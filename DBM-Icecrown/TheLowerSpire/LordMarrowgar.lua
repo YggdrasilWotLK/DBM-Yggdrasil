@@ -55,10 +55,13 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 69076 then						-- Bone Storm (Whirlwind)
 		specWarnWhirlwind:Show()
 		specWarnWhirlwind:Play("justrun")
-		if self:IsHeroic() then
-			timerWhirlwind:Show(37)			--36-38 on HC
+		-- Core: RAID_MODE(20000,30000,20000,30000) = 10N 20s / 25N 30s / 10H 20s / 25H 30s
+		if self:IsDifficulty("normal25", "heroic25") then
+			timerWhirlwind:Show(30)
 		else
-			timerWhirlwind:Show()			--30 on Norm
+			timerWhirlwind:Show(20)
+		end
+		if self:IsNormal() then
 			timerBoneSpike:Cancel()						-- He doesn't do Bone Spike Graveyard during Bone Storm on normal
 		end
 	end
@@ -72,8 +75,8 @@ function mod:SPELL_AURA_REMOVED(args)
 		end
 	elseif spellId == 69076 then
 		timerWhirlwind:Cancel()
-		timerWhirlwindCD:Start()
-		preWarnWhirlwind:Schedule(25)
+		-- Core EVENT_WARN_BONE_STORM repeats 90-95s WARN->WARN. CD was already
+		-- (re)started on CAST_START, do not restart a short 30s CD here.
 		if self:IsNormal() then
 			timerBoneSpike:Start(15)					-- He will do Bone Spike Graveyard 15 seconds after whirlwind ends on normal
 		end
@@ -88,6 +91,9 @@ function mod:SPELL_CAST_START(args)
 		soundBoneSpike:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\Bone_Spike_cast.mp3")
 	elseif args.spellId == 69076 then
 		timerWhirlwindCD:Cancel()
+		-- Core WARN->WARN cycle is 90-95s; start next CD on cast, not on aura removal.
+		timerWhirlwindCD:Start(90)
+		preWarnWhirlwind:Schedule(85)
 		timerWhirlwindStart:Start()
 		soundBoneStorm:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\Bone_Storm_cast.mp3")
 	end
@@ -108,9 +114,10 @@ function mod:SPELL_SUMMON(args)
 		if self.Options.SetIconOnImpale then
 			self:SetIcon(args.sourceName, self.vb.impaleIcon)
 		end
-		if self.vb.impaleIcon < 1 then
+		if self.vb.impaleIcon <= 1 then
 			self.vb.impaleIcon = 8
+		else
+			self.vb.impaleIcon = self.vb.impaleIcon - 1
 		end
-		self.vb.impaleIcon = self.vb.impaleIcon - 1
 	end
 end

@@ -11,10 +11,10 @@ mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 71289 71001 72108 72109 72110 71237 70674 71204",
 	"SPELL_AURA_APPLIED_DOSE 71204",
 	"SPELL_AURA_REMOVED 70842 71289",
-	"SPELL_CAST_START 71420 72007 72501 72502 70900 70901 72499 72500 72497 72496",
+	"SPELL_CAST_START 71420 72007 72501 72502 72905 70900 70901 71236 72495 72496 72497 72498 72499 72500",
 	"SPELL_CAST_SUCCESS 71289",
 	"SPELL_INTERRUPT",
-	"SPELL_SUMMON 71426",
+	"SPELL_SUMMON 71363 71426",
 	"SWING_DAMAGE",
 	"CHAT_MSG_MONSTER_YELL"
 )
@@ -60,20 +60,22 @@ mod:AddSetIconOption("SetIconOnDominateMind", 71289, true, 0, {1, 2, 3})
 
 -- Stage Two
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(2))
-local warnSummonSpirit				= mod:NewSpellAnnounce(71426, 2)
+local warnSummonSpirit				= mod:NewSpellAnnounce(71363, 2)
 local warnPhase2					= mod:NewPhaseAnnounce(2, 1, nil, nil, nil, nil, nil, 2)
 local warnTouchInsignificance		= mod:NewStackAnnounce(71204, 2, nil, "Tank|Healer")
+local warnFrostboltVolley			= mod:NewSpellAnnounce(72905, 3, nil, "HasInterrupt")
 
 local specWarnCurseTorpor			= mod:NewSpecialWarningYou(71237, nil, nil, nil, 1, 2)
 local specWarnTouchInsignificance	= mod:NewSpecialWarningStack(71204, nil, 3, nil, nil, 1, 6)
 local specWarnFrostbolt				= mod:NewSpecialWarningInterrupt(72007, "HasInterrupt", nil, 2, 1, 2)
-local specWarnVengefulShade			= mod:NewSpecialWarning("SpecWarnVengefulShade", true, nil, nil, nil, 1, 2, nil, 71426, 71426)
+local specWarnVengefulShade			= mod:NewSpecialWarning("SpecWarnVengefulShade", true, nil, nil, nil, 1, 2, nil, 71363, 71363)
 
-local timerSummonSpiritCD			= mod:NewCDTimer(10, 71426, nil, true, nil, 3)
+local timerSummonSpiritCD			= mod:NewCDTimer(12, 71363, nil, true, nil, 3)
 local timerFrostboltCast			= mod:NewCastTimer(2, 72007, nil, "HasInterrupt")
 local timerTouchInsignificance		= mod:NewTargetTimer(30, 71204, nil, "Tank|Healer", nil, 5)
+local timerDeathDecayCD			= mod:NewCDTimer(25, 71001, nil, nil, nil, 3)
 
-local soundWarnSpirit				= mod:NewSound(71426)
+local soundWarnSpirit				= mod:NewSound(71363)
 
 local dominateMindTargets = {}
 mod.vb.dominateMindIcon = 1
@@ -221,6 +223,7 @@ function mod:OnCombatStart(delay)
 	end
 	berserkTimer:Start(-delay)
 	timerAdds:Start(5.5)
+	timerDeathDecayCD:Start(10-delay)
 	warnAddsSoon:Schedule(2.5)			-- 3sec pre-warning on start
 	self:Schedule(5.5, addsTimer, self)
 	if not self:IsDifficulty("normal10") then
@@ -269,6 +272,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnDeathDecay:Show()
 			specWarnDeathDecay:Play("watchfeet")
 		end
+		timerDeathDecayCD:Start()
 	elseif spellId == 71237 and args:IsPlayer() then
 		specWarnCurseTorpor:Show()
 		specWarnCurseTorpor:Play("targetyou")
@@ -324,6 +328,8 @@ function mod:SPELL_CAST_START(args)
 		specWarnFrostbolt:Show(args.sourceName)
 		specWarnFrostbolt:Play("kickcast")
 		timerFrostboltCast:Start()
+	elseif spellId == 72905 then
+		warnFrostboltVolley:Show()
 	elseif spellId == 70900 then
 		warnDarkTransformation:Show()
 		if self.Options.SetIconOnDeformedFanatic then
@@ -334,7 +340,7 @@ function mod:SPELL_CAST_START(args)
 		if self.Options.SetIconOnEmpoweredAdherent then
 			self:ScanForMobs(args.sourceGUID, 2, 7, 1, nil, 12, "SetIconOnEmpoweredAdherent")
 		end
-	elseif args:IsSpellID(72499, 72500, 72497, 72496) then
+	elseif args:IsSpellID(71236, 72495, 72496, 72497, 72498, 72499, 72500) then
 		specWarnDarkMartyrdom:Show()
 		specWarnDarkMartyrdom:Play("justrun")
 	end
@@ -361,7 +367,7 @@ function mod:SPELL_INTERRUPT(args)
 end
 
 function mod:SPELL_SUMMON(args)
-	if args.spellId == 71426 and self:AntiSpam(5, 1) then -- Summon Vengeful Shade
+	if args:IsSpellID(71363, 71426) and self:AntiSpam(5, 1) then -- Summon Vengeful Shade (core casts 71363)
 		warnSummonSpirit:Show()
 		timerSummonSpiritCD:Start()
 		soundWarnSpirit:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\spirits.mp3")

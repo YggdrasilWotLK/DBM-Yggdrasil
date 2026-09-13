@@ -25,21 +25,23 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 71195 71193 71188 69652 69651 72306 69638 69705",
+	"SPELL_AURA_APPLIED 71195 71193 71188 69652 69651 72306 69638 69637 69705 72525",
 	"SPELL_AURA_APPLIED_DOSE 72306 69638",
 	"SPELL_AURA_REMOVED 69705",
-	"SPELL_CAST_START 69705",
+	"SPELL_CAST_START 69705 69651",
+	"SPELL_CAST_SUCCESS 69651",
 	"UNIT_SPELLCAST_SUCCEEDED boss1 boss2"
 )
 
 local warnBelowZero			= mod:NewSpellAnnounce(69705, 4)
 local warnExperienced		= mod:NewTargetNoFilterAnnounce(71188, 1, nil, false)		-- might be spammy
 local warnVeteran			= mod:NewTargetNoFilterAnnounce(71193, 2, nil, false)		-- might be spammy
-local warnElite				= mod:NewTargetNoFilterAnnounce(71195, 3, nil, false)		-- might be spammy
+local warnElite			= mod:NewTargetNoFilterAnnounce(71195, 3, nil, false)		-- might be spammy
 local warnBattleFury		= mod:NewStackAnnounce(69638, 2, nil, "Tank|Healer", 2)
 local warnBladestorm		= mod:NewSpellAnnounce(69652, 3, nil, "Melee")
 local warnWoundingStrike	= mod:NewTargetNoFilterAnnounce(69651, 2)
-local warnAddsSoon			= mod:NewAnnounce("WarnAddsSoon", 2, addsIcon)
+local warnAddsSoon		= mod:NewAnnounce("WarnAddsSoon", 2, addsIcon)
+local warnAddBerserk		= mod:NewSpellAnnounce(72525, 3)
 
 local timerCombatStart		= mod:NewCombatTimer(47.5)
 local timerBelowZeroCD		= mod:NewNextTimer(35, 69705, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON, nil, 1)
@@ -63,15 +65,23 @@ end
 
 function mod:OnCombatStart(delay)
 	DBM.BossHealth:Clear()
-	timerAdds:Start(15-delay) --First adds might come early or late so timer should be taken as a proximity only.
-	warnAddsSoon:Schedule(10)
-	self:Schedule(15, Adds, self)
+	timerAdds:Start(12-delay) --Core EVENT_ADDS first 12s, repeat 60s
+	warnAddsSoon:Schedule(7)
+	self:Schedule(12, Adds, self)
 	self.vb.firstMage = false
 	if UnitFactionGroup("player") == "Alliance" then
 		timerBelowZeroCD:Start(39-delay) --Approximate, since it depends on cannon damage. Corrected on yell later
 	else
 		timerBelowZeroCD:Start(37-delay) --Approximate, since it depends on cannon damage. Corrected on yell later
 	end
+end
+
+function mod:OnCombatEnd()
+	self:Unschedule(Adds)
+	timerAdds:Cancel()
+	warnAddsSoon:Cancel()
+	timerBelowZeroCD:Cancel()
+	timerBattleFuryActive:Cancel()
 end
 
 function mod:SPELL_AURA_APPLIED(args)
@@ -84,17 +94,17 @@ function mod:SPELL_AURA_APPLIED(args)
 		warnExperienced:Show(args.destName)
 	elseif spellId == 69652 then
 		warnBladestorm:Show()
-	elseif spellId == 69651 then
-		warnWoundingStrike:Show(args.destName)
-	elseif args:IsSpellID(72306, 69638) and self:GetCIDFromGUID(args.destGUID) == bossID then
+	elseif args:IsSpellID(72306, 69638, 69637) and self:GetCIDFromGUID(args.destGUID) == bossID then
 		timerBattleFuryActive:Start()		-- only a timer for 1st stack
+	elseif spellId == 72525 then
+		warnAddBerserk:Show()
 	elseif spellId == 69705 and self:AntiSpam(1, 1) then
 		soundFreeze:Play("Interface\\AddOns\\DBM-Core\\sounds\\Alert.mp3")
 	end
 end
 
 function mod:SPELL_AURA_APPLIED_DOSE(args)
-	if args:IsSpellID(72306, 69638) and self:GetCIDFromGUID(args.destGUID) == bossID then
+	if args:IsSpellID(72306, 69638, 69637) and self:GetCIDFromGUID(args.destGUID) == bossID then
 		if args.amount % 5 == 0 then		-- warn every 5 stacks
 			warnBattleFury:Show(args.destName, args.amount or 1)
 		end
@@ -104,13 +114,24 @@ end
 
 function mod:SPELL_AURA_REMOVED(args)
 	if args.spellId == 69705 then
-		timerBelowZeroCD:Start()
+		-- Core interval is DPS-driven with 30-33.5s respawn cooldown; use Update
+		-- so yell corrections don't double-count.
+		timerBelowZeroCD:Update(30, 35)
 	end
 end
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 69705 then
 		warnBelowZero:Show()
+	elseif args.spellId == 69651 and self:AntiSpam(2, 2) then
+		-- Core casts Wounding Strike directly (no reliable aura); warn on cast.
+		warnWoundingStrike:Show(args.sourceName)
+	end
+end
+
+function mod:SPELL_CAST_SUCCESS(args)
+	if args.spellId == 69651 and self:AntiSpam(2, 2) then
+		warnWoundingStrike:Show(args.sourceName)
 	end
 end
 

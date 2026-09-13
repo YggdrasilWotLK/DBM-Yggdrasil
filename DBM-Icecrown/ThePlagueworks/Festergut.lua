@@ -9,7 +9,7 @@ mod:SetMinSyncRevision(20220623000000)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 69195 71219 73031 73032",
-	"SPELL_AURA_APPLIED 69279 69166 71912 72219 72551 72552 72553 69240 71218 73019 73020 69291 72101 72102 72103",
+	"SPELL_AURA_APPLIED 69279 69166 71912 72219 72551 72552 72553 69240 71218 73019 73020 69291 72101 72102 72103 72296",
 	"SPELL_AURA_APPLIED_DOSE 69166 71912 72219 72551 72552 72553 69291 72101 72102 72103",
 	"SPELL_AURA_REMOVED 69279",
 	"UNIT_SPELLCAST_SUCCEEDED boss1"
@@ -31,12 +31,13 @@ local specWarnGoo			= mod:NewSpecialWarningDodge(72297, true, nil, nil, 1, 2) --
 
 local timerGasSpore			= mod:NewBuffFadesTimer(12, 69279, nil, nil, nil, 3)
 local timerVileGas			= mod:NewBuffFadesTimer(6, 69240, nil, "Ranged", nil, 3)
-local timerGasSporeCD		= mod:NewNextTimer(40, 69279, nil, nil, nil, 3)		-- Every 40 seconds except after 3rd and 6th cast, then it's 50sec CD
+local timerGasSporeCD		= mod:NewNextTimer(40, 69279, nil, nil, nil, 3)		-- Core 40-45s repeat, 20-25s first / after Pungent
 local timerPungentBlight	= mod:NewNextTimer(34, 69195, nil, nil, nil, 2)		-- Edited. ~34 seconds after 3rd stack of inhaled
-local timerInhaledBlight	= mod:NewNextTimer(34, 69166, nil, nil, nil, 6)		-- 34 seconds'ish
+local timerInhaledBlight	= mod:NewNextTimer(34, 69166, nil, nil, nil, 6)		-- 34s repeat, ~25s first
 local timerGastricBloat		= mod:NewTargetTimer(100, 72219, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)	-- 100 Seconds until expired
-local timerGastricBloatCD	= mod:NewCDTimer(12, 72219, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)		-- 10 to 14 seconds
-local timerGooCD			= mod:NewCDTimer(10, 72297, nil, nil, nil, 3)
+local timerGastricBloatCD	= mod:NewCDTimer(16, 72219, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)		-- Core 15-17.5s
+local timerGooCD			= mod:NewCDTimer(17, 72297, nil, nil, nil, 3)	-- Core 15-20s heroic-only (spell 72296)
+local timerVileGasCD		= mod:NewNextTimer(30, 69240, nil, nil, nil, 3)	-- Core 28-35s
 
 local berserkTimer			= mod:NewBerserkTimer(300)
 
@@ -70,8 +71,9 @@ end
 
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
-	timerInhaledBlight:Start(-delay)
+	timerInhaledBlight:Start(25-delay)
 	timerGasSporeCD:Start(20-delay)--This may need tweaking
+	timerVileGasCD:Start(30-delay)
 	table.wipe(gasSporeTargets)
 	table.wipe(vileGasTargets)
 	self.vb.gasSporeCast = 0
@@ -80,7 +82,7 @@ function mod:OnCombatStart(delay)
 		DBM.RangeCheck:Show(10) -- Nick bookmark, increased from 8 to 10 re Vile Gas spread in Rotface 10 HC (which is 10 yds) and reports of overlaps/spreads at 8-yd range
 	end
 	if self:IsHeroic() then
-		timerGooCD:Start(13-delay)
+		timerGooCD:Start(17-delay)
 	end
 end
 
@@ -94,21 +96,16 @@ function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(69195, 71219, 73031, 73032) then	-- Pungent Blight
 		specWarnPungentBlight:Show()
 		specWarnPungentBlight:Play("aesoon")
-		timerInhaledBlight:Start(38)
+		timerInhaledBlight:Start(34)
+		timerGasSporeCD:Start(22)
 	end
 end
 
 function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 69279 then	-- Gas Spore
 		gasSporeTargets[#gasSporeTargets + 1] = args.destName
-		self.vb.gasSporeCast = self.vb.gasSporeCast + 1
-		--25 man is 3 sets of 3 and 10 man is 3 sets of 2, totallying 9 and 6 respectively
-		if (self.vb.gasSporeCast < 9 and self:IsDifficulty("normal25", "heroic25")) or (self.vb.gasSporeCast < 6 and self:IsDifficulty("normal10", "heroic10")) then
-			timerGasSporeCD:Start()
-		elseif (self.vb.gasSporeCast >= 9 and self:IsDifficulty("normal25", "heroic25")) or (self.vb.gasSporeCast >= 6 and self:IsDifficulty("normal10", "heroic10")) then
-			timerGasSporeCD:Start(50)--Basically, the third time spores are placed on raid, it'll be an extra 10 seconds before he applies first set of spores again.
-			self.vb.gasSporeCast = 0
-		end
+		-- Core: 40-45s repeat, 20-25s after Pungent. No 50s extension.
+		timerGasSporeCD:Start()
 		if args:IsPlayer() then
 			specWarnGasSpore:Show()
 			specWarnGasSpore:Play("targetyou")
@@ -145,6 +142,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args:IsSpellID(69240, 71218, 73019, 73020) and args:IsDestTypePlayer() then	-- Vile Gas
 		vileGasTargets[#vileGasTargets + 1] = args.destName
+		timerVileGasCD:Start()
 		if args:IsPlayer() then
 			specWarnVileGas:Show()
 			specWarnVileGas:Play("scatter")
@@ -152,6 +150,10 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 		self:Unschedule(warnVileGasTargets)
 		self:Schedule(0.8, warnVileGasTargets)
+	elseif args.spellId == 72296 and args:IsDestTypePlayer() then	-- Malleable Goo (core 72296)
+		specWarnGoo:Show()
+		specWarnGoo:Play("watchstep")
+		timerGooCD:Start()
 	elseif args:IsSpellID(69291, 72101, 72102, 72103) and args:IsDestTypePlayer() then	--Inoculated
 		local amount = args.amount or 1
 		if self.Options.AchievementCheck and DBM:GetRaidRank() > 0 and not self.vb.warnedfailed and self:AntiSpam(3, 1) then
@@ -172,14 +174,11 @@ function mod:SPELL_AURA_REMOVED(args)
 	end
 end
 
-function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
-	if spellName == GetSpellInfo(72299) then -- Malleable Goo Summon Trigger (10 player normal) (the other 3 spell ids are not needed here since all spells have the same name)
+function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName, _, _, spellId)
+	-- Core casts 72296 (triggered) for Malleable Goo, 15-20s heroic-only.
+	if spellId == 72296 or spellName == GetSpellInfo(72296) or spellName == GetSpellInfo(72299) then
 		specWarnGoo:Show()
 		specWarnGoo:Play("watchstep")
-		if self:IsDifficulty("heroic25") then
-			timerGooCD:Start()
-		else
-			timerGooCD:Start(15)--30 seconds in between goos on 10 man heroic
-		end
+		timerGooCD:Start()
 	end
 end

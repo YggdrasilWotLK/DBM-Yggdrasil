@@ -9,9 +9,9 @@ mod:SetMinSyncRevision(3860)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 70351 71966 71967 71968 71617 72842 72843 72851 72852 71621 72850 70672 72455 72832 72833 73121 73122 73120 71893",
-	"SPELL_CAST_SUCCESS 70341 71255 72855 72856 70911 72615 72295 74280 74281",
-	"SPELL_AURA_APPLIED 70447 72836 72837 72838 70672 72455 72832 72833 72451 72463 72671 72672 70542 70539 72457 72875 72876 70352 74118 70353 74119 72855 72856 70911",
+	"SPELL_CAST_START 70351 71966 71967 71968 71617 72842 72843 72851 72852 71621 72850 70672 72455 72832 72833 73121 73122 73120 71893 70852",
+	"SPELL_CAST_SUCCESS 70341 71255 72855 72856 70911 72615 72295 74280 74281 70852",
+	"SPELL_AURA_APPLIED 70447 72836 72837 72838 70672 72455 72832 72833 72451 72463 72671 72672 70542 70539 72457 72875 72876 70352 74118 70353 74119 72855 72856 70911 72295 72615 74280 74281",
 	"SPELL_AURA_APPLIED_DOSE 72451 72463 72671 72672 70542",
 	"SPELL_AURA_REFRESH 70539 72457 72875 72876 70542",
 	"SPELL_AURA_REMOVED 70447 72836 72837 72838 70672 72455 72832 72833 72855 72856 70911 71615 70539 72457 72875 72876 70542",
@@ -69,7 +69,7 @@ local specWarnChokingGasBomb		= mod:NewSpecialWarningMove(71255, "Melee", nil, n
 local specWarnMalleableGooCast		= mod:NewSpecialWarningSpell(72295, "Ranged", nil, nil, 2, 2)
 
 local timerChokingGasBombCD			= mod:NewNextTimer(35.5, 71255, nil, nil, nil, 3)
-local timerMalleableGooCD			= mod:NewCDTimer(20, 72295, nil, nil, nil, 3)
+local timerMalleableGooCD			= mod:NewCDTimer(27, 72295, nil, nil, nil, 3) -- Core 25-30s, spell 70852
 
 local soundSpecWarnMalleableGoo		= mod:NewSound(72295, nil, "Ranged")
 local soundMalleableGooSoon		= mod:NewSoundSoon(72295, nil, "Ranged")
@@ -109,11 +109,17 @@ mod.vb.warned_preP2 = false
 mod.vb.warned_preP3 = false
 
 local function NextPhase(self)
-	self:SetStage(0)
+	-- vb.phase is 1 from OnCombatStart; advance on each transition since
+	-- callers (Concoction/Guzzle/Tear Gas removal) don't set it explicitly.
+	if (self.vb.phase or 1) < 3 then
+		self.vb.phase = (self.vb.phase or 1) + 1
+	end
 	if self.vb.phase == 2 then
+		self:SetStage(2)
 		warnPhase2:Show()
 		warnPhase2:Play("ptwo")
 	elseif self.vb.phase == 3 then
+		self:SetStage(3)
 		warnPhase3:Show()
 		warnPhase3:Play("pthree")
 	end
@@ -169,6 +175,17 @@ function mod:OnCombatStart(delay)
 	end
 end
 
+function mod:OnCombatEnd()
+	self:Unschedule(NextPhase)
+	warnUnstableExperimentSoon:Cancel()
+	warnChokingGasBombSoon:Cancel()
+	soundMalleableGooSoon:Cancel()
+	soundChokingGasSoon:Cancel()
+	soundSpecWarnMalleableGoo:Cancel()
+	soundSpecWarnChokingGasBomb:Cancel()
+	timerNextPhase:Cancel()
+end
+
 function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
 	if args:IsSpellID(70351, 71966, 71967, 71968) then
@@ -201,19 +218,19 @@ function mod:SPELL_CAST_START(args)
 		if self:IsHeroic() then
 			self:Schedule(35, NextPhase, self)	--after 5s PP sets target
 			timerNextPhase:Start(35)
-			timerMalleableGooCD:Start(45.5)
-			soundMalleableGooSoon:Schedule(45.5-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
-			timerChokingGasBombCD:Start(67)
-			soundChokingGasSoon:Schedule(67-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking_soon.mp3")
-			warnChokingGasBombSoon:Schedule(67-5)
+			timerMalleableGooCD:Start(30)
+			soundMalleableGooSoon:Schedule(30-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
+			timerChokingGasBombCD:Start(40)
+			soundChokingGasSoon:Schedule(40-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking_soon.mp3")
+			warnChokingGasBombSoon:Schedule(40-5)
 			timerUnboundPlagueCD:Start(120-(GetTime()-UnboundTime))
 		else
 			timerNextPhase:Start(9.5)
-			timerMalleableGooCD:Start(19)
-			soundMalleableGooSoon:Schedule(19-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
-			timerChokingGasBombCD:Start(40.5)
-			soundChokingGasSoon:Schedule(40.5-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking_soon.mp3")
-			warnChokingGasBombSoon:Schedule(40.5-5)
+			timerMalleableGooCD:Start(25)
+			soundMalleableGooSoon:Schedule(25-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
+			timerChokingGasBombCD:Start(37)
+			soundChokingGasSoon:Schedule(37-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking_soon.mp3")
+			warnChokingGasBombSoon:Schedule(37-5)
 		end
 	elseif args:IsSpellID(70672, 72455, 72832, 72833) then	--Red Slime
 		timerGaseousBloatCast:Start()
@@ -271,14 +288,14 @@ function mod:SPELL_CAST_SUCCESS(args)
 	elseif args:IsSpellID(72855, 72856, 70911) then
 		timerUnboundPlagueCD:Start()
 		UnboundTime = GetTime()
-	elseif args:IsSpellID(72615, 72295, 74280, 74281) then
+	elseif args:IsSpellID(72615, 72295, 74280, 74281, 70852) then
 		--self:BossTargetScanner(36678, "MalleableGooTarget", 0.05, 6)
 		specWarnMalleableGooCast:Show()
 		--specWarnMalleableGooCast:Play("watchstep")
 		timerMalleableGooCD:Start()
 		soundSpecWarnMalleableGoo:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable.mp3")
 		soundMalleableGooSoon:Cancel()
-		soundMalleableGooSoon:Schedule(20-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
+		soundMalleableGooSoon:Schedule(27-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
 		GooTime = GetTime()
 	end
 end
@@ -326,6 +343,9 @@ function mod:SPELL_AURA_APPLIED(args)
 		if args:IsPlayer() then
 			specWarnGasVariable:Show()
 		end
+	elseif args:IsSpellID(72295, 72615, 74280, 74281) then	 -- Malleable Goo aura (core casts 70852)
+		timerMalleableGooCD:Start()
+		GooTime = GetTime()
 	elseif args:IsSpellID(72855, 72856, 70911) then	 -- Unbound Plague
 		if self.Options.UnboundPlagueIcon then
 			self:SetIcon(args.destName, 3)
@@ -393,7 +413,7 @@ function mod:UNIT_HEALTH(uId)
 		self.vb.warned_preP3 = true
 		warnPhase3Soon:Show()
 		warnPhase3Soon:Play("nextphasesoon")
-	elseif self:GetUnitCreatureId(uId) == 36678 and UnitHealth(uId) / UnitHealthMax(uId) == 0.35 then
+	elseif self:GetUnitCreatureId(uId) == 36678 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.35 then
 		warnUnstableExperimentSoon:Cancel()
 		warnChokingGasBombSoon:Cancel()
 		soundMalleableGooSoon:Cancel()

@@ -8,9 +8,8 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 69508 69774 69839",
-	"SPELL_AURA_APPLIED 71208 69760 69558 69674 71224 73022 73023 72272 72273",
+	"SPELL_AURA_APPLIED 69774 71208 69760 69558 69674 71224 73022 73023 69240 71218 73019 73020 72272 72273",
 	"SPELL_AURA_APPLIED_DOSE 69558",
-	"SPELL_CAST_SUCCESS 72272 72273",
 	"SPELL_AURA_REMOVED 69674 71224 73022 73023",
 	"CHAT_MSG_MONSTER_YELL"
 )
@@ -31,12 +30,12 @@ local specWarnRadiatingOoze		= mod:NewSpecialWarningSpell(69760, "-Tank", nil, n
 local specWarnLittleOoze		= mod:NewSpecialWarning("SpecWarnLittleOoze", false, nil, nil, 1, 2)
 local specWarnVileGas			= mod:NewSpecialWarningYou(72272, nil, nil, nil, 1, 2)
 
-local timerStickyOoze			= mod:NewNextTimer(16, 69774, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerStickyOoze			= mod:NewNextTimer(15, 69774, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerWallSlime			= mod:NewNextTimer(25, 69789) -- Edited.
-local timerSlimeSpray			= mod:NewNextTimer(21, 69508, nil, nil, nil, 3)
+local timerSlimeSpray			= mod:NewNextTimer(20, 69508, nil, nil, nil, 3)
 local timerMutatedInfection		= mod:NewTargetTimer(12, 69674, nil, nil, nil, 5)
 local timerOozeExplosion		= mod:NewCastTimer(4, 69839, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON, nil, 3)
-local timerVileGasCD			= mod:NewNextTimer(30, 72272, nil, nil, nil, 3)
+local timerVileGasCD			= mod:NewNextTimer(17, 72272, nil, nil, nil, 3) -- Core 15-20s
 
 mod:AddRangeFrameOption(10, 72272, "Ranged")
 mod:AddSetIconOption("InfectionIcon", 69674, true, 0, {1, 2})
@@ -56,14 +55,14 @@ local function WallSlime(self)
 	self:Unschedule(WallSlime)
 	if self:IsInCombat() then
 		timerWallSlime:Start()
-		self:Schedule(20, WallSlime, self)
+		self:Schedule(25, WallSlime, self)
 	end
 end
 
 function mod:OnCombatStart(delay)
-	timerWallSlime:Start(9-delay) -- Adjust from 25 to 9 to have a correct timer from the start
+	timerWallSlime:Start(8-delay)
 	timerSlimeSpray:Start(20-delay) -- Custom add for the first Slime Spray
-	timerVileGasCD:Start(29-delay) -- Edited.
+	timerVileGasCD:Start(17-delay)
 	self:Schedule(25-delay, WallSlime, self)
 	self.vb.InfectionIcon = 1
 	spamOoze = 0
@@ -110,7 +109,7 @@ end
 
 function mod:SPELL_AURA_APPLIED(args)
 	local spellId = args.spellId
-	if spellId == 71208 and args:IsPlayer() then
+	if args:IsSpellID(69774, 71208) and args:IsPlayer() then
 		specWarnStickyOoze:Show()
 		specWarnStickyOoze:Play("runaway")
 	elseif spellId == 69760 then
@@ -133,7 +132,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		else
 			self.vb.InfectionIcon = 1
 		end
-	elseif args:IsSpellID(72272, 72273) and args:IsDestTypePlayer() then	-- Vile Gas(Heroic Rotface only, 25 man spellid the same as 10?)
+	elseif args:IsSpellID(69240, 71218, 73019, 73020, 72272, 72273) and args:IsDestTypePlayer() then	-- Vile Gas (core 69240, 15-20s)
 		RFVileGasTargets[#RFVileGasTargets + 1] = args.destName
 		if args:IsPlayer() then
 			specWarnVileGas:Show()
@@ -144,12 +143,6 @@ function mod:SPELL_AURA_APPLIED(args)
 	end
 end
 mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED
-
-function mod:SPELL_CAST_SUCCESS(args)
-	if args:IsSpellID(72272, 72273) then
-		timerVileGasCD:Start()
-	end
-end
 
 function mod:SPELL_AURA_REMOVED(args)
 	if args:IsSpellID(69674, 71224, 73022, 73023) then
@@ -190,7 +183,6 @@ end
 mod.SWING_MISSED = mod.SWING_DAMAGE
 
 function mod:CHAT_MSG_MONSTER_YELL(msg)
-	if (msg == L.YellSlimePipes1 or msg:find(L.YellSlimePipes1)) or (msg == L.YellSlimePipes2 or msg:find(L.YellSlimePipes2)) then
-		WallSlime(self)
-	end
+	-- Core ooze flood is timer-driven (8s first, 25s repeat); yells are flavour only.
+	-- Do not retrigger WallSlime here to avoid double-scheduling.
 end

@@ -29,7 +29,7 @@ local warnSwarmingShadows			= mod:NewTargetAnnounce(71266, 4)
 local warnSwarmingShadowsSoon		= mod:NewSoonAnnounce(71266, 4, nil, nil, nil, nil, nil, 2)
 local warnInciteTerror				= mod:NewSpellAnnounce(73070, 3, nil, nil, nil, nil, nil, 2)
 local warnInciteTerrorSoon			= mod:NewSoonAnnounce(73070, 3, nil, nil, nil, nil, nil, 2)
-local warnVampiricBite				= mod:NewTargetNoFilterAnnounce(70946, 2)
+local warnVampiricBite				= mod:NewTargetNoFilterAnnounce(71726, 2)
 local warnBloodthirstSoon			= mod:NewSoonAnnounce(70877, 2)
 local warnBloodthirst				= mod:NewTargetNoFilterAnnounce(70877, 3, nil, false)
 local warnEssenceoftheBloodQueen	= mod:NewTargetNoFilterAnnounce(70867, 3, nil, false)
@@ -44,11 +44,11 @@ local specWarnMindConrolled			= mod:NewSpecialWarningTarget(70923, "-Healer", ni
 local specWarnGTFO					= mod:NewSpecialWarningGTFO(71266, nil, nil, nil, 1, 8)
 
 local timerNextInciteTerror			= mod:NewNextTimer(100, 73070, nil, nil, nil, 6)
-local timerFirstBite				= mod:NewNextTimer(15, 70946, nil, "Dps", nil, 5)
+local timerFirstBite				= mod:NewNextTimer(15, 71726, nil, "Dps", nil, 5)
 local timerNextPactDarkfallen		= mod:NewNextTimer(30, 71340, nil, nil, nil, 3)
-local timerNextSwarmingShadows		= mod:NewNextTimer(30.5, 71266, nil, nil, nil, 3)
+local timerNextSwarmingShadows		= mod:NewNextTimer(30, 71266, nil, nil, nil, 3)
 local timerInciteTerror				= mod:NewBuffActiveTimer(4, 73070)
-local timerBloodBolt				= mod:NewBuffActiveTimer(6, 71772, nil, nil, nil, 2, nil, DBM_COMMON_L.HEALER_ICON)
+local timerBloodBolt				= mod:NewBuffActiveTimer(7, 71772, nil, nil, nil, 2, nil, DBM_COMMON_L.HEALER_ICON)
 local timerBloodThirst				= mod:NewBuffFadesTimer(10, 70877, nil, nil, nil, 5)
 local timerEssenceoftheBloodQueen	= mod:NewBuffFadesTimer(60, 70867, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
 
@@ -76,9 +76,9 @@ end
 function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
 	timerFirstBite:Start(-delay)
-	timerNextPactDarkfallen:Start(15-delay)
-	warnPactDarkfallenSoon:Schedule(10-delay)
-	warnPactDarkfallenSoon:ScheduleVoice(10-delay, "linesoon")
+	timerNextPactDarkfallen:Start(20-delay)
+	warnPactDarkfallenSoon:Schedule(15-delay)
+	warnPactDarkfallenSoon:ScheduleVoice(15-delay, "linesoon")
 	timerNextSwarmingShadows:Start(-delay)
 	warnSwarmingShadowsSoon:Schedule(25.5-delay)
 	warnSwarmingShadowsSoon:ScheduleVoice(25.5-delay, "flamessoon")
@@ -193,9 +193,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 		timerNextSwarmingShadows:Start()--This resets the swarming shadows timer
 		warnSwarmingShadowsSoon:Schedule(25.5)
 		warnSwarmingShadowsSoon:ScheduleVoice(25.5, "flamessoon")
-		timerNextPactDarkfallen:Start(25)--and the Pact timer also reset -5 seconds
-		warnPactDarkfallenSoon:Schedule(20)
-		warnPactDarkfallenSoon:ScheduleVoice(20, "linesoon")
+		-- Core re-schedules Pact 5s after landing (~9.5s after fear cast), so 15s from fear.
+		timerNextPactDarkfallen:Start(15)--and the Pact timer also reset
+		warnPactDarkfallenSoon:Schedule(10)
+		warnPactDarkfallenSoon:ScheduleVoice(10, "linesoon")
 		if self:IsDifficulty("normal10", "heroic10") then
 			timerNextInciteTerror:Start(120)--120 seconds in between first and second on 10 man
 			warnInciteTerrorSoon:Schedule(115)

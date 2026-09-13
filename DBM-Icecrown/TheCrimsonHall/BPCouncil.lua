@@ -35,7 +35,7 @@ local warnTargetSwitch			= mod:NewAnnounce("WarnTargetSwitch", 3, 70952)
 local warnTargetSwitchSoon		= mod:NewAnnounce("WarnTargetSwitchSoon", 2, 70952)
 
 local timerCombatStart			= mod:NewCombatTimer(17) -- Roleplay for first pull
-local timerTargetSwitch			= mod:NewTimer(47, "TimerTargetSwitch", 70952)	-- every 46-47seconds
+local timerTargetSwitch			= mod:NewTimer(45, "TimerTargetSwitch", 70952)	-- Core 45s then 46s
 local berserkTimer				= mod:NewBerserkTimer((myRealm == "Lordaeron" or myRealm == "Frostmourne") and 360 or 600)
 
 mod:AddSetIconOption("ActivePrinceIcon", nil, false, 5, {8})
@@ -109,9 +109,9 @@ end
 function mod:OnCombatStart(delay)
 	self.vb.kineticIcon = 7
 	berserkTimer:Start(-delay)
-	warnTargetSwitchSoon:Schedule(42-delay)
-	warnTargetSwitchSoon:ScheduleVoice(42, "swapsoon")
-	timerTargetSwitch:Start(-delay)
+	warnTargetSwitchSoon:Schedule(40-delay)
+	warnTargetSwitchSoon:ScheduleVoice(40, "swapsoon")
+	timerTargetSwitch:Start(45-delay)
 	timerEmpoweredShockVortex:Start(15-delay) -- Warmane: random 15-20
 	timerKineticBombCD:Start(20-delay)
 	table.wipe(glitteringSparksTargets)
@@ -176,9 +176,9 @@ function mod:SPELL_CAST_START(args)
 	elseif spellId == 71718 then	-- Conjure Flames
 		warnConjureFlames:Show()
 		timerConjureFlamesCD:Start()
-	elseif spellId == 72040 then	-- Conjure Empowered Flames
+	elseif spellId == 72040 then	-- Conjure Empowered Flames (core 15s empowered)
 		warnEmpoweredFlamesCast:Show()
-		timerConjureFlamesCD:Start()
+		timerConjureFlamesCD:Start(15)
 	end
 end
 
@@ -187,8 +187,8 @@ function mod:SPELL_AURA_APPLIED(args)
 	if spellId == 70952 then
 		if self:IsInCombat() then
 			warnTargetSwitch:Show(L.Valanar)
-			warnTargetSwitchSoon:Schedule(42)
-			warnTargetSwitchSoon:ScheduleVoice(42, "swapsoon")
+			warnTargetSwitchSoon:Schedule(40)
+			warnTargetSwitchSoon:ScheduleVoice(40, "swapsoon")
 			timerTargetSwitch:Start()
 			if not timerEmpoweredShockVortex:IsStarted() then -- avoid overwriting first vortex
 				if timerShockVortex:IsStarted() then
@@ -299,9 +299,9 @@ function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
 		warnKineticBomb:Show()
 		soundKineticBomb:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\KineticSpawn.mp3")
 		if self:IsDifficulty("normal10", "heroic10") then
-			timerKineticBombCD:Start(27)
+			timerKineticBombCD:Start(30.5)
 		else
-			timerKineticBombCD:Start()
+			timerKineticBombCD:Start(20.5)
 		end
 		if self.Options.SetIconOnKineticBomb then
 			self:ScanForMobs(38454, 2, self.vb.kineticIcon, 5, nil, 12, "SetIconOnKineticBomb", false, nil, true)

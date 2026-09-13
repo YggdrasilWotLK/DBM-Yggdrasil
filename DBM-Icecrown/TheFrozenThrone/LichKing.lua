@@ -18,9 +18,9 @@ mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 68981 74270 74271 74272 72259 74273 74274 74275 72143 72146 72147 72148 72262 70372 70358 70498 70541 73779 73780 73781 72762 73539 73650 72350 69242 73800 73801 73802",
 	"SPELL_CAST_SUCCESS 70337 73912 73913 73914 69409 73797 73798 73799 69200 68980 74325 74326 74327 73654 74295 74296 74297",
 	"SPELL_DISPEL",
-	"SPELL_AURA_APPLIED 72143 72146 72147 72148 28747 72754 73708 73709 73710 73650",
+	"SPELL_AURA_APPLIED 72143 72146 72147 72148 28747 72754 73708 73709 73710 73650 72595",
 	"SPELL_AURA_APPLIED_DOSE 70338 73785 73786 73787",
-	"SPELL_SUMMON 69037",
+	"SPELL_SUMMON 69037 74361",
 	"SPELL_DAMAGE 68983 73791 73792 73793",
 	"SPELL_MISSED 68983 73791 73792 73793",
 	"UNIT_HEALTH target focus",
@@ -97,7 +97,7 @@ local specWarnEnrageLow		= mod:NewSpecialWarningSpell(28747, false)
 local timerInfestCD			= mod:NewNextTimer(22.5, 70541, nil, "Healer|RaidCooldown", nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerNecroticPlagueCleanse = mod:NewTimer(5, "TimerNecroticPlagueCleanse", 70337, "Healer", nil, 5, DBM_COMMON_L.HEALER_ICON, nil, nil, nil, nil, nil, nil, 70337)
 local timerNecroticPlagueCD	= mod:NewNextTimer(30, 70337, nil, nil, nil, 3)
-local timerEnrageCD			= mod:NewCDTimer(20, 72143, nil, "Tank|RemoveEnrage", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON)
+local timerEnrageCD			= mod:NewCDTimer(22, 72143, nil, "Tank|RemoveEnrage", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON) -- Core 20-25s repeat, 11-14s first
 local timerShamblingHorror	= mod:NewNextTimer(60, 70372, nil, nil, nil, 1)
 local timerDrudgeGhouls	= mod:NewNextTimer(30, 70358, nil, nil, nil, 1)
 local timerTrapCD			= mod:NewNextTimer(15.5, 73539, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, nil, 1, 4)
@@ -152,10 +152,9 @@ local specWarnHarvestSouls	= mod:NewSpecialWarningSpell(73654, nil, nil, nil, 1,
 
 local timerHarvestSoul		= mod:NewTargetTimer(6, 68980)
 local timerHarvestSoulCD	= mod:NewNextTimer(75, 68980, nil, nil, nil, 6)
-local timerVileSpirit		= mod:NewNextTimer(30.5, 70498, nil, nil, nil, 1)
+local timerVileSpirit		= mod:NewNextTimer(30, 70498, nil, nil, nil, 1)
 local timerRestoreSoul		= mod:NewCastTimer(40, 73650, nil, nil, nil, 6)
 local timerRoleplay			= mod:NewTimer(162, "TimerRoleplay", 72350, nil, nil, 6)
-local DefileCount = 0
 
 mod:AddSetIconOption("HarvestSoulIcon", 68980, false, 0, {5})
 
@@ -201,22 +200,27 @@ local function RemoveImmunes(self)
 	end
 end
 
-local function NextPhase(self)
-	self:SetStage(0)
+local function NextPhase(self, newPhase)
+	-- Core: ONE(2) --70%--> TRANSITION --62.5s--> TWO(3) --40%--> TRANSITION --62.5s--> THREE(4).
+	-- Quake (transition end) passes the new phase explicitly; combat start passes 1.
+	if newPhase then
+		self.vb.phase = newPhase
+		self:SetStage(newPhase)
+	end
 	if self.vb.phase == 1 then
 		if myRealm == "Lordaeron" and self:IsDifficulty("normal10", "heroic10") then -- only normal10 confirmed, but added heroic10 just in case
 			berserkTimer:Start(720)
 		else
 			berserkTimer:Start()
 		end
-		warnShamblingSoon:Schedule(15)
-		timerShamblingHorror:Start(20)
+		warnShamblingSoon:Schedule(10)
+		timerShamblingHorror:Start(15)
 		timerDrudgeGhouls:Start(10)
 		if self:IsHeroic() then
 			timerTrapCD:Start()
 			timerNecroticPlagueCD:Start(30)
 		else
-			timerNecroticPlagueCD:Start(27)
+			timerNecroticPlagueCD:Start(30)
 		end
 	elseif self.vb.phase == 2 then
 		warnPhase2:Show()
@@ -224,10 +228,10 @@ local function NextPhase(self)
 		if self.Options.ShowFrame then
 			self:CreateFrame()
 		end
-		timerSummonValkyr:Start(18.5)
+		timerSummonValkyr:Start(20)
 		timerSoulreaperCD:Start(40)
 		soundSoulReaperSoon:Schedule(40-2.5, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\soulreaperSoon.mp3")
-		timerDefileCD:Start(37.5)
+		timerDefileCD:Start(38)
 		timerInfestCD:Start(14)
 		soundInfestSoon:Schedule(14-2, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\infestSoon.mp3")
 		warnDefileSoon:Schedule(33)
@@ -235,13 +239,13 @@ local function NextPhase(self)
 	elseif self.vb.phase == 3 then
 		warnPhase3:Show()
 		warnPhase3:Play("pthree")
-		timerVileSpirit:Start(17)
-		timerSoulreaperCD:Start(37.5)
-		soundSoulReaperSoon:Schedule(37.5-2.5, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\soulreaperSoon.mp3")
-		timerDefileCD:Start(37)
+		timerVileSpirit:Start(20)
+		timerSoulreaperCD:Start(40)
+		soundSoulReaperSoon:Schedule(40-2.5, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\soulreaperSoon.mp3")
+		timerDefileCD:Start(38)
 		timerHarvestSoulCD:Start(14)
-		warnDefileSoon:Schedule(33.5)
-		warnDefileSoon:ScheduleVoice(33.5, "scatter")
+		warnDefileSoon:Schedule(33)
+		warnDefileSoon:ScheduleVoice(33, "scatter")
 	end
 end
 
@@ -252,11 +256,12 @@ end
 function mod:OnCombatStart()
 	self:DestroyFrame()
 	self.vb.valkIcon = 1
-	self.vb.phase = 0
 	self.vb.warned_preP2 = false
 	self.vb.warned_preP3 = false
 	self.vb.ragingSpiritCount = 0
-	NextPhase(self)
+	warnedAchievement = false
+	lastPlague = nil
+	NextPhase(self, 1)
 	table.wipe(iceSpheresGUIDs)
 	table.wipe(warnedValkyrGUIDs)
 	table.wipe(plagueExpires)
@@ -265,6 +270,7 @@ end
 function mod:OnCombatEnd()
 	self:UnregisterShortTermEvents()
 	self:DestroyFrame()
+	self:ClearIcons()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -326,7 +332,7 @@ function mod:SPELL_CAST_START(args)
 		self.vb.ragingSpiritCount = 1
 		warnRemorselessWinter:Show()
 		timerPhaseTransition:Start()
-		timerRagingSpiritCD:Start(6, self.vb.ragingSpiritCount)
+		timerRagingSpiritCD:Start(4, self.vb.ragingSpiritCount)
 		warnShamblingSoon:Cancel()
 		timerShamblingHorror:Cancel()
 		timerDrudgeGhouls:Cancel()
@@ -353,12 +359,16 @@ function mod:SPELL_CAST_START(args)
 		warnShamblingEnrage:Show(args.sourceName)
 		specWarnEnrage:Show()
 		timerEnrageCD:Start(args.sourceGUID)
-		timerEnrageCD:Schedule(21,args.sourceGUID)
 	elseif spellId == 72262 then -- Quake (phase transition end)
 		self.vb.ragingSpiritCount = 0
 		warnQuake:Show()
 		timerRagingSpiritCD:Cancel()
-		NextPhase(self)
+		-- Core: transition 1 ends into phase 2, transition 2 into phase 3.
+		if self.vb.phase == 1 then
+			NextPhase(self, 2)
+		else
+			NextPhase(self, 3)
+		end
 		self:UnregisterShortTermEvents()
 		if self.Options.RangeFrame then
 			DBM.RangeCheck:Hide()
@@ -371,18 +381,6 @@ function mod:SPELL_CAST_START(args)
 	elseif spellId == 70358 then -- Drudge Ghouls
 		warnDrudgeGhouls:Show()
 		timerDrudgeGhouls:Start()
-		if self.vb.warned_preP2 == true then
-			self:DestroyFrame()
-			self.vb.valkIcon = 1
-			self.vb.phase = 0
-			self.vb.warned_preP2 = false
-			self.vb.warned_preP3 = false
-			self.vb.ragingSpiritCount = 0
-			NextPhase(self)
-			table.wipe(iceSpheresGUIDs)
-			table.wipe(warnedValkyrGUIDs)
-			table.wipe(plagueExpires)
-		end
 	elseif spellId == 70498 then -- Vile Spirits
 		warnSummonVileSpirit:Show()
 		timerVileSpirit:Start()
@@ -392,21 +390,13 @@ function mod:SPELL_CAST_START(args)
 		timerInfestCD:Start()
 		soundInfestSoon:Cancel()
 		soundInfestSoon:Schedule(22.5-2, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\infestSoon.mp3")
-	elseif spellId == 72762 and self.vb.phase == 2 then -- Defile NICK BOOKMARK
+	elseif spellId == 72762 then -- Defile (core 38s first, 32.5s repeat, both phases)
 		self:BossTargetScanner(36597, "DefileTarget", 0.02, 15)
 		warnDefileSoon:Cancel()
 		warnDefileSoon:CancelVoice()
-		warnDefileSoon:Schedule(27)
-		warnDefileSoon:ScheduleVoice(27, "scatter")
+		warnDefileSoon:Schedule(27.5)
+		warnDefileSoon:ScheduleVoice(27.5, "scatter")
 		timerDefileCD:Start()
-	elseif spellId == 72762 and self.vb.phase == 3 then -- Defile NICK BOOKMARK
-		self:BossTargetScanner(36597, "DefileTarget", 0.02, 15)
-		warnDefileSoon:Cancel()
-		warnDefileSoon:CancelVoice()
-		DefileCount = DefileCount + 1
-		warnDefileSoon:Schedule(27+(DefileCount))
-		warnDefileSoon:ScheduleVoice(27+(DefileCount), "scatter")
-		timerDefileCD:Start(30.5+DefileCount)
 	elseif spellId == 73539 then -- Shadow Trap (Heroic)
 		self:BossTargetScanner(36597, "TrapTarget", 0.02, 15)
 		timerTrapCD:Start()
@@ -456,7 +446,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		end
 	elseif spellId == 69200 then -- Raging Spirit
 		self.vb.ragingSpiritCount = self.vb.ragingSpiritCount + 1
-		timerSoulShriekCD:Start(20, args.destName)
+		timerSoulShriekCD:Start(13, args.destName)
 		if args:IsPlayer() then
 			specWarnRagingSpirit:Show()
 			specWarnRagingSpirit:Play("targetyou")
@@ -519,9 +509,16 @@ function mod:SPELL_AURA_APPLIED(args)
 		specWarnGTFO:Show(args.spellName)
 		specWarnGTFO:Play("watchfeet")
 		soundDefileOnYou:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\defileOnYou.mp3")
-	elseif spellId == 73650 and self:AntiSpam(3, 2) then		-- Restore Soul (Heroic)
-		timerHarvestSoulCD:Start(60)
-		timerVileSpirit:Start(10)--May be wrong too but we'll see, didn't have enough log for this one.
+	elseif spellId == 73650 and self:AntiSpam(3, 2) then		-- Restore Soul (Heroic, Frostmourne exit)
+		-- Core: START_ATTACK 55s, Vile delayed 52.5s, Defile immediate, Soul Reaper 7-12s.
+		timerHarvestSoulCD:Start(55)
+		timerVileSpirit:Start(52.5)--May be wrong too but we'll see, didn't have enough log for this one.
+		timerDefileCD:Start(5)
+		timerSoulreaperCD:Start(10)
+	elseif spellId == 72595 and self:AntiSpam(3, 2) then		-- Restore Soul (Normal)
+		timerHarvestSoulCD:Start(55)
+		timerDefileCD:Start(5)
+		timerSoulreaperCD:Start(10)
 	end
 end
 
@@ -582,7 +579,7 @@ do
 
 	function mod:SPELL_SUMMON(args)
 		local spellId = args.spellId
-		if spellId == 69037 then -- Summon Val'kyr
+		if args:IsSpellID(69037, 74361) then -- Summon Val'kyr (74361 heroic)
 			if self.Options.ShowFrame then
 				self:CreateFrame()
 			end
@@ -643,9 +640,9 @@ end
 function mod:UNIT_DIED(args)
 	local cid = self:GetCIDFromGUID(args.destGUID)
 	if cid == 37698 then--Shambling Horror
-		timerEnrageCD:Cancel(args.sourceGUID)
+		timerEnrageCD:Cancel(args.destGUID)
 	elseif cid == 36701 then -- Raging Spirit
-		timerSoulShriekCD:Cancel(args.sourceGUID)
+		timerSoulShriekCD:Cancel(args.destGUID)
 	end
 end
 

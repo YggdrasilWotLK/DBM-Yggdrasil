@@ -12,11 +12,10 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 73058 72378 72293",
+	"SPELL_CAST_START 72378 72293",
 	"SPELL_CAST_SUCCESS 72385 72410",
-	"SPELL_CAST_APPLIED 72385 72410",
 	"SPELL_SUMMON 72172 72173 72356 72357 72358",
-	"SPELL_AURA_APPLIED 72293 72385 72410 72441 72442 72443 72737 19753",
+	"SPELL_AURA_APPLIED 72293 72385 72410 72441 72442 72443 72737 72769 19753",
 	"SPELL_AURA_REMOVED 72385 72441 72442 72443",
 	"UNIT_HEALTH boss1"
 )
@@ -40,6 +39,7 @@ local warnFrenzy			= mod:NewSpellAnnounce(72737, 2, nil, "Tank|Healer")
 local warnBloodNova			= mod:NewSpellAnnounce(72378, 2)
 local warnMark				= mod:NewTargetCountAnnounce(72293, 4, 72293, nil, nil, nil, nil, nil, true)
 local warnBoilingBlood		= mod:NewTargetNoFilterAnnounce(72385, 2, nil, "Healer")
+local warnScentofBlood		= mod:NewSpellAnnounce(72769, 3)
 -- local warnRuneofBlood		= mod:NewTargetNoFilterAnnounce(72410, 3, nil, "Tank|Healer")
 
 local specwarnMark			= mod:NewSpecialWarningTarget(72444, nil, false, nil, 1, 2)
@@ -137,11 +137,11 @@ function mod:OnCombatStart(delay)
 	NovaCount = 0
 	Skewed = 0
 	
-	timerCallBloodBeast:Start(40-delay)
-	warnAddsSoon:Schedule(30-delay)
-	timerBloodNova:Start(16.8-delay)
-	timerRuneofBlood:Start(19.5-delay)
-	timerBoilingBlood:Start(19-delay)
+	timerCallBloodBeast:Start(30-delay)
+	warnAddsSoon:Schedule(20-delay)
+	timerBloodNova:Start(17-delay)
+	timerRuneofBlood:Start(20-delay)
+	timerBoilingBlood:Start(15.5-delay)
 	table.wipe(boilingBloodTargets)
 	self.vb.warned_preFrenzy = false
 	self.vb.boilingBloodIcon = 1
@@ -167,227 +167,25 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(73058, 72378) then	-- Blood Nova (only 2 cast IDs, 4 spell damage IDs, and one dummy)
+	if args.spellId == 72378 then	-- Blood Nova (core casts 72378 only, 20-25s loop)
 		warnBloodNova:Show()
-		
-		if NovaCount == 0 then
-			timerBloodNova:Start(21.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 1 and BeastCount == 0 then
-			timerBloodNova:Start(25.5)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-			Skewed=0
-		elseif NovaCount == 1 and BeastCount == 1 then
-			timerBloodNova:Start(24.5)
-			timerRuneofBlood:Start(26.5)
-			NovaCount = NovaCount+1
-			Skewed=1
-			
-		elseif NovaCount == 2 then
-			timerBloodNova:Start(21.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 3 and BeastCount == 1 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 3 and BeastCount == 2 then
-			timerBloodNova:Start(21.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 4 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 5 and BeastCount == 2 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 5 and BeastCount == 3 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(26)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 6 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(26)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 7 and BeastCount == 3 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 7 and BeastCount == 4 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 8 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 9 and BeastCount == 4 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 9 and BeastCount == 5 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 10 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 11 and BeastCount == 5 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 11 and BeastCount == 6 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 12 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 13 and BeastCount == 6 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 13 and BeastCount == 7 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 14 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 15 and BeastCount == 7 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 15 and BeastCount == 8 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 16 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 17 and BeastCount == 8 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 17 and BeastCount == 9 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 18 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 19 and BeastCount == 9 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 19 and BeastCount == 10 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 20 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 21 and BeastCount == 10 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 21 and BeastCount == 11 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 22 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 23 and BeastCount == 11 then
-			timerBloodNova:Start(24)
-			timerRuneofBlood:Start(27.5)
-			NovaCount = NovaCount+1
-		elseif NovaCount == 23 and BeastCount == 12 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		elseif NovaCount == 24 then
-			timerBloodNova:Start(22.5)
-			timerRuneofBlood2:Start(25.5)
-			NovaCount = NovaCount+1
-			
-		end
+		-- Core EVENT_BLOOD_NOVA repeats 20-25s; use mean 22s.
+		timerBloodNova:Start(22)
+		timerRuneofBlood:Start(22)
+		timerRuneofBlood2:Start(22)
 	elseif args.spellId == 72293 then
 		self:BossTargetScanner(37813, "FallenMarkTarget", 0.01, 10)
 	end
 end
 
-function mod:SPELL_CAST_APPLIED(args)
-	--if args.spellId == 72410 then
-	--	warnRuneofBlood:Show(args.destName)
-	if args.spellId == 72410 and not args:IsPlayer() then
-		specwarnRuneofBlood:Show(args.destName)
-		specwarnRuneofBlood:Play("tauntboss")
-	else
-		specwarnRuneofBloodYou:Show()
---	end
-	end
-end
-
-function mod:SPELL_CAST_SUCCESS(args)
-	if args.spellId == 72410 and 72385 then
-		--timerRuneofBlood:Start(), removed as Rune timers called from Blood Nova instead to allow for runes stolen by ranged
-	end
-end
-
-function mod:SPELL_SUMMON(args)
-	if args:IsSpellID(72172, 72173) or args:IsSpellID(72356, 72357, 72358) then -- Summon Blood Beasts
-		if self:AntiSpam(5) then
-			BeastCount = (BeastCount+1)
-			self.vb.beastIcon = 8
-			warnAdds:Show()
-			warnAddsSoon:Schedule(30)
-			timerCallBloodBeast:Start()
-		end
-		if self.Options.BeastIcons then
-			self:ScanForMobs(args.destGUID, 2, self.vb.beastIcon, 1, nil, 10, "BeastIcons")
-		end
-		self.vb.beastIcon = self.vb.beastIcon - 1
-	end
-end
-
 function mod:SPELL_AURA_APPLIED(args)
 	local spellId = args.spellId
-	if spellId == 72293 then		-- Mark of the Fallen Champion
+	if spellId == 72410 and not args:IsPlayer() then	-- Rune of Blood on someone else: taunt
+		specwarnRuneofBlood:Show(args.destName)
+		specwarnRuneofBlood:Play("tauntboss")
+	elseif spellId == 72410 then				-- Rune of Blood on you
+		specwarnRuneofBloodYou:Show()
+	elseif spellId == 72293 then		-- Mark of the Fallen Champion
 		self.vb.Mark = self.vb.Mark + 1
 		warnMark:Show(self.vb.Mark, args.destName)
 		specwarnMark:Show(args.destName)
@@ -405,6 +203,8 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif spellId == 72737 then						-- Frenzy
 		warnFrenzy:Show()
+	elseif spellId == 72769 then						-- Scent of Blood (heroic)
+		warnScentofBlood:Show()
 	elseif spellId == 19753 and self:IsInCombat() and self.Options.RemoveDI then	-- Remove Divine Intervention
 		CancelUnitBuff("player", GetSpellInfo(19753))
 	end
