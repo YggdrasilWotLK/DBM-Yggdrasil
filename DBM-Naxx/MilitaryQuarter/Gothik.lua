@@ -18,9 +18,9 @@ local warnRiderDown		= mod:NewAnnounce("WarningRiderDown", 4)
 local warnKnightDown	= mod:NewAnnounce("WarningKnightDown", 2)
 local warnPhase2		= mod:NewPhaseAnnounce(2, 3)
 
-local timerPhase2		= mod:NewTimer(277, "TimerPhase2", 27082, nil, nil, 6)
+local timerPhase2		= mod:NewTimer(274, "TimerPhase2", 27082, nil, nil, 6)--Core 30s initial + 244s waves
 local timerWave			= mod:NewTimer(20, "TimerWave", 5502, nil, nil, 1)
-local timerGate			= mod:NewTimer(155, "Gate Opens", 9484)
+local timerGate			= mod:NewTimer(120, "Gate Opens", 9484)--Core EVENT_CHECK_PLAYERS at 2min (conditional on split)
 
 mod.vb.wave = 0
 local wavesNormal = {
@@ -29,14 +29,14 @@ local wavesNormal = {
 	{2, L.Trainee, timer = 10},
 	{1, L.Knight, timer = 10},
 	{2, L.Trainee, timer = 15},
-	{1, L.Knight, timer = 5},
-	{2, L.Trainee, timer = 20},
+	{1, L.Knight, timer = 10},
+	{2, L.Trainee, timer = 15},
 	{1, L.Knight, 2, L.Trainee, timer = 10},
 	{1, L.Rider, timer = 10},
 	{2, L.Trainee, timer = 5},
 	{1, L.Knight, timer = 15},
 	{2, L.Trainee, 1, L.Rider, timer = 10},
-	{2, L.Knight, timer = 10},
+	{1, L.Knight, timer = 10},
 	{2, L.Trainee, timer = 10},
 	{1, L.Rider, timer = 5},
 	{1, L.Knight, timer = 5},
@@ -51,8 +51,8 @@ local wavesHeroic = {
 	{3, L.Trainee, timer = 10},
 	{2, L.Knight, timer = 10},
 	{3, L.Trainee, timer = 15},
-	{2, L.Knight, timer = 5},
-	{3, L.Trainee, timer = 20},
+	{2, L.Knight, timer = 10},
+	{3, L.Trainee, timer = 15},
 	{3, L.Trainee, 2, L.Knight, timer = 10},
 	{3, L.Trainee, timer = 10},
 	{1, L.Rider, timer = 5},
@@ -104,11 +104,21 @@ function mod:OnCombatStart()
 	self.vb.wave = 0
 	timerGate:Start()
 	timerPhase2:Start()
-	warnPhase2:Schedule(277)
-	timerWave:Start(25, self.vb.wave + 1)
-	warnWaveSoon:Schedule(22, self.vb.wave + 1, getWaveString(self.vb.wave + 1))
-	self:Schedule(25, NextWave, self)
-	self:Schedule(277, StartPhase2, self)
+	warnPhase2:Schedule(274)
+	timerWave:Start(30, self.vb.wave + 1)--Core first adds at 30s
+	warnWaveSoon:Schedule(27, self.vb.wave + 1, getWaveString(self.vb.wave + 1))
+	self:Schedule(30, NextWave, self)
+	self:Schedule(274, StartPhase2, self)
+end
+
+function mod:OnCombatEnd()
+	self:Unschedule(NextWave)
+	self:Unschedule(StartPhase2)
+	timerWave:Cancel()
+	timerPhase2:Cancel()
+	timerGate:Cancel()
+	warnPhase2:Cancel()
+	warnWaveSoon:Cancel()
 end
 
 function mod:OnTimerRecovery()

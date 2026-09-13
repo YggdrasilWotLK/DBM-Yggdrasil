@@ -34,13 +34,14 @@ local specWarnFissureClose	= mod:NewSpecialWarningClose(27810, nil, nil, nil, 2,
 local yellFissure			= mod:NewYellMe(27810)
 
 local blastTimer			= mod:NewBuffActiveTimer(4, 27808, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerManaBomb			= mod:NewCDTimer(20, 27819, nil, nil, nil, 3)--20-50
-local timerFrostBlast		= mod:NewCDTimer(30, 27808, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--40-46 (retail 40.1)
+local timerManaBomb			= mod:NewCDTimer(30, 27819, nil, nil, nil, 3)--Core 30s first and repeat
+local timerFrostBlast		= mod:NewCDTimer(45, 27808, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 45s first and repeat
 local timerFissure			= mod:NewTargetTimer(5, 27810, nil, nil, 2, 3)
-local timerFissureCD 		= mod:NewCDTimer(14, 27810)
+local timerFissureCD 		= mod:NewCDTimer(25, 27810)--Core 25s first and repeat
 local timerMC				= mod:NewBuffActiveTimer(20, 28410, nil, nil, nil, 3)
-local timerMCCD				= mod:NewCDTimer(90, 28410, nil, nil, nil, 3)--actually 60 second cdish but its easier to do it this way for the first one.
-local timerPhase2			= mod:NewTimer(227, "TimerPhase2", nil, nil, nil, 6)
+local timerMCCD				= mod:NewCDTimer(90, 28410, nil, nil, nil, 3)--Core 90s first and repeat (25m only)
+local timerPhase2			= mod:NewTimer(228, "TimerPhase2", nil, nil, nil, 6)--Core 228s
+local berserkTimer			= mod:NewBerserkTimer(900)--Core 15min
 
 mod:AddSetIconOption("SetIconOnMC", 28410, true, false, {1, 2, 3})
 mod:AddSetIconOption("SetIconOnManaBomb", 27819, false, false, {8})
@@ -149,11 +150,11 @@ local function StartPhase2(self)
 		warnPhase2:Show()
 		warnPhase2:Play("ptwo")
 		if self:IsDifficulty("normal25") then
-			timerMCCD:Start(61)
-			warnMindControlSoon:Schedule(56)
+			timerMCCD:Start(90)--Core 90s first (25m only)
+			warnMindControlSoon:Schedule(85)
 			if self.Options.EqUneqWeaponsKT and self:IsDps() then
-				self:Schedule(60, UnWKT, self)
-				self:Schedule(60.5, UnWKT, self)
+				self:Schedule(89, UnWKT, self)
+				self:Schedule(89.5, UnWKT, self)
 			end
 		end
 		if self.Options.RangeFrame then
@@ -168,12 +169,24 @@ function mod:OnCombatStart(delay)
 	table.wipe(frostBlastTargets)
 	self.vb.warnedAdds = false
 	self.vb.MCIcon = 1
-	specwarnP2Soon:Schedule(217-delay)
-	timerPhase2:Start()
-	self:Schedule(226, StartPhase2, self)
+	berserkTimer:Start(-delay)
+	specwarnP2Soon:Schedule(218-delay)
+	timerPhase2:Start(228-delay)
+	self:Schedule(228-delay, StartPhase2, self)
 end
 
 function mod:OnCombatEnd()
+	self:Unschedule(StartPhase2)
+	self:Unschedule(AnnounceChainsTargets)
+	self:Unschedule(AnnounceBlastTargets)
+	timerManaBomb:Cancel()
+	timerFrostBlast:Cancel()
+	timerFissureCD:Cancel()
+	timerMC:Cancel()
+	timerMCCD:Cancel()
+	timerPhase2:Cancel()
+	berserkTimer:Cancel()
+	warnMindControlSoon:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -194,8 +207,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		else
 			warnFissure:Show(args.destName)
 		end
-	elseif args.spellId == 28410 then
-		timerMCCD:Start()
+	elseif spellId == 28410 then -- Chains of Kel'Thuzad (core 25m-only, 90s; AURA handler owns the CD)
 		DBM:Debug("MC on "..args.destName,2)
 		if self.Options.EqUneqWeaponsKT2 and args.destName == UnitName("player") then
 			UnWKT(self)
@@ -229,12 +241,12 @@ function mod:SPELL_AURA_APPLIED(args)
 		else
 			warnMana:Show(args.destName)
 		end
-	elseif spellId == 28410 then -- Chains of Kel'Thuzad
+	elseif spellId == 28410 then -- Chains of Kel'Thuzad (core 25m-only, 90s repeat)
 		chainsTargets[#chainsTargets + 1] = args.destName
-		if self:AntiSpam() then
+		if self:AntiSpam(3) then
 			timerMC:Start()
-			timerMCCD:Start()
-			warnMindControlSoon:Schedule(60)
+			timerMCCD:Start(90)
+			warnMindControlSoon:Schedule(85)
 		end
 		if self.Options.SetIconOnMC then
 			self:SetIcon(args.destName, self.vb.MCIcon)

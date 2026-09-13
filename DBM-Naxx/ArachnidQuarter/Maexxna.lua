@@ -6,8 +6,11 @@ mod:SetCreatureID(15952)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 28622",
-	"SPELL_CAST_SUCCESS 29484 54125"
+	"SPELL_AURA_APPLIED 28622 28776 54121",
+	"SPELL_CAST_SUCCESS 29484 54125",
+	"SPELL_DAMAGE 28741 54122",
+	"SPELL_MISSED 28741 54122",
+	"UNIT_HEALTH boss1"
 )
 
 --TODO, verify nax40 web wrap timer
@@ -16,6 +19,9 @@ local warnWebSpraySoon	= mod:NewSoonAnnounce(29484, 1)
 local warnWebSprayNow	= mod:NewSpellAnnounce(29484, 3)
 local warnSpidersSoon	= mod:NewAnnounce("WarningSpidersSoon", 2, 17332)
 local warnSpidersNow	= mod:NewAnnounce("WarningSpidersNow", 4, 17332)
+local warnPoisonShock	= mod:NewSpellAnnounce(28741, 3, nil, "Tank|Healer")
+local warnNecrotic		= mod:NewTargetNoFilterAnnounce(28776, 2, nil, "Tank|Healer")
+local warnFrenzy		= mod:NewSpellAnnounce(54124, 4)
 
 local specWarnWebWrap	= mod:NewSpecialWarningSwitch(28622, "RangedDps", nil, nil, 1, 2)
 local yellWebWrap		= mod:NewYellMe(28622)
@@ -23,6 +29,10 @@ local yellWebWrap		= mod:NewYellMe(28622)
 local timerWebSpray		= mod:NewNextTimer(40, 29484, nil, nil, nil, 2)
 local timerWebWrap		= mod:NewNextTimer(39.6, 28622, nil, "RangedDps|Healer", nil, 3)-- 39.593-40.885
 local timerSpider		= mod:NewTimer(30, "TimerSpider", 17332, nil, nil, 1)
+local timerPoisonShockCD	= mod:NewCDTimer(10, 28741, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 10s first and repeat
+local timerNecroticCD	= mod:NewCDTimer(30, 28776, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 5s first, 30s repeat
+
+mod.vb.warnedFrenzy = false
 
 local function Spiderlings(self)
 	warnSpidersSoon:Schedule(35)
@@ -36,10 +46,13 @@ function mod:OnCombatStart(delay)
 	warnWebSpraySoon:Schedule(35 - delay)
 	timerWebSpray:Start(40 - delay)
 	timerWebWrap:Start(20.1 - delay)--20.095-21.096
+	timerPoisonShockCD:Start(10 - delay)--Core 10s first
+	timerNecroticCD:Start(5 - delay)--Core 5s first
 	warnSpidersSoon:Schedule(25 - delay)
 	warnSpidersNow:Schedule(30 - delay)
 	timerSpider:Start(30 - delay)
 	self:Schedule(30 - delay, Spiderlings, self)
+	self.vb.warnedFrenzy = false
 end
 
 function mod:OnCombatEnd(wipe)
@@ -60,6 +73,9 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnWebWrap:Play("targetchange")
 			timerWebWrap:Start()
 		end
+	elseif args:IsSpellID(28776, 54121) then -- Necrotic Poison (core 5s first, 30s repeat)
+		warnNecrotic:Show(args.destName)
+		timerNecroticCD:Start()
 	end
 end
 
@@ -68,5 +84,20 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnWebSprayNow:Show()
 		warnWebSpraySoon:Schedule(35)
 		timerWebSpray:Start()
+	end
+end
+
+function mod:SPELL_DAMAGE(_, _, _, _, destName, _, spellId)
+	if spellId == 28741 or spellId == 54122 then -- Poison Shock (core 10s loop, tank nuke)
+		warnPoisonShock:Show(destName)
+		timerPoisonShockCD:Start()
+	end
+end
+mod.SPELL_MISSED = mod.SPELL_DAMAGE
+
+function mod:UNIT_HEALTH(uId)
+	if not self.vb.warnedFrenzy and self:GetUnitCreatureId(uId) == 15952 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.30 then
+		self.vb.warnedFrenzy = true
+		warnFrenzy:Show()
 	end
 end

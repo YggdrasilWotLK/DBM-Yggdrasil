@@ -9,7 +9,7 @@ mod:SetModelScale(0.1)
 
 mod:RegisterEventsInCombat(
 --	"SPELL_CAST_START 28524",
-	"SPELL_CAST_SUCCESS 28542 55665",
+	"SPELL_CAST_SUCCESS 28542 55665 28560",
 	"SPELL_AURA_APPLIED 28522 55699 28547",
 	"CHAT_MSG_MONSTER_EMOTE",
 	"CHAT_MSG_RAID_BOSS_EMOTE",
@@ -30,9 +30,10 @@ local specWarnDeepBreath= mod:NewSpecialWarningSpell(28524, nil, nil, nil, 1, 2)
 local yellIceBlock		= mod:NewYell(28522)
 
 local timerDrainLife	= mod:NewCDTimer(24, 28542, nil, nil, nil, 3, nil, DBM_COMMON_L.CURSE_ICON)
-local timerAirPhase		= mod:NewTimer(66, "TimerAir", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
+local timerAirPhase		= mod:NewTimer(45, "TimerAir", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)--Core 45s initial, 45s + 35s delay repeat
 local timerLanding		= mod:NewTimer(28.5, "TimerLanding", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6)
-local timerIceBlast		= mod:NewCastTimer(8, 28524, nil, nil, nil, 2, DBM_COMMON_L.DEADLY_ICON)
+local timerIceBlast		= mod:NewCastTimer(8.5, 28524, nil, nil, nil, 2, DBM_COMMON_L.DEADLY_ICON)--Core 8.5s explosion delay
+local timerBlizzardCD		= mod:NewCDTimer(8, 28560, nil, nil, nil, 3)--Core 17s first, 8s/6.5s repeat
 
 local berserkTimer		= mod:NewBerserkTimer(900)
 
@@ -51,11 +52,12 @@ local function Landing(self)
 	warnLanded:Show()
 	warnDrainLifeSoon:Schedule(5)
 	timerDrainLife:Start(10.5)
-	warnAirPhaseSoon:Schedule(56)
-	timerAirPhase:Start()
+	timerBlizzardCD:Start(8)
+	warnAirPhaseSoon:Schedule(35)
+	timerAirPhase:Start(45)--Core 45s ground between flights
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
-		self:Schedule(65, DBM.RangeCheck.Show, DBM.RangeCheck, 12)
+		self:Schedule(44, DBM.RangeCheck.Show, DBM.RangeCheck, 12)
 	end
 end
 
@@ -63,10 +65,11 @@ function mod:OnCombatStart(delay)
 	noTargetTime = 0
 	warned_lowhp = false
 	self.vb.isFlying = false
-	warnDrainLifeSoon:Schedule(6.5 - delay)
-	timerDrainLife:Start(12 - delay)
-	warnAirPhaseSoon:Schedule(38.5 - delay)
-	timerAirPhase:Start(48.5 - delay)
+	warnDrainLifeSoon:Schedule(12 - delay)
+	timerDrainLife:Start(17 - delay)--Core 17s first
+	timerBlizzardCD:Start(17 - delay)--Core 17s first
+	warnAirPhaseSoon:Schedule(35 - delay)
+	timerAirPhase:Start(45 - delay)--Core 45s first
 	berserkTimer:Start(-delay)
 	if self.Options.RangeFrame then
 		self:Schedule(46 - delay, DBM.RangeCheck.Show, DBM.RangeCheck, 12)
@@ -100,6 +103,13 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:OnCombatEnd()
+	self:UnregisterOnUpdateHandler()
+	self:Unschedule(Landing)
+	timerDrainLife:Cancel()
+	timerAirPhase:Cancel()
+	timerLanding:Cancel()
+	timerIceBlast:Cancel()
+	timerBlizzardCD:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -114,6 +124,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	elseif args:IsSpellID(55699, 28547) and args:IsPlayer() and self:AntiSpam(1) then
 		specWarnBlizzard:Show(args.spellName)
 		specWarnBlizzard:Play("watchfeet")
+		timerBlizzardCD:Start()
 	end
 end
 
@@ -134,6 +145,12 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnDrainLifeNow:Show()
 		warnDrainLifeSoon:Schedule(18.5)
 		timerDrainLife:Start()
+	elseif args.spellId == 28560 then -- Blizzard summon (core 8s/6.5s repeat)
+		if self:IsDifficulty("normal25", "heroic25") then
+			timerBlizzardCD:Start(6.5)
+		else
+			timerBlizzardCD:Start(8)
+		end
 	end
 end
 
@@ -145,7 +162,7 @@ end
 mod.CHAT_MSG_RAID_BOSS_EMOTE = mod.CHAT_MSG_MONSTER_EMOTE -- used to be a normal emote
 
 function mod:UNIT_HEALTH(uId)
-	if not warned_lowhp and self:GetUnitCreatureId(uId) == 15989 and UnitHealth(uId) / UnitHealthMax(uId) < 0.1 then
+	if not warned_lowhp and self:GetUnitCreatureId(uId) == 15989 and UnitHealth(uId) / UnitHealthMax(uId) < 0.11 then--Core skips flight below 11%
 		warned_lowhp = true
 		specWarnLowHP:Show()
 		timerAirPhase:Cancel()
@@ -153,10 +170,10 @@ function mod:UNIT_HEALTH(uId)
 end
 
 function mod:OnSync(event)
-	if event == "DeepBreath" then
+	if event == "DeepBreath" then--Core breath->ground 14s (8.5 + 3 + 1 + 1.5)
 		timerIceBlast:Start()
 		timerLanding:Update(14)
-		self:Schedule(14.5, Landing, self)
+		self:Schedule(14, Landing, self)
 		specWarnDeepBreath:Show()
 		specWarnDeepBreath:Play("findshelter")
 	end

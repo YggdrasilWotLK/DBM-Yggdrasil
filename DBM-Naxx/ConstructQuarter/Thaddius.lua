@@ -9,6 +9,8 @@ mod:RegisterCombat("combat_yell", L.Yell)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 28089",
+	"SPELL_CAST_SUCCESS 28134 54529 28167 54531",
+	"SPELL_AURA_APPLIED 28059 28084",
 	"CHAT_MSG_RAID_BOSS_EMOTE",
 	"UNIT_AURA player"
 )
@@ -17,13 +19,17 @@ local warnShiftSoon			= mod:NewPreWarnAnnounce(28089, 5, 3)
 local warnShiftCasting		= mod:NewCastAnnounce(28089, 4)
 local warnChargeChanged		= mod:NewSpecialWarning("WarningChargeChanged", nil, nil, nil, 3, 2, nil, nil, 28089)
 local warnChargeNotChanged	= mod:NewSpecialWarning("WarningChargeNotChanged", false, nil, nil, 1, 12, nil, nil, 28089)
---local warnThrow				= mod:NewSpellAnnounce(28338, 2)
-local warnThrowSoon			= mod:NewSoonAnnounce(28338, 1)
+--local warnThrow				= mod:NewSpellAnnounce(28337, 2)
+local warnThrowSoon			= mod:NewSoonAnnounce(28337, 1)
+local warnPowerSurge		= mod:NewSpellAnnounce(28134, 3, nil, "Tank|Healer")
+local warnChainLightning	= mod:NewSpellAnnounce(28167, 2)
 
 local enrageTimer			= mod:NewBerserkTimer(365)
 local timerNextShift		= mod:NewNextTimer(30, 28089, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerShiftCast		= mod:NewCastTimer(3, 28089, nil, nil, nil, 2)
-local timerThrow			= mod:NewNextTimer(20.6, 28338, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerThrow			= mod:NewNextTimer(20, 28337, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core Stalagg pull 20s
+local timerPowerSurgeCD		= mod:NewCDTimer(19, 28134, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 10s first, 19s repeat
+local timerChainCD			= mod:NewCDTimer(15, 28167, nil, nil, nil, 3)--Core 14s first, 15s repeat
 
 if not DBM.Options.GroupOptionsBySpell then
 	mod:AddMiscLine(DBM_CORE_L.OPTION_CATEGORY_DROPDOWNS)
@@ -44,17 +50,26 @@ local function TankThrow(self)
 		return
 	end
 	timerThrow:Start()
-	warnThrowSoon:Schedule(17.6)
-	self:Schedule(20.6, TankThrow, self)
+	warnThrowSoon:Schedule(17)
+	self:Schedule(20, TankThrow, self)
 end
 
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	currentCharge = nil
 	down = 0
-	self:Schedule(20.6 - delay, TankThrow, self)
-	timerThrow:Start(-delay)
-	warnThrowSoon:Schedule(17.6 - delay)
+	self:Schedule(20 - delay, TankThrow, self)
+	timerThrow:Start(20 - delay)--Core 20s
+	warnThrowSoon:Schedule(17 - delay)
+	timerPowerSurgeCD:Start(10 - delay)--Core Stalagg surge 10s first
+end
+
+function mod:OnCombatEnd()
+	self:Unschedule(TankThrow)
+	timerThrow:Cancel()
+	timerPowerSurgeCD:Cancel()
+	timerChainCD:Cancel()
+	warnThrowSoon:Cancel()
 end
 
 do
@@ -67,6 +82,16 @@ do
 			warnShiftCasting:Show()
 			warnShiftSoon:Schedule(25)
 			lastShift = GetTime()
+		end
+	end
+
+	function mod:SPELL_CAST_SUCCESS(args)
+		if args:IsSpellID(28134, 54529) then -- Power Surge (Stalagg, core 19s repeat)
+			warnPowerSurge:Show()
+			timerPowerSurgeCD:Start()
+		elseif args:IsSpellID(28167, 54531) then -- Chain Lightning (core 15s repeat)
+			warnChainLightning:Show()
+			timerChainCD:Start()
 		end
 	end
 
@@ -115,11 +140,14 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 	if msg:match(L.Emote) or msg:match(L.Emote2) or msg:find(L.Emote) or msg:find(L.Emote2) or msg == L.Emote or msg == L.Emote2 then
 		down = down + 1
 		if down >= 2 then
+			self:SetStage(2)
 			self:Unschedule(TankThrow)
 			timerThrow:Cancel()
 			warnThrowSoon:Cancel()
+			timerPowerSurgeCD:Cancel()
 			DBM.BossHealth:Hide()
 			enrageTimer:Start()
+			timerChainCD:Start(14)--Core chain 14s after activation
 		end
 	end
 end

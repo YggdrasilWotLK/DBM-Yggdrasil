@@ -7,8 +7,8 @@ mod:SetCreatureID(16011)
 mod:RegisterCombat("combat")--Maybe change to a yell later so pull detection works if you chain pull him from tash gauntlet
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 29234 29204 55052 30281 55593",
-	"SPELL_AURA_APPLIED 29185 29194 29196 29198",-- 29184 29195 29197 29199
+	"SPELL_CAST_SUCCESS 29234 29204 55052 29865 55053 55593",
+	"SPELL_AURA_APPLIED 55593 29185 29194 29196 29198",-- 29184 29195 29197 29199
 	"SPELL_AURA_REMOVED 29185 29194 29196 29198",-- 29184 29195 29197 29199
 	"SPELL_DAMAGE",
 	"SWING_DAMAGE",
@@ -20,14 +20,15 @@ mod:RegisterEventsInCombat(
 local warnSporeNow	= mod:NewSpellAnnounce(32329, 2)
 local warnSporeSoon	= mod:NewSoonAnnounce(32329, 1)
 local warnDoomNow	= mod:NewSpellAnnounce(29204, 3)
-local warnRemoveCurse		= mod:NewSpellAnnounce(30281, 3)
+local warnDeathbloom	= mod:NewSpellAnnounce(29865, 3)
 local warnHealSoon	= mod:NewAnnounce("WarningHealSoon", 4, 48071, nil, nil, nil, 55593)
 local warnHealNow	= mod:NewAnnounce("WarningHealNow", 1, 48071, false, nil, nil, 55593)
 
-local timerSpore	= mod:NewNextTimer(36, 32329, nil, nil, nil, 5, 42524, DBM_COMMON_L.DAMAGE_ICON)
-local timerDoom		= mod:NewNextTimer(180, 29204, nil, nil, nil, 2)
---local timerRemoveCurseCD	= mod:NewNextTimer(30.8, 30281, nil, nil, nil, 5)
+local timerSpore	= mod:NewNextTimer(35, 32329, nil, nil, nil, 5, 42524, DBM_COMMON_L.DAMAGE_ICON)--Core 15s first, 35s repeat
+local timerDoom		= mod:NewNextTimer(180, 29204, nil, nil, nil, 2)--Core 2min first, 30s then 15s
+local timerDeathbloomCD	= mod:NewCDTimer(30, 29865, nil, nil, nil, 3)--Core 5s first, 30s repeat
 local timerAura		= mod:NewBuffActiveTimer(17, 55593, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
+local berserkTimer	= mod:NewBerserkTimer(720)--Core 12min
 
 mod:AddInfoFrameOption(55593, "Tank|Healer")
 mod:AddBoolOption("SporeDamageAlert", false)
@@ -78,15 +79,12 @@ end
 function mod:OnCombatStart(delay)
 	self.vb.doomCounter = 0
 	self.vb.sporeCounter = 0
---	timerRemoveCurseCD:Start(3 - delay)
-	if self:IsDifficulty("normal25") then
-		self.vb.sporeTimer = 15
-	else
-		self.vb.sporeTimer = 36
-	end
+	self.vb.sporeTimer = 15--Core 15s first both modes
 	timerSpore:Start(self.vb.sporeTimer - delay, 1)
 	warnSporeSoon:Schedule(self.vb.sporeTimer - 5 - delay)
-	timerDoom:Start(90 - delay, self.vb.doomCounter + 1)
+	timerDoom:Start(120 - delay, self.vb.doomCounter + 1)--Core 2min first
+	timerDeathbloomCD:Start(5 - delay)--Core 5s first
+	berserkTimer:Start(-delay)
 
 	local startTime = GetTime()
 	table.wipe(hadCorrupted)
@@ -116,18 +114,17 @@ function mod:SPELL_CAST_SUCCESS(args)
 		timerSpore:Start(self.vb.sporeTimer, self.vb.sporeCounter + 1)
 		warnSporeNow:Show()
 		warnSporeSoon:Schedule(self.vb.sporeTimer - 5)
-	elseif args:IsSpellID(29204, 55052) then  -- Inevitable Doom
+	elseif args:IsSpellID(29204, 55052) then  -- Inevitable Doom (core 30s until 6, then 15s)
 		self.vb.doomCounter = self.vb.doomCounter + 1
 		local timer = 30
-		if self.vb.doomCounter >= 7 then
-			if self.vb.doomCounter % 2 == 0 then timer = 17
-			else timer = 12 end
+		if self.vb.doomCounter >= 6 then
+			timer = 15
 		end
 		warnDoomNow:Show(self.vb.doomCounter)
 		timerDoom:Start(timer, self.vb.doomCounter + 1)
-	elseif spellId == 30281 then
-		warnRemoveCurse:Show()
---		timerRemoveCurseCD:Start()
+	elseif args:IsSpellID(29865, 55053) then -- Deathbloom (core 30s repeat)
+		warnDeathbloom:Show()
+		timerDeathbloomCD:Start()
 	elseif spellId == 55593 then
 		timerAura:Start()
 		warnHealSoon:Schedule(14)
@@ -145,7 +142,11 @@ end
 
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(29194, 29196, 29185, 29198) and DBM:UnitDebuff(args.destName, 29184, 29195, 29197, 29199) then
+	if args.spellId == 55593 then -- Necrotic Aura fallback (triggered casts may not log SUCCESS)
+		timerAura:Start()
+		warnHealSoon:Schedule(14)
+		warnHealNow:Schedule(17)
+	elseif args:IsSpellID(29194, 29196, 29185, 29198) and DBM:UnitDebuff(args.destName, 29184, 29195, 29197, 29199) then
 		hadCorrupted[args.destName] = GetTime() + 60
 		if args:IsPlayer() then
 			warnHealSoon:Schedule(55)

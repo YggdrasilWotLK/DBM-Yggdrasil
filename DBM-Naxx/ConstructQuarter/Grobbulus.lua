@@ -22,8 +22,9 @@ local specWarnInjection		= mod:NewSpecialWarningYou(28169, nil, nil, nil, 1, 2)
 local yellInjection			= mod:NewYellMe(28169, nil, false)
 
 local timerInjection		= mod:NewTargetTimer(10, 28169, nil, nil, nil, 3)
+local timerInjectionCD	= mod:NewCDTimer(12, 28169, nil, nil, nil, 3)--Core 20s first, 6s+1.2s/hp% repeat (~12s avg)
 local timerCloud			= mod:NewNextTimer(15, 28240, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerSlimeSpray		= mod:NewNextTimer(32, 54364, nil, nil, nil, 2)
+local timerSlimeSpray		= mod:NewNextTimer(20, 54364, nil, nil, nil, 2)--Core 10s first, 20s repeat
 local enrageTimer			= mod:NewBerserkTimer(720)
 
 mod:AddSetIconOption("SetIconOnInjectionTarget", 28169, false, false, {1, 2, 3, 4})
@@ -51,9 +52,15 @@ end
 function mod:OnCombatStart(delay)
 	self.vb.slimeSprays = 1
 	table.wipe(mutateIcons)
-	enrageTimer:Start(-delay)
-	warnSlimeSpraySoon:Schedule(27)
-	timerSlimeSpray:Start()
+	if self:IsDifficulty("normal25", "heroic25") then
+		enrageTimer:Start(540 - delay)--Core 9min on 25m
+	else
+		enrageTimer:Start(720 - delay)--Core 12min on 10m
+	end
+	warnSlimeSpraySoon:Schedule(5 - delay)
+	timerSlimeSpray:Start(10 - delay)--Core 10s first, 20s repeat
+	timerCloud:Start(15 - delay)--Core 15s first
+	timerInjectionCD:Start(20 - delay)--Core 20s first
 end
 
 function mod:OnCombatEnd()
@@ -66,6 +73,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 28169 then
 		warnInjection:Show(args.destName)
 		timerInjection:Start(args.destName)
+		timerInjectionCD:Start()--Core accelerates as boss HP drops; fixed restart, resyncs each cast
 		if args:IsPlayer() then
 			specWarnInjection:Show()
 			specWarnInjection:Play("runout")
@@ -91,15 +99,9 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 28240 then
 		warnCloud:Show()
 		timerCloud:Start()
-	elseif args:IsSpellID(28157, 54364) then
+	elseif args:IsSpellID(28157, 54364) then -- Slime Spray (core flat 20s)
 		warnSlimeSprayNow:Show()
-		self.vb.slimeSprays = self.vb.slimeSprays + 1
-		if self.vb.slimeSprays % 2 == 0 then -- every 2/4/6... spray short cd
-			warnSlimeSpraySoon:Schedule(26)
-			timerSlimeSpray:Start(31)
-		else -- every 3/5/7... spray long cd
-			warnSlimeSpraySoon:Schedule(54)
-			timerSlimeSpray:Start(59)
-		end
+		warnSlimeSpraySoon:Schedule(15)
+		timerSlimeSpray:Start(20)
 	end
 end

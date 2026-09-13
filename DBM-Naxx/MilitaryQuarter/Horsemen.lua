@@ -8,9 +8,7 @@ mod:RegisterCombat("combat", 16063, 16064, 16065, 30549)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 28884 57467",
-	"SPELL_CAST_SUCCESS 28832 28833 28834 28835 28883 53638 57466 32455",
-	"SPELL_AURA_APPLIED 29061",
-	"SPELL_AURA_REMOVED 29061",
+	"SPELL_CAST_SUCCESS 28832 28833 28834 28835 28883 53638 57466 32455 28863 57463",
 	"SPELL_AURA_APPLIED_DOSE 28832 28833 28834 28835",
 	"UNIT_DIED"
 )
@@ -21,20 +19,19 @@ local warnMarkSoon				= mod:NewAnnounce("WarningMarkSoon", 1, 28835, false, nil,
 local warnMeteor				= mod:NewSpellAnnounce(57467, 4)
 local warnVoidZone				= mod:NewTargetNoFilterAnnounce(28863, 3)--Only warns for nearby targets, to reduce spam
 local warnHolyWrath				= mod:NewTargetNoFilterAnnounce(28883, 3, nil, false)
-local warnBoneBarrier			= mod:NewTargetNoFilterAnnounce(29061, 2)
 
 local specWarnMarkOnPlayer		= mod:NewSpecialWarning("SpecialWarningMarkOnPlayer", nil, nil, nil, 1, 6, nil, nil, 28835)
 local specWarnVoidZone			= mod:NewSpecialWarningYou(28863, nil, nil, nil, 1, 2)
 local yellVoidZone				= mod:NewYell(28863)
 
-local timerLadyMark				= mod:NewNextTimer(16, 28833, nil, nil, nil, 3)
-local timerZeliekMark			= mod:NewNextTimer(16, 28835, nil, nil, nil, 3)
-local timerBaronMark			= mod:NewNextTimer(15, 28834, nil, nil, nil, 3)
-local timerThaneMark			= mod:NewNextTimer(15, 28832, nil, nil, nil, 3)
+local timerLadyMark				= mod:NewNextTimer(15, 28833, nil, nil, nil, 3)--Core 15s repeat
+local timerZeliekMark			= mod:NewNextTimer(15, 28835, nil, nil, nil, 3)--Core 15s repeat
+local timerBaronMark			= mod:NewNextTimer(12, 28834, nil, nil, nil, 3)--Core 12s repeat
+local timerThaneMark			= mod:NewNextTimer(12, 28832, nil, nil, nil, 3)--Core 12s repeat
 local timerMeteorCD				= mod:NewCDTimer(15, 57467, nil, nil, nil, 3)
---local timerVoidZoneCD			= mod:NewCDTimer(12.9, 28863, nil, nil, nil, 3)-- 12.9-16
-local timerHolyWrathCD			= mod:NewCDTimer(13, 28883, nil, nil, nil, 3)
-local timerBoneBarrier			= mod:NewTargetTimer(20, 29061, nil, nil, nil, 5)
+local timerVoidZoneCD			= mod:NewCDTimer(15, 28863, nil, nil, nil, 3)--Core 15s repeat
+local timerHolyWrathCD			= mod:NewCDTimer(15, 28883, nil, nil, nil, 3)--Core 15s repeat
+local berserkTimer				= mod:NewBerserkTimer(600)--Core 10min
 
 mod:AddRangeFrameOption("12")
 
@@ -54,20 +51,32 @@ local function MeteorCast(self)
 	self:Schedule(15, MeteorCast, self)
 end
 
-function mod:OnCombatStart()
+function mod:OnCombatStart(delay)
 	self.vb.markCount = 0
-	timerLadyMark:Start()
-	timerZeliekMark:Start()
-	timerBaronMark:Start()
-	timerThaneMark:Start()
-	warnMarkSoon:Schedule(12)
-	timerMeteorCD:Start()
+	-- Core schedules marks 24s at Reset and freezes until corner run finishes;
+	-- 24s from engage approximates run + first mark.
+	timerLadyMark:Start(24-delay)
+	timerZeliekMark:Start(24-delay)
+	timerBaronMark:Start(24-delay)
+	timerThaneMark:Start(24-delay)
+	warnMarkSoon:Schedule(19-delay)
+	berserkTimer:Start(-delay)
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(12)
 	end
 end
 
 function mod:OnCombatEnd()
+	self:Unschedule(MeteorCast)
+	timerLadyMark:Cancel()
+	timerZeliekMark:Cancel()
+	timerBaronMark:Cancel()
+	timerThaneMark:Cancel()
+	timerMeteorCD:Cancel()
+	timerVoidZoneCD:Cancel()
+	timerHolyWrathCD:Cancel()
+	berserkTimer:Cancel()
+	warnMarkSoon:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -94,8 +103,8 @@ function mod:SPELL_CAST_SUCCESS(args)
 			timerThaneMark:Start()
 		end
 		warnMarkSoon:Schedule(12)
-	elseif args.spellId == 28863 then
---		timerVoidZoneCD:Start()
+	elseif args:IsSpellID(28863, 57463) then -- Void Zone (core 15s repeat, 57463 on 25m)
+		timerVoidZoneCD:Start()
 		if args:IsPlayer() then
 			specWarnVoidZone:Show()
 			specWarnVoidZone:Play("targetyou")
@@ -109,23 +118,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 	end
 end
 
-function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 29061 then
-		warnBoneBarrier:Show(args.destName)
-		timerBoneBarrier:Start(20, args.destName)
-	end
-end
-
-function mod:SPELL_AURA_REMOVED(args)
-	if args.spellId == 29061 then
-		timerBoneBarrier:Stop(args.destName)
-	end
-end
-
 function mod:SPELL_AURA_APPLIED_DOSE(args)
 	if args:IsSpellID(28832, 28833, 28834, 28835) and args:IsPlayer() then
 		local amount = args.amount or 1
-		if amount >= 4 then
+		if amount >= 3 then
 			specWarnMarkOnPlayer:Show(args.spellName, amount)
 			specWarnMarkOnPlayer:Play("stackhigh")
 		end
