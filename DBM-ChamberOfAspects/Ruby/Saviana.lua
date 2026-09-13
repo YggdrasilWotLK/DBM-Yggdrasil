@@ -21,12 +21,13 @@ local specWarnTranq			= mod:NewSpecialWarningDispel(78722, "RemoveEnrage", nil, 
 
 local timerBeacon			= mod:NewBuffActiveTimer(5, 74453, nil, nil, nil, 3)
 local timerConflag			= mod:NewBuffActiveTimer(5, 74456, nil, nil, nil, 3)
-local timerConflagCD		= mod:NewNextTimer(50, 74452, nil, nil, nil, 3)
+local timerConflagCD		= mod:NewNextTimer(62, 74452, nil, nil, nil, 3)--Core flight re-scheduled 50s then delayed 15s (~65s period, beacon ~3s after flight start)
 local timerBreath			= mod:NewCDTimer(25, 74403, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerEnrage			= mod:NewBuffActiveTimer(10, 78722, nil, "RemoveEnrage|Tank|Healer", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON..DBM_COMMON_L.TANK_ICON)
+local timerEnrageCD		= mod:NewCDTimer(17, 78722, nil, "RemoveEnrage|Tank|Healer", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON)--Core 15s first, 15-20s repeat
 
 mod:AddRangeFrameOption(10, 74456)
-mod:AddSetIconOption("beaconIcon", 74453, true, false, {8, 7, 6, 5, 4})
+mod:AddSetIconOption("beaconIcon", 74453, true, false, {8, 7, 6, 5, 4, 3})
 
 mod:GroupSpells(74453, 74456, 74452)--Group target debuff ID with regular debuff IDs
 
@@ -41,7 +42,8 @@ end
 
 function mod:OnCombatStart(delay)
 	timerConflagCD:Start(32-delay)--need more pulls to verify consistency
-	timerBreath:Start(12-delay)--need more pulls to verify consistency
+	timerBreath:Start(10-delay)--Core 10s first
+	timerEnrageCD:Start(15-delay)--Core 15s first
 	table.wipe(beaconTargets)
 	self.vb.beaconIcon = 8
 	if self.Options.RangeFrame then
@@ -50,6 +52,10 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:OnCombatEnd()
+	self:Unschedule(warnConflagTargets)
+	timerConflagCD:Cancel()
+	timerBreath:Cancel()
+	timerEnrageCD:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -68,17 +74,19 @@ function mod:SPELL_AURA_APPLIED(args)
 		specWarnTranq:Show(args.destName)
 		specWarnTranq:Play("trannow")
 		timerEnrage:Start()
+		timerEnrageCD:Start()
 	elseif spellId == 74453 then
 		beaconTargets[#beaconTargets + 1] = args.destName
 		timerConflagCD:Start()
 		timerBeacon:Start()
 		timerConflag:Schedule(5)
+		timerBreath:AddTime(10)--Boss is airborne ~10s during flight; breath timers pause
 		if args:IsPlayer() then
 			specWarnBeacon:Show()
 			specWarnBeacon:Play("targetyou")
 		end
 		if self.Options.beaconIcon then
-			self:SetIcon(args.destName, self.vb.beaconIcon, 11)
+			self:SetIcon(args.destName, self.vb.beaconIcon, 6)
 		end
 		self.vb.beaconIcon = self.vb.beaconIcon - 1
 		self:Unschedule(warnConflagTargets)

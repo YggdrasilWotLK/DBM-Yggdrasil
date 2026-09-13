@@ -10,8 +10,8 @@ mod:RegisterCombat("combat")
 --mod:RegisterKill("yell", L.Kill)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 74806 75954 75955 75956 74525 74526 74527 74528",
-	"SPELL_CAST_SUCCESS 74792 74562",
+	"SPELL_CAST_START 74806 75954 75955 75956 74525 74526 74527 74528 74768",
+	"SPELL_CAST_SUCCESS 74792 74562 74638",
 	"SPELL_AURA_APPLIED 74792 74562",
 	"SPELL_AURA_REMOVED 74792 74562",
 	"SPELL_DAMAGE",
@@ -38,10 +38,10 @@ local specWarnFieryCombustion		= mod:NewSpecialWarningRun(74562, nil, nil, nil, 
 local yellFieryCombustion			= mod:NewYellMe(74562)
 local specWarnMeteorStrike			= mod:NewSpecialWarningMove(74648, nil, nil, nil, 1, 2)
 
-local timerFieryConsumptionCD		= mod:NewNextTimer(25, 74562, nil, nil, nil, 3)
+local timerFieryConsumptionCD		= mod:NewNextTimer(25, 74562, nil, nil, nil, 3)--Core 15-18s first, 25s repeat (no heroic split)
 local timerMeteorCD					= mod:NewNextTimer(40, 74648, nil, nil, nil, 3)--Target or aoe? tough call. It's a targeted aoe!
-local timerMeteorCast				= mod:NewCastTimer(7, 74648)--7-8 seconds from boss yell the meteor impacts.
-local timerFieryBreathCD			= mod:NewCDTimer(16, 74525, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--But unique icons are nice pertaining to phase you're in ;)
+local timerMeteorCast				= mod:NewCastTimer(6.5, 74648)--6.5 seconds from boss yell the meteor impacts (core marker 6500ms).
+local timerFieryBreathCD			= mod:NewCDTimer(11, 74525, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 10-15s first, 10-12s repeat
 
 mod:AddSetIconOption("SetIconOnFireConsumption", 74562, true, false, {7})--Red x for Fire
 
@@ -58,11 +58,11 @@ local specWarnShadowConsumption		= mod:NewSpecialWarningRun(74792, nil, nil, nil
 local yellShadowconsumption			= mod:NewYellMe(74792)
 local specWarnTwilightCutter		= mod:NewSpecialWarningSpell(74769, nil, nil, nil, 3, 2)
 
-local timerShadowConsumptionCD		= mod:NewNextTimer(25, 74792, nil, nil, nil, 3)
+local timerShadowConsumptionCD		= mod:NewNextTimer(20, 74792, nil, nil, nil, 3)--Core 20s first and repeat (no heroic split)
 local timerTwilightCutterCast		= mod:NewCastTimer(5, 74769, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerTwilightCutter			= mod:NewBuffActiveTimer(10, 74769, nil, nil, nil, 6)
-local timerTwilightCutterCD			= mod:NewNextTimer(15, 74769, nil, nil, nil, 6)
-local timerShadowBreathCD			= mod:NewCDTimer(16, 74806, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Edited. Same as debuff timers, same CD, can be merged into 1.
+local timerTwilightCutterCD			= mod:NewNextTimer(29, 74769, nil, nil, nil, 6)--Core 16s first, 29s repeat
+local timerShadowBreathCD			= mod:NewCDTimer(11, 74806, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 10-15s first, 10-12s repeat
 
 mod:AddSetIconOption("SetIconOnShadowConsumption", 74792, true, false, {3})--Purple diamond for shadow
 
@@ -91,6 +91,16 @@ function mod:OnCombatStart(delay)--These may still need retuning too, log i had 
 end
 
 function mod:OnCombatEnd()
+	specWarnTwilightCutter:Cancel()
+	specWarnTwilightCutter:CancelVoice()
+	timerMeteorCD:Cancel()
+	timerMeteorCast:Cancel()
+	timerFieryConsumptionCD:Cancel()
+	timerFieryBreathCD:Cancel()
+	timerShadowConsumptionCD:Cancel()
+	timerShadowBreathCD:Cancel()
+	timerTwilightCutterCD:Cancel()
+	timerTwilightCutterCast:Cancel()
 	if self.Options.HealthFrame then
 		DBM.BossHealth:Hide()
 	end
@@ -103,28 +113,47 @@ function mod:SPELL_CAST_START(args)
 	elseif args:IsSpellID(74525, 74526, 74527, 74528) then
 		warningFieryBreath:Show()
 		timerFieryBreathCD:Start()
+	elseif args.spellId == 74768 and self:AntiSpam(7, "CutterCast") then -- Twilight Cutter orb cast (CLEU fallback for yell)
+		self:TwilightCutterWarn()
+	end
+end
+
+function mod:TwilightCutterWarn()
+	specWarnTwilightCutter:Schedule(5)
+	specWarnTwilightCutter:ScheduleVoice(5, "farfromline")
+	if not self.Options.AnnounceAlternatePhase then
+		timerTwilightCutterCD:Cancel()
+		warningTwilightCutter:Show()
+		timerTwilightCutterCast:Start()
+		timerTwilightCutter:Schedule(5)--Delay it since it happens 5 seconds after the emote
+		timerTwilightCutterCD:Schedule(29)
+	end
+	if self:LatencyCheck() then
+		self:SendSync("TwilightCutter")
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)--We use spell cast success for debuff timers in case it gets resisted by a player we still get CD timer for next one
 	local spellId = args.spellId
 	if spellId == 74792 then
-		if self:IsHeroic() then
-			timerShadowConsumptionCD:Start(20)
-		else
-			timerShadowConsumptionCD:Start()
-		end
+		timerShadowConsumptionCD:Start()--Core 20s always
 		if self:LatencyCheck() then
 			self:SendSync("ShadowCD")
 		end
 	elseif spellId == 74562 then
-		if self:IsHeroic() then
-			timerFieryConsumptionCD:Start(20)
-		else
-			timerFieryConsumptionCD:Start()
-		end
+		timerFieryConsumptionCD:Start()--Core 25s always
 		if self:LatencyCheck() then
 			self:SendSync("FieryCD")
+		end
+	elseif spellId == 74638 and self:AntiSpam(5, "MeteorCast") then -- Meteor targeting (CLEU fallback for yell)
+		warningMeteor:Play("meteorrun")
+		if not self.Options.AnnounceAlternatePhase then
+			warningMeteor:Show()
+			timerMeteorCast:Start()
+			timerMeteorCD:Start()
+		end
+		if self:LatencyCheck() then
+			self:SendSync("Meteor")
 		end
 	end
 end
@@ -178,7 +207,7 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:SPELL_DAMAGE(_, _, _, destGUID, _, _, spellId)
-	if (spellId == 75952 or spellId == 75951 or spellId == 75950 or spellId == 75949 or spellId == 75948 or spellId ==  75947) and destGUID == UnitGUID("player") and self:AntiSpam() then
+	if (spellId == 74713 or spellId == 74718) and destGUID == UnitGUID("player") and self:AntiSpam() then -- Meteor fire (core IDs)
 		specWarnMeteorStrike:Show()
 		specWarnMeteorStrike:Play("runaway")
 	-- Physical/Shadow Realm detection:
@@ -255,30 +284,21 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		if self:LatencyCheck() then
 			self:SendSync("Meteor")
 		end
-	elseif msg == L.twilightcutter or msg:find(L.twilightcutter) then -- Edited (specific for Warmane since CHAT_MSG_RAID_BOSS_EMOTE fires twice: at 5s and at cutter)
-			specWarnTwilightCutter:Schedule(5)
-			specWarnTwilightCutter:ScheduleVoice(5, "farfromline")
-		if not self.Options.AnnounceAlternatePhase then
-			timerTwilightCutterCD:Cancel()
-			warningTwilightCutter:Show()
-			timerTwilightCutterCast:Start()
-			timerTwilightCutter:Schedule(5)--Delay it since it happens 5 seconds after the emote
-			timerTwilightCutterCD:Schedule(15)
-		end
-		if self:LatencyCheck() then
-			self:SendSync("TwilightCutter")
+	elseif msg == L.twilightcutter or msg:find(L.twilightcutter) then -- Cutter warning (yell path; cast 74768 path calls TwilightCutterWarn directly)
+		if self:AntiSpam(7, "CutterYell") then
+			self:TwilightCutterWarn()
 		end
 	end
 end
 
 function mod:OnSync(msg, target)
 	if msg == "TwilightCutter" then
-		if self.Options.AnnounceAlternatePhase and self:AntiSpam(7, msg) then -- Edited to circumvent Warmane double cutter boss emote
+		if self.Options.AnnounceAlternatePhase and self:AntiSpam(7, msg) then
 			timerTwilightCutterCD:Cancel()
 			warningTwilightCutter:Show()
 			timerTwilightCutterCast:Start()
 			timerTwilightCutter:Schedule(5)--Delay it since it happens 5 seconds after the emote
-			timerTwilightCutterCD:Schedule(15)
+			timerTwilightCutterCD:Schedule(29)
 		end
 	elseif msg == "Meteor" then
 		if self.Options.AnnounceAlternatePhase then
@@ -296,19 +316,11 @@ function mod:OnSync(msg, target)
 		end
 	elseif msg == "ShadowCD" then
 		if self.Options.AnnounceAlternatePhase then
-			if self:IsHeroic() then
-				timerShadowConsumptionCD:Start(20)
-			else
-				timerShadowConsumptionCD:Start()
-			end
+			timerShadowConsumptionCD:Start()--Core 20s always
 		end
 	elseif msg == "FieryCD" then
 		if self.Options.AnnounceAlternatePhase then
-			if self:IsHeroic() then
-				timerFieryConsumptionCD:Start(20)
-			else
-				timerFieryConsumptionCD:Start()
-			end
+			timerFieryConsumptionCD:Start()--Core 25s always
 		end
 	elseif msg == "Phase2" and self.vb.phase < 2 then
 		self:SetStage(2)
@@ -317,19 +329,15 @@ function mod:OnSync(msg, target)
 		timerFieryConsumptionCD:Cancel()
 		warnPhase2:Show()
 		warnPhase2:Play("ptwo")
-		timerShadowBreathCD:Start(18) -- Edited.
-		timerShadowConsumptionCD:Start(25)--Edited. not exact, 15 seconds from tank aggro, but easier to add 5 seconds to it as a estimate timer than trying to detect this
-		if self:IsHeroic() then --These i'm not sure if they start regardless of drake aggro, or if it should be moved too.
-			timerTwilightCutterCD:Start(30)
-		else
-			timerTwilightCutterCD:Start(35)
-		end
+		timerShadowBreathCD:Start(13) -- Core 10-15s
+		timerShadowConsumptionCD:Start(20)--Core 20s
+		timerTwilightCutterCD:Start(16)--Core 16s first
 	elseif msg == "Phase3" and self.vb.phase < 3 then
 		self:SetStage(3)
 		warnPhase3:Show()
 		warnPhase3:Play("pthree")
-		timerMeteorCD:Start(30) --These i'm not sure if they start regardless of drake aggro, or if it varies as well.
-		timerFieryConsumptionCD:Start(20)--not exact, 15 seconds from tank aggro, but easier to add 5 seconds to it as a estimate timer than trying to detect this
+		timerMeteorCD:Start(30) --Estimate, core never re-seeds meteor in P3.
+		timerFieryConsumptionCD:Start(25)--Core 25s repeat (estimate from P3 start)
 	elseif msg == "Phase3soon" and not self.vb.warned_preP3 then
 		self.vb.warned_preP3 = true
 		warnPhase3Soon:Show()
