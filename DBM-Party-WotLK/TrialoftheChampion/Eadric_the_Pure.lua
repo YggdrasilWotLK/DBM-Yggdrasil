@@ -10,6 +10,7 @@ mod:RegisterKill("yell", L.YellCombatEnd)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 66935 66867",
+	"SPELL_CAST_SUCCESS 66935",
 	"SPELL_AURA_APPLIED 66940 66889 66905"
 )
 
@@ -21,15 +22,35 @@ local specwarnHammerofJustice	= mod:NewSpecialWarningDispel(66940, "Healer", nil
 local specwarnHammerofRighteous	= mod:NewSpecialWarningYou(66905, nil, nil, nil, 1, 2)
 
 local timerVengeance			= mod:NewBuffActiveTimer(6, 66889)
+local timerRadianceCD				= mod:NewCDTimer(16, 66935, nil, nil, nil, 2)--Core 16s repeat
+local timerHammerRightCD			= mod:NewCDTimer(25, 66867, nil, nil, nil, 3)--Core 25s paired with HoJ
 
 mod:AddSetIconOption("SetIconOnHammerTarget", 66940, true, true, {8})
 
+function mod:OnCombatStart(delay)
+	timerRadianceCD:Start(16-delay)--Core 16s
+	timerHammerRightCD:Start(25-delay)--Core 25s
+end
+
+function mod:OnCombatEnd()
+	timerRadianceCD:Cancel()
+	timerHammerRightCD:Cancel()
+end
+
 function mod:SPELL_CAST_START(args)
-	if args.spellId == 66935 then					-- Radiance Look Away!
+	if args.spellId == 66935 then					-- Radiance Look Away! (core 16s repeat)
 		specwarnRadiance:Show(args.sourceName)
 		specwarnRadiance:Play("turnaway")
-	elseif args.spellId == 66867 then				-- Hammer of the Righteous
+		timerRadianceCD:Start()
+	elseif args.spellId == 66867 then				-- Hammer of the Righteous (core 25s)
 		warnHammerofRighteous:Show()
+		timerHammerRightCD:Start()
+	end
+end
+
+function mod:SPELL_CAST_SUCCESS(args)
+	if args.spellId == 66935 then -- Radiance fallback (core casts on nil, START may not log)
+		timerRadianceCD:Start()
 	end
 end
 

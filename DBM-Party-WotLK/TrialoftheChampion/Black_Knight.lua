@@ -14,6 +14,7 @@ mod:RegisterEvents(
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 67729 67886",
+	"SPELL_CAST_SUCCESS 67729 67886",
 	"SPELL_AURA_APPLIED 67823 67882 67751",
 	"SPELL_DAMAGE 67781 67876 67729 67886",
 	"SPELL_MISSED 67781 67876 67729 67886"
@@ -64,7 +65,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			self:SetIcon(args.destName, 8, 10)
 		end
 		warnMarked:Show(args.destName)
-		timerMarked:Show(args.destName)
+		timerMarked:Start(args.destName)
 	elseif args.spellId == 67751 and self:AntiSpam(2, 2) then	-- Ghoul Explode (BK exlodes Army of the dead. Phase 3)
 		specWarnExplode:Show()
 		specWarnExplode:Play("justrun")

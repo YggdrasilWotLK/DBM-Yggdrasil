@@ -8,8 +8,8 @@ mod:SetUsedIcons(8)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 68788",
-	"SPELL_AURA_APPLIED 70381 72930 68785 70335",
+	"SPELL_CAST_START 68788 68778 68774 70334",
+	"SPELL_AURA_APPLIED 70381 68785 70335 68774 70334",
 	"SPELL_AURA_APPLIED_DOSE 68786 70336",
 	"CHAT_MSG_RAID_BOSS_WHISPER"
 )
@@ -17,37 +17,49 @@ mod:RegisterEventsInCombat(
 local warnForgeWeapon			= mod:NewSpellAnnounce(68785, 2)
 local warnDeepFreeze			= mod:NewTargetAnnounce(70381, 2)
 local warnSaroniteRock			= mod:NewTargetAnnounce(68789, 3)
+local warnChillingWave		= mod:NewSpellAnnounce(68778, 3)
 
 local specWarnSaroniteRock		= mod:NewSpecialWarningYou(68789, nil, nil, nil, 1, 2)
 local yellRock					= mod:NewYellMe(68789)
 local specWarnSaroniteRockNear	= mod:NewSpecialWarningClose(68789, nil, nil, nil, 1, 2)
 local specWarnPermafrost		= mod:NewSpecialWarningStack(68786, nil, 9, nil, nil, 1, 2)
 
-local timerSaroniteRockCD		= mod:NewCDTimer(15.5, 68789, nil, nil, nil, 3)--15.5-20
-local timerDeepFreezeCD			= mod:NewCDTimer(19, 70381, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)
+local timerSaroniteRockCD		= mod:NewCDTimer(16, 68789, nil, nil, nil, 3)--Core 12.5-20s repeat
+local timerDeepFreezeCD			= mod:NewCDTimer(35, 70381, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)--Core 35s repeat
 local timerDeepFreeze			= mod:NewTargetTimer(14, 70381, nil, false, 3, 5)
+local timerChillingWaveCD		= mod:NewCDTimer(35, 68778, nil, nil, nil, 3)--Core 35s phase-2 AoE (was untracked)
 
 mod:AddSetIconOption("SetIconOnSaroniteRockTarget", 68789, true, false, {8})
 mod:AddBoolOption("AchievementCheck", false, "announce")
 
 mod.vb.warnedfailed = false
 
-function mod:OnCombatStart()
+function mod:OnCombatStart(delay)
 	self.vb.warnedfailed = false
+	timerSaroniteRockCD:Start(6-delay)--Core 5-7.5s first
+end
+
+function mod:OnCombatEnd()
+	timerSaroniteRockCD:Cancel()
+	timerDeepFreezeCD:Cancel()
+	timerChillingWaveCD:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args.spellId == 68788 then								-- Throw Saronite
+	if args.spellId == 68788 then								-- Throw Saronite (core 12.5-20s repeat)
 		timerSaroniteRockCD:Start()
+	elseif args.spellId == 68778 then -- Chilling Wave phase 2 (was untracked)
+		warnChillingWave:Show()
+		timerChillingWaveCD:Start()
 	end
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(70381, 72930) then						-- Deep Freeze
+	if args.spellId == 70381 then						-- Deep Freeze (core single ID, 35s repeat)
 		warnDeepFreeze:Show(args.destName)
 		timerDeepFreeze:Start(args.destName)
 		timerDeepFreezeCD:Start()
-	elseif args:IsSpellID(68785, 70335) then					-- Forge Frostborn Mace
+	elseif args:IsSpellID(68785, 70335, 68774, 70334) then					-- Forge Mace + Forge Blade (Blade was ignored)
 		warnForgeWeapon:Show()
 	end
 end

@@ -16,16 +16,20 @@ mod:RegisterEventsInCombat(
 
 local warningPhase	= mod:NewAnnounce("WarningPhase", 2, "Interface\\Icons\\Spell_Nature_WispSplode")
 
-local timerEvent	= mod:NewTimer(302, "timerEvent", "Interface\\Icons\\Spell_Holy_BorrowedTime", nil, nil, 6)
+local timerEvent	= mod:NewTimer(310, "timerEvent", "Interface\\Icons\\Spell_Holy_BorrowedTime", nil, nil, 6)--Core 310s tribunal
 
 function mod:OnCombatStart(delay)
-	timerEvent:Start(-delay)
+	timerEvent:Start(310-delay)--Core 310s
+end
+
+function mod:OnCombatEnd()
+	timerEvent:Cancel()
 end
 
 function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if L.Phase1 == msg then
 		warningPhase:Show(1)
-	elseif msg == L.Phase2 then
+	elseif msg == L.Phase2 or (msg:find("Celestial") and msg:find("planetary")) then -- locale Phase2 has double-space typo
 		warningPhase:Show(2)
 	elseif msg == L.Phase3 then
 		warningPhase:Show(3)

@@ -8,37 +8,44 @@ mod:SetUsedIcons(8)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 52658 59795",
-	"SPELL_AURA_REMOVED 52658 59795",
-	"SPELL_CAST_START 52770",
+	"SPELL_CAST_START 52770 52780",
+	"SPELL_AURA_APPLIED 52658",
+	"SPELL_AURA_REMOVED 52658",
 	"UNIT_HEALTH boss1"
 )
 
 local warningDisperseSoon	= mod:NewSoonAnnounce(52770, 2)
 local warningDisperse		= mod:NewSpellAnnounce(52770, 3)
 local warningOverload		= mod:NewTargetAnnounce(52658, 2)
+local warnBall				= mod:NewSpellAnnounce(52780, 3)
 
 local specWarnOverload		= mod:NewSpecialWarningMoveAway(52658, nil, nil, nil, 1, 2)
 
 local timerOverload			= mod:NewTargetTimer(10, 52658, nil, nil, nil, 3)
+local timerOverloadCD			= mod:NewCDTimer(5, 52658, nil, nil, nil, 3)--Core 5-6s repeat (was untracked)
+local timerBallCD				= mod:NewCDTimer(10, 52780, nil, nil, nil, 3)--Core every 10-11s (was untracked)
 
 mod:AddRangeFrameOption(10, 52658)
-mod:AddSetIconOption("SetIconOnOverloadTarget", 59795, true, false, {8})
+mod:AddSetIconOption("SetIconOnOverloadTarget", 52658, true, false, {8})
 
 local warnedDisperse = false
 
-function mod:OnCombatStart()
+function mod:OnCombatStart(delay)
 	warnedDisperse = false
+	timerOverloadCD:Start(5-delay)--Core 5-6s
+	timerBallCD:Start(10-delay)--Core every 10-11s
 end
 
 function mod:OnCombatEnd()
+	timerOverloadCD:Cancel()
+	timerBallCD:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(52658, 59795) then
+	if args.spellId == 52658 then -- Static Overload (core single ID both modes)
 		if args:IsPlayer() then
 			specWarnOverload:Show()
 			specWarnOverload:Play("runout")
@@ -49,6 +56,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			warningOverload:Show(args.destName)
 		end
 		timerOverload:Start(args.destName)
+		timerOverloadCD:Start()
 		if self.Options.SetIconOnOverloadTarget then
 			self:SetIcon(args.destName, 8, 10)
 		end
@@ -56,7 +64,7 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args:IsSpellID(52658, 59795) then
+	if args.spellId == 52658 then
 		if args:IsPlayer() and self.Options.RangeFrame then
 			DBM.RangeCheck:Hide()
 		end
@@ -69,6 +77,9 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 52770 then
 		warningDisperse:Show()
+	elseif args.spellId == 52780 then -- Ball Lightning (core every 10-11s, was untracked)
+		warnBall:Show()
+		timerBallCD:Start()
 	end
 end
 

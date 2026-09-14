@@ -12,24 +12,35 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 50255 59331",
+	"SPELL_CAST_START 50255 59331 50234 59330",
 	"SPELL_AURA_APPLIED 50258 59334 50228 59322",
 	"SPELL_AURA_REMOVED 50258 59334"
 )
 
 local warnPhase2			= mod:NewPhaseAnnounce(2)
 local warningPoisonDebuff	= mod:NewTargetNoFilterAnnounce(50258, 2, nil, "Healer")
+local warnCrush			= mod:NewSpellAnnounce(50234, 3, nil, "Tank")
 
-local specWarnWhirlwind		= mod:NewSpecialWarningRun(59322, nil, nil, 2, 4, 2)
+local specWarnWhirlwind		= mod:NewSpecialWarningRun(50228, nil, nil, 2, 4, 2)
 
 local timerPoisonDebuff		= mod:NewTargetTimer(12, 50258, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerPoisonCD			= mod:NewCDTimer(10, 59331, nil, "Healer", nil, 5)
-local timerWhirlwindCD		= mod:NewCDTimer(20, 59322, nil, nil, nil, 2)
+local timerWhirlwindCD		= mod:NewCDTimer(17, 50228, nil, nil, nil, 2)--Core 15s first, 15-20s repeat
+local timerCrushCD			= mod:NewCDTimer(8, 50234, nil, "Tank", nil, 3)--Core 8s first and repeat
 local timerAchieve			= mod:NewAchievementTimer(180, 1873)
+
+function mod:OnCombatEnd()
+	timerPoisonCD:Cancel()
+	timerWhirlwindCD:Cancel()
+	timerCrushCD:Cancel()
+end
 
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(50255, 59331) then
 		timerPoisonCD:Start() -- Poisoned Spear throw
+	elseif args:IsSpellID(50234, 59330) then -- Crush (core 8s repeat, was untracked)
+		warnCrush:Show()
+		timerCrushCD:Start()
 	end
 end
 
@@ -37,7 +48,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(50258, 59334) then
 		warningPoisonDebuff:Show(args.destName)
 		timerPoisonDebuff:Start(args.destName)
-	elseif args:IsSpellID(50228, 59322) then
+	elseif args:IsSpellID(50228, 59322) then -- Whirlwind (core casts 50228 both modes; 59322 heroic fallback)
 		timerWhirlwindCD:Start()
 		specWarnWhirlwind:Show()
 		specWarnWhirlwind:Play("runout")

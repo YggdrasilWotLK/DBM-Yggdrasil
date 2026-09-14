@@ -15,8 +15,8 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 69629 69167",
-	"SPELL_CAST_SUCCESS 69155 69627",
+	"SPELL_CAST_START 69167 69246",
+	"SPELL_CAST_SUCCESS 69155",
 	"SPELL_AURA_APPLIED 69172",
 	"SPELL_AURA_REMOVED 69172",
 	"SPELL_PERIODIC_DAMAGE 69238 69628",
@@ -37,37 +37,45 @@ local specWarnOverlordsBrand	= mod:NewSpecialWarningReflect(69172, nil, nil, nil
 local specWarnUnholyPower		= mod:NewSpecialWarningSpell(69167, "Tank", nil, nil, 1, 2) --Spell for now. may change to run away if damage is too high for defensive
 
 local timerCombatStart			= mod:NewCombatTimer(34)
-local timerOverlordsBrandCD		= mod:NewCDTimer(12, 69172, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerOverlordsBrandCD		= mod:NewCDTimer(12, 69172, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 4-6s first, 11-12s repeat
 local timerOverlordsBrand		= mod:NewTargetTimer(8, 69172, nil, nil, nil, 5)
 local timerUnholyPower			= mod:NewBuffActiveTimer(10, 69167, nil, "Tank|Healer", 2, 5)
-local timerHoarfrostCD			= mod:NewCDTimer(25.5, 69246, nil, nil, nil, 3)
-local timerForcefulSmash		= mod:NewCDTimer(40, 69155, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--Highly Variable. 40-50
+local timerUnholyPowerCD		= mod:NewCDTimer(44, 69167, nil, "Tank|Healer", 2, 5)--Core ~40-48s chain (was untracked)
+local timerHoarfrostCD			= mod:NewCDTimer(25, 69246, nil, nil, nil, 3)--Core 25s first and repeat
+local timerForcefulSmash		= mod:NewCDTimer(44, 69155, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 14-16s first, 40-48s chain
 
 mod:AddSetIconOption("SetIconOnHoarfrostTarget", 69246, true, false, {8})
 mod:AddRangeFrameOption(8, 69246)
 
 function mod:OnCombatStart(delay)
-	timerForcefulSmash:Start(9-delay)--Sems like a WTF
-	timerOverlordsBrandCD:Start(-delay)
-	timerHoarfrostCD:Start(31.5-delay)--Verify
+	timerForcefulSmash:Start(15-delay)--Core 14-16s first
+	timerOverlordsBrandCD:Start(5-delay)--Core 4-6s first
+	timerHoarfrostCD:Start(25-delay)--Core 25s first
 end
 
 function mod:OnCombatEnd()
+	timerForcefulSmash:Cancel()
+	timerOverlordsBrandCD:Cancel()
+	timerUnholyPowerCD:Cancel()
+	timerHoarfrostCD:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(69629, 69167) then					-- Unholy Power
+	if args.spellId == 69167 then					-- Unholy Power (core single ID, 1s after Smash)
 		specWarnUnholyPower:Show()
 		specWarnUnholyPower:Play("justrun")
 		timerUnholyPower:Start()
+		timerUnholyPowerCD:Start()
+	elseif args.spellId == 69246 then -- Mark of Rimefang (cast fallback for emote path)
+		timerHoarfrostCD:Start()
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args:IsSpellID(69155, 69627) then					-- Forceful Smash
+	if args.spellId == 69155 then					-- Forceful Smash (core single ID)
 		warnForcefulSmash:Show()
 		timerForcefulSmash:Start()
 	end

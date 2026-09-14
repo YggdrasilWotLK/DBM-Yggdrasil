@@ -19,7 +19,7 @@ local addWaves = {
 }
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args.spellId == 69708 then			--Lich King has broken out of his iceblock, this starts actual event
+	if args.spellId == 69708 or args.spellId == 70194 then			--Ice Prison (Alliance 69708 / Horde Dark Binding 70194)
 		if self:IsDifficulty("heroic5") then
 			timerEscape:Start()
 		end
