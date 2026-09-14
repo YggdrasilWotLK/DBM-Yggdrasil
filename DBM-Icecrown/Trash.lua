@@ -53,9 +53,9 @@ local timerDisruptingShout		= mod:NewCastTimer(3, 71022, nil, nil, nil, 2)
 local timerDarkReckoning		= mod:NewTargetTimer(8, 69483, nil, nil, nil, 5)
 local timerDeathPlague			= mod:NewTargetTimer(15, 72865, nil, nil, nil, 3)
 --Plagueworks
-local timerZombies				= mod:NewNextTimer(20, 71159, nil, nil, nil, 1)
+local timerZombies				= mod:NewNextTimer(22, 71159, nil, nil, nil, 1)--Core 25-30s first, 20-25s repeat
 local timerMortalWound			= mod:NewTargetTimer(15, 71127, nil, nil, nil, 5)
-local timerDecimate				= mod:NewNextTimer(33, 71123, nil, nil, nil, 2)
+local timerDecimate				= mod:NewNextTimer(22, 71123, nil, nil, nil, 2)--Core 20-25s repeat
 local timerBlightBomb			= mod:NewCastTimer(5, 71088, nil, nil, nil, 3)
 --Crimson Hall
 local timerBloodMirror			= mod:NewTargetTimer(30, 70451, nil, "Healer|Tank", nil, 5)
@@ -151,7 +151,7 @@ function mod:SPELL_CAST_START(args)
 	elseif spellId == 71123 then
 		specWarnDecimate:Show()
 		warnDecimateSoon:Cancel()	-- in case the first 1 is inaccurate, you wont have an invalid soon warning
-		warnDecimateSoon:Schedule(28)
+		warnDecimateSoon:Schedule(17)
 		timerDecimate:Start()
 	end
 end

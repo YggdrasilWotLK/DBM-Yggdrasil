@@ -21,9 +21,9 @@ local specWarnMortalWound	= mod:NewSpecialWarningStack(71127, nil, 5)
 local specWarnTrap			= mod:NewSpecialWarning("SpecWarnTrap")
 local specWarnBlightBomb	= mod:NewSpecialWarningSpell(71088)
 
-local timerZombies		= mod:NewNextTimer(20, 71159)
+local timerZombies		= mod:NewNextTimer(22, 71159)--Core 25-30s first, 20-25s repeat
 local timerMortalWound	= mod:NewTargetTimer(15, 71127)
-local timerDecimate		= mod:NewNextTimer(33, 71123)
+local timerDecimate		= mod:NewNextTimer(22, 71123)--Core 20-25s repeat
 local timerBlightBomb	= mod:NewCastTimer(5, 71088)
 
 mod:RemoveOption("HealthFrame")
@@ -54,7 +54,7 @@ function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(71123) then
 		specWarnDecimate:Show()
 		warnDecimateSoon:Cancel()	-- in case the first 1 is inaccurate, you wont have an invalid soon warning
-		warnDecimateSoon:Schedule(28)
+		warnDecimateSoon:Schedule(17)
 		timerDecimate:Start()
 	elseif args:IsSpellID(71088) then
 		specWarnBlightBomb:Show()
