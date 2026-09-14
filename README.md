@@ -12,13 +12,13 @@ This addon is based on [DBM-Warmane](https://github.com/Zidras/DBM-Warmane) by Z
 
 ## Installation
 
-1. Download or clone this repository.
-2. Copy all addon folders into your WoW 3.3.5a client's Interface/AddOns directory.
+1. [Download the repository from this link](https://github.com/YggdrasilWotLK/DBM-Yggdrasil/archive/refs/heads/main.zip).
+2. In the .zip file, open folder `DBM-Yggdrasil-main` and copy all addon folders into your WoW 3.3.5a client's Interface/AddOns directory.
 3. Restart or reload your UI.
 
 ## Compatibility
 
-Tested on Yggdrasilcore. May work well on other AzerothCore-based projects. Timers and mechanics are validated against Yggdrasilcore's server-side boss scripts.
+Tested on Yggdrasilcore. Expected to work well on other AzerothCore-based projects. Timers and mechanics are validated against Yggdrasilcore's server-side boss scripts.
 
 ## Contributing
 
@@ -26,9 +26,9 @@ Bug reports and pull requests are welcome, especially ones that identify timer o
 
 ## Credits
 
-- Original DBM-Warmane by Zidras
+- [Original DBM-Warmane by Zidras](https://github.com/Zidras/DBM-Warmane) and co-authors of this project up until release v.9.2.21 alpha.
 - Upstream Deadly Boss Mods project and contributors
 
 ## License
 
-This project inherits the licensing terms of DBM-Warmane and upstream Deadly Boss Mods. See their respective repositories for full license details.
+This project inherits any applicable licensing terms of DBM-Warmane and upstream Deadly Boss Mods (used for the basis of Zidras' DBM-Warmane, not by YggdrasilWotLK directly). See their respective repositories for full license details.
