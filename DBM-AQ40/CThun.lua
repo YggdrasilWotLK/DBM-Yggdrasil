@@ -11,7 +11,8 @@ mod:SetWipeTime(25)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 26134",
-	"SPELL_CAST_SUCCESS 26586",
+	"SPELL_CAST_SUCCESS 26586",--26586 never cast by CThun (Ouro Birth); tentacle timers driven by SPELL_SUMMON below
+	"SPELL_SUMMON 15726 15725 15334 15728",
 	"SPELL_AURA_APPLIED 26476",
 	"SPELL_AURA_REMOVED 26476",
 	"CHAT_MSG_MONSTER_EMOTE",
@@ -168,6 +169,29 @@ function mod:SPELL_CAST_SUCCESS(args)
 				warnGiantClawTentacle:Show()
 				timerGiantClawTentacle:Start()
 			end
+		end
+	end
+end
+
+function mod:SPELL_SUMMON(args)--Tentacles spawn without a cast; same branches as the (dead) 26586 handler
+	local cid = self:GetCIDFromGUID(args.destGUID)
+	if self:AntiSpam(5, cid) then--Throttle multiple spawn within 5 seconds
+		if cid == 15726 then--Eye Tentacle
+			timerEyeTentacle:Stop()
+			warnEyeTentacle:Show()
+			timerEyeTentacle:Start(self.vb.phase == 2 and 30 or 45)
+		elseif cid == 15725 then -- Claw Tentacle
+			timerClawTentacle:Stop()
+			warnClawTentacle:Show()
+			timerClawTentacle:Start()
+		elseif cid == 15334 then -- Giant Eye Tentacle
+			timerGiantEyeTentacle:Stop()
+			warnGiantEyeTentacle:Show()
+			timerGiantEyeTentacle:Start()
+		elseif cid == 15728 then -- Giant Claw Tentacle
+			timerGiantClawTentacle:Stop()
+			warnGiantClawTentacle:Show()
+			timerGiantClawTentacle:Start()
 		end
 	end
 end

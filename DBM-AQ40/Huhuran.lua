@@ -41,9 +41,9 @@ local StingTargets = {}
 function mod:OnCombatStart(delay)
 	self.vb.prewarn_berserk = false
 	table.wipe(StingTargets)
-	timerFrenzyCD:Start(9.6-delay)
+	timerFrenzyCD:Start(12-delay)--Core 12-21s first
 	timerPoisonCD:Start(11-delay)
-	timerStingCD:Start(20-delay)
+	timerStingCD:Start(25-delay)--Core 25-43s first
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(18)
 	end

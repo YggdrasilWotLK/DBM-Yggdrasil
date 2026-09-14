@@ -10,9 +10,9 @@ mod:SetUsedIcons(1)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 38280 38575",
+	"SPELL_AURA_APPLIED 38280 38575 38574"--38574 is the core toxic ID, 38575 kept as fallback,
 	"SPELL_AURA_REMOVED 38280 38132",
-	"SPELL_CAST_START 38253",
+	"SPELL_CAST_START 38253 38017",
 	"SPELL_CAST_SUCCESS 38316",
 	"UNIT_DIED",
 	"CHAT_MSG_MONSTER_YELL",
@@ -106,7 +106,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		if self.Options.ChargeIcon then
 			self:SetIcon(args.destName, 1, 20)
 		end
-	elseif args.spellId == 38575 and args:IsPlayer() and self:AntiSpam() then
+	elseif args:IsSpellID(38575, 38574) and args:IsPlayer() and self:AntiSpam() then--Core ID added
 		specWarnToxic:Show()
 		specWarnToxic:Play("runaway")
 	end

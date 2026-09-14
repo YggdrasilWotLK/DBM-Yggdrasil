@@ -39,7 +39,7 @@ end
 function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 25646 then
 		local amount = args.amount or 1
-		timerWound:Show(args.destName)
+		timerWound:Start(args.destName)
 		if amount >= 5 then
 			if args:IsPlayer() then
 				specWarnWound:Show(amount)

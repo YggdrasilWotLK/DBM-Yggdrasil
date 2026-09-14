@@ -22,7 +22,7 @@ local timerEnergize		= mod:NewNextTimer(90, 25685, nil, nil, nil, 6)
 local timerEnergizeDur	= mod:NewBuffActiveTimer(90, 25685, nil, nil, nil, 6)
 
 function mod:OnCombatStart(delay)
-	timerEnergize:Start(-delay)
+	timerEnergize:Start(90-delay)--Core 90s
 end
 
 function mod:SPELL_AURA_APPLIED(args)

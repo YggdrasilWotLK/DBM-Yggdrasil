@@ -8,7 +8,7 @@ mod:SetModelID(14367)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 23309 23313 23189 23315 23312",
+	"SPELL_CAST_START 23309 23313 23189 23315 23312 23308 23310 23187"--23308/23310/23187 are the core IDs, others kept as fallback,
 	"SPELL_AURA_APPLIED 23155 23169 23153 23154 23170 23128 23537",
 --	"SPELL_AURA_REFRESH",
 	"SPELL_AURA_REMOVED 23155 23169 23153 23154 23170 23128",
@@ -183,7 +183,7 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(23309, 23313, 23189, 23315, 23312) then
+	if args:IsSpellID(23309, 23313, 23189, 23315, 23312, 23308, 23310, 23187) then--Core IDs added as fallback
 		warnBreath:Show(args.spellName)
 		timerBreath:Start(2, args.spellName)
 		timerBreath:UpdateIcon(args.spellId)

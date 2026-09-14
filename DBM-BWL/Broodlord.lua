@@ -8,7 +8,7 @@ mod:SetModelID(14308)
 mod:RegisterCombat("yell", L.Pull)--L.Pull is backup for classic, since classic probably won't have ENCOUNTER_START to rely on and player regen never works for this boss
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 23331 18670",
+	"SPELL_CAST_SUCCESS 23331 25778--Core Knockback 25778 (was 18670 Bug-trio ID)",
 	"SPELL_AURA_APPLIED 24573",
 	"SPELL_AURA_REMOVED 24573"
 )

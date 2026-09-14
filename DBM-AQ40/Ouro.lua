@@ -41,14 +41,14 @@ function mod:OnCombatStart(delay)
 	self.vb.Berserked = false
 	timerSweepCD:Start(22-delay)--22-25
 	timerBlastCD:Start(20-delay)--20-26
-	timerSubmerge:Start(184-delay)
+	timerSubmerge:Start(90-delay)
 end
 
 function mod:Emerge()
 	warnEmerge:Show()
 	timerSweepCD:Start(23)--23-24 (it might be 22-25 like pull)
 	timerBlastCD:Start(24)--24-26 (it might be 20-26 like pull)
-	timerSubmerge:Start(184)
+	timerSubmerge:Start(90)--Core 90s re-submerge (was 184)
 end
 
 function mod:SPELL_AURA_APPLIED(args)

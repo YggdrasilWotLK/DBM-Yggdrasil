@@ -34,7 +34,7 @@ local berserkTimer			= mod:NewBerserkTimer(900)
 function mod:OnCombatStart(delay)
 	--timerStrikeCD:Start(14.2-delay)
 	berserkTimer:Start()
-	timerTeleport:Start(-delay)
+	timerTeleport:Start(29.2-delay)
 	if self.Options.NPAuraOnMutateBug then
 		DBM:FireEvent("BossMod_EnableHostileNameplates")
 	end

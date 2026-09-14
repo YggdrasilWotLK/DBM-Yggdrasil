@@ -13,7 +13,7 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 22539 22686",
+	"SPELL_CAST_START 22539 22686 22678"--22678 P1 Fear, 22686 P3 Bellowing Roar,
 	"SPELL_AURA_APPLIED 22687 22667",
 	"UNIT_DIED",
 	"UNIT_HEALTH mouseover target"
@@ -71,7 +71,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 22539 then
 		warnShadowFlame:Show()
-	elseif args.spellId == 22686 then
+	elseif args:IsSpellID(22686, 22678) then--22678 P1 fallback
 		warnFear:Show()
 		timerFearNext:Start()
 	end

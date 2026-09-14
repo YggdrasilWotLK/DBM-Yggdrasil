@@ -22,9 +22,10 @@ local specWarnSpout		= mod:NewSpecialWarningSpell(37433, nil, nil, nil, 2, 2)
 
 local timerSubmerge		= mod:NewTimer(105, "TimerSubmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6)
 local timerEmerge		= mod:NewTimer(60, "TimerEmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
-local timerSpoutCD		= mod:NewCDTimer(50, 37433, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerSpoutCD		= mod:NewCDTimer(60, 37433, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 60s repeat (was 50)
 local timerSpout		= mod:NewBuffActiveTimer(22, 37433, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
-local timerWhirlCD		= mod:NewCDTimer(18, 37363, nil, nil, nil, 2)
+local timerWhirlMinCD		= mod:NewCDTimer(34, 37363, nil, nil, nil, 2)--Core 34-68.5s RNG: earliest recast
+local timerWhirlCD		= mod:NewCDTimer(68, 37363, nil, nil, nil, 2)--Core 34-68.5s RNG; max bar (was 18)
 
 mod.vb.submerged = false
 mod.vb.guardianKill = 0
@@ -92,6 +93,9 @@ function mod:OnSync(msg)
 		self:Schedule(60, emerged, self)
 	elseif msg == "Whirl" then
 		warnWhirl:Show()
-		timerWhirlCD:Start()
+		timerWhirlMinCD:Cancel()
+		timerWhirlCD:Cancel()
+		timerWhirlMinCD:Start(34)
+		timerWhirlCD:Start(68)
 	end
 end

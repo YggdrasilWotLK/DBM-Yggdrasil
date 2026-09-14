@@ -77,12 +77,12 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(38215, 38216, 38217, 38219, 38220, 38221) then
 		warnMark:Show(args.spellName, damage[args.spellId] or "10%")
 		timerMark:Cancel()
-		timerMark:Show(args.spellName, damageNext[args.spellId] or "10%")
+		timerMark:Start(args.spellName, damageNext[args.spellId] or "10%")
 	elseif args:IsSpellID(38218, 38231, 40584, 38222, 38230, 40583) then
 		warnMark:Show(args.spellName, damage[args.spellId] or "10%")
 		specWarnMark:Show(args.spellName, damage[args.spellId] or "10%")
 		timerMark:Cancel()
-		timerMark:Show(args.spellName, damageNext[args.spellId] or "10%")
+		timerMark:Start(args.spellName, damageNext[args.spellId] or "10%")
 	elseif args.spellId == 25035 and self:AntiSpam(2) then
 		timerMark:Cancel()
 		if args:GetSrcCreatureID() == 22035 then

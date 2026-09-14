@@ -59,7 +59,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		timerCyclone:Start(args.destName)
 	elseif args:IsSpellID(25177, 25178, 25180, 25181, 25183) then
 		warnVulnerable:Show(args.spellName)
-		timerVulnerable:Show(args.spellName)
+		timerVulnerable:Start(args.spellName)
 	end
 end
 

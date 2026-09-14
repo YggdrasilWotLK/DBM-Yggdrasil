@@ -28,8 +28,8 @@ function mod:OnCombatStart(delay)
 	timerFearCD:Start(10-delay)
 	if not self:IsTrivial() then
 		self:RegisterShortTermEvents(
-			"SPELL_AURA_APPLIED 25786 25989",
-			"SPELL_PERIODIC_DAMAGE 25786 25989",
+			"SPELL_AURA_APPLIED 25786 25989 26575",--26575 core Toxin added, others DBC-real fallback
+			"SPELL_PERIODIC_DAMAGE 25786 25989 26575",
 			"SPELL_PERIODIC_MISSED 25786 25989"
 		)
 	end
@@ -60,14 +60,14 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if (args.spellId == 25786 or args.spellId == 25989) and args:IsPlayer() and self:AntiSpam(3, 2) then
+	if (args.spellId == 25786 or args.spellId == 25989 or args.spellId == 26575) and args:IsPlayer() and self:AntiSpam(3, 2) then
 		specWarnGTFO:Show(args.spellName)
 		specWarnGTFO:Play("watchfeet")
 	end
 end
 
 function mod:SPELL_PERIODIC_DAMAGE(_, _, _, destGUID, _, _, spellId, spellName)
-	if (spellId == 25786 or spellId == 25989) and destGUID == UnitGUID("player") and self:AntiSpam(3, 2) then
+	if (spellId == 25786 or spellId == 25989 or spellId == 26575) and destGUID == UnitGUID("player") and self:AntiSpam(3, 2) then
 		specWarnGTFO:Show(spellName)
 		specWarnGTFO:Play("watchfeet")
 	end
