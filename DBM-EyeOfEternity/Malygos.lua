@@ -14,8 +14,8 @@ mod:RegisterEvents(
 
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 60936 57407",
-	"SPELL_CAST_START 57430 56505",
-	"SPELL_CAST_SUCCESS 56105 57430",
+	"SPELL_CAST_START 57430 56505 56272 60072 55873 56263",
+	"SPELL_CAST_SUCCESS 56105 55873 56263 57430",
 	"CHAT_MSG_RAID_BOSS_EMOTE",
 	"UNIT_SPELLCAST_SUCCEEDED boss1"
 )
@@ -36,17 +36,18 @@ local specWarnStaticField		= mod:NewSpecialWarningYou(57430, nil, nil, nil, 1, 2
 local specWarnStaticFieldNear	= mod:NewSpecialWarningClose(57430, nil, nil, nil, 1, 2)
 local yellStaticField			= mod:NewYellMe(57430)
 
-local timerSpark				= mod:NewNextTimer(30, 56140, nil, nil, nil, 1, 59381, DBM_COMMON_L.DAMAGE_ICON)
+local timerSpark				= mod:NewNextTimer(25, 56140, nil, nil, nil, 1, 59381, DBM_COMMON_L.DAMAGE_ICON)--Core 10-15s first, 20-30s repeat
 local timerVortex				= mod:NewCastTimer(11, 56105, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerVortexCD				= mod:NewNextTimer(60, 56105, nil, nil, nil, 2)
+local timerVortexCD				= mod:NewNextTimer(60, 56105, nil, nil, nil, 2)--Core 30s after fight start, 60s repeat
 local timerBreath				= mod:NewBuffActiveTimer(8, 56505, nil, nil, nil, 5) --lasts 5 seconds plus 3 sec cast.
 local timerBreathCD				= mod:NewCDTimer(59, 56505, nil, nil, nil, 2)
-local timerStaticFieldCD		= mod:NewCDTimer(12.5, 57430, nil, nil, nil, 3) --High 15-25 second variation
+local timerArcaneBreathCD		= mod:NewCDTimer(13, 56272, nil, "Tank", nil, 5)--Core P1 9-12s first, 12-15s repeat
+local timerStaticFieldCD		= mod:NewCDTimer(12, 57430, nil, nil, nil, 3) --Core 1-4s first, 12s repeat
 local timerAchieve				= mod:NewAchievementTimer(360, 1875)
 local timerIntermission		= mod:NewPhaseTimer(22)
 --local timerAttackable			= mod:NewTimer(24, "Malygos Wipes Debuffs") -- Not enough info nor locales on the code from previous contributor to know what this is intended for. Disabled for now
 
-local enrageTimer				= mod:NewBerserkTimer(615)
+local enrageTimer				= mod:NewBerserkTimer(600)--Core 10min
 
 local tableBuild = false
 local guids = {}
@@ -90,10 +91,24 @@ end
 function mod:OnCombatStart(delay)
 	tableBuild = false
 	self:SetStage(1)
-	timerVortexCD:Start(40) -- 44.6-delay
+	timerVortexCD:Start(30) -- Core 30s after fight start (post-landing)
+	timerArcaneBreathCD:Start(10-delay)--Core P1 9-12s first
+	timerSpark:Start(12-delay)--Core 10-15s first
 	enrageTimer:Start(-delay)
 	timerAchieve:Start(-delay)
 	table.wipe(guids)
+end
+
+function mod:OnCombatEnd()
+	timerVortexCD:Cancel()
+	timerVortex:Cancel()
+	timerBreath:Cancel()
+	timerBreathCD:Cancel()
+	timerArcaneBreathCD:Cancel()
+	timerSpark:Cancel()
+	timerStaticFieldCD:Cancel()
+	warnVortexSoon:Cancel()
+	warnBreathInc:Cancel()
 end
 
 function mod:SPELL_AURA_APPLIED(args)
@@ -122,11 +137,13 @@ function mod:SPELL_CAST_START(args)
 	if self:GetCIDFromGUID(args.sourceGUID) == 28859 then
 		DBM:Debug("SCStart " .. spellId .. GetSpellLink(spellId) , 2)
 	end
-	if spellId == 56505 then--His deep breath
+	if spellId == 56505 then--P2 Surge of Power (core 55s/65s cycle)
 		specWarnBreath:Show()
 		specWarnBreath:Play("findshield")
 		timerBreath:Start()
 		timerBreathCD:Start()
+	elseif args:IsSpellID(56272, 60072) then--P1 Arcane Breath (core 12-15s repeat)
+		timerArcaneBreathCD:Start()
 	elseif spellId == 57430 then
 		self:ScheduleMethod(0.1, "StaticFieldTarget")
 		--warnStaticField:Show()
@@ -139,7 +156,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if self:GetCIDFromGUID(args.sourceGUID) == 28859 then
 		DBM:Debug("SCSuccess " .. spellId .. GetSpellLink(spellId) , 2)
 	end
-	if spellId == 56105 then
+	if args:IsSpellID(56105, 55873, 56263) then -- Vortex (core uses 55873/56263 + vehicle, 56105 retail)
 		timerVortexCD:Start()
 		warnVortexSoon:Schedule(54)
 		warnVortex:Show()
