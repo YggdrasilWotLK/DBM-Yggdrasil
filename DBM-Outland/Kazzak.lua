@@ -22,14 +22,21 @@ local specWarnMark		= mod:NewSpecialWarningYou(32960, nil, nil, nil, 1, 2)
 local specWarnTwisted	= mod:NewSpecialWarningDispel(21063, "Healer", nil, nil, 1, 2)
 
 local timerFrenzy		= mod:NewBuffActiveTimer(10, 32964)
-local timerFrenzyCD		= mod:NewCDTimer(60, 32964, nil, nil, nil, 3)
+local timerFrenzyMinCD		= mod:NewCDTimer(30, 32964, nil, nil, nil, 3)--Core repeat 30s: earliest recast
+local timerFrenzyCD		= mod:NewCDTimer(60, 32964, nil, nil, nil, 3)--Core 60s first; max bar
 --local timerTwistedCD	= mod:NewCDTimer(30, 21063, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON..DBM_COMMON_L.MAGIC_ICON)--Unknown, but would be nice to have
 local timerMark			= mod:NewTargetTimer(10, 32960, nil, nil, nil, 3)
 
 mod:AddSetIconOption("SetIconOnMark", 32960, true, false, {8})
 
 function mod:OnCombatStart(delay)
-	timerFrenzyCD:Start(-delay)
+	timerFrenzyMinCD:Start(60-delay)--Core 60s first
+	timerFrenzyCD:Start(60-delay)
+end
+
+function mod:OnCombatEnd()
+	timerFrenzyMinCD:Cancel()
+	timerFrenzyCD:Cancel()
 end
 
 
@@ -47,8 +54,11 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args.spellId == 32964 then
 		warningFrenzy:Show()
-		timerFrenzy:Show()
-		timerFrenzyCD:Start()
+		timerFrenzy:Start()
+		timerFrenzyMinCD:Cancel()
+		timerFrenzyCD:Cancel()
+		timerFrenzyMinCD:Start(30)
+		timerFrenzyCD:Start(30)
 	elseif args.spellId == 21063 then
 		if self.Options.SpecWarn21063dispel then
 			specWarnTwisted:Show(args.destName)

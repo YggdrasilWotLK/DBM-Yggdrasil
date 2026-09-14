@@ -24,7 +24,8 @@ local warnNoxiousBreath			= mod:NewStackAnnounce(24818, 2, nil, "Tank", 2)
 local specWarnSleepingFog		= mod:NewSpecialWarningDodge(24814, nil, nil, nil, 2, 2)
 
 --local timerNoxiousBreathCD		= mod:NewCDTimer(19.4, 24818, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Iffy
-local timerSleepingFogCD		= mod:NewCDTimer(21.9, 24814, nil, nil, nil, 3)
+local timerSleepingFogMinCD	= mod:NewCDTimer(120, 24814, nil, nil, nil, 3)--Core 120-150s RNG: earliest recast
+local timerSleepingFogCD		= mod:NewCDTimer(150, 24814, nil, nil, nil, 3)--Core 120-150s RNG; max bar (was 21.9)
 --local timerBellowingRoarCD		= mod:NewCDTimer(7.2, 243661, nil, nil, nil, 2)
 
 --mod:AddReadyCheckOption(48620, false)
@@ -33,6 +34,7 @@ function mod:OnCombatStart(delay, yellTriggered)
 	if yellTriggered then
 		--timerBellowingRoarCD:Start(10.5-delay)
 		--timerNoxiousBreathCD:Start(14.3-delay)
+		timerSleepingFogMinCD:Start(21.5-delay)
 		timerSleepingFogCD:Start(21.5-delay)
 	end
 end
@@ -53,7 +55,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 24814 then
 		specWarnSleepingFog:Show()
 		specWarnSleepingFog:Play("watchstep")
-		timerSleepingFogCD:Start()
+		timerSleepingFogMinCD:Cancel()
+		timerSleepingFogCD:Cancel()
+		timerSleepingFogMinCD:Start(120)
+		timerSleepingFogCD:Start(150)
 	--elseif args.spellId == 24818 and self:AntiSpam(3, 1) then
 		--timerNoxiousBreathCD
 	end

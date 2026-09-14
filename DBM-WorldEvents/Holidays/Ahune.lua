@@ -9,7 +9,7 @@ mod:RegisterCombat("combat")
 mod:SetMinCombatTime(15)
 
 mod:RegisterEvents(
-	"CHAT_MSG_SAY"
+	"CHAT_MSG_MONSTER_YELL"--Luma Skymother pull line is MONSTER_YELL (type 14), not SAY
 )
 
 mod:RegisterEventsInCombat(
@@ -23,12 +23,12 @@ local warnEmerged				= mod:NewAnnounce("Emerged", 2, "Interface\\AddOns\\DBM-Cor
 local specWarnAttack			= mod:NewSpecialWarning("specWarnAttack", nil, nil, nil, 1, 2)
 
 local timerCombatStart			= mod:NewCombatTimer(10)--rollplay for first pull
-local timerEmerge				= mod:NewTimer(33.5, "EmergeTimer", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
-local timerSubmerge				= mod:NewTimer(92, "SubmergeTimer", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6)--Variable, 92-96
+local timerEmerge				= mod:NewTimer(35, "EmergeTimer", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)--Core 35s submerge (was 33.5)
+local timerSubmerge				= mod:NewTimer(100, "SubmergeTimer", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6)--Core 100s emerged (was 92)
 
 function mod:OnCombatStart(delay)
 	if self:AntiSpam(4, 1) then
-		timerSubmerge:Start(95-delay)--first is 95, rest are 92
+		timerSubmerge:Start(98-delay)--first ~98s attackable, rest 100s
 	end
 end
 
@@ -48,7 +48,7 @@ function mod:SPELL_AURA_REMOVED(args)
 	end
 end
 
-function mod:CHAT_MSG_SAY(msg)
+function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg == L.Pull then
 		timerCombatStart:Start()
 		self:Schedule(10, DBM.StartCombat, DBM, self, 0)
