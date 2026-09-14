@@ -79,10 +79,13 @@ local function currentFullDate()
 end
 
 DBM = {
-	Revision = parseCurseDate("20240121080601"),
-	DisplayVersion = "Mania by Nick v1.0.3 beta", -- the string that is shown as version
-	ReleaseRevision = releaseDate(2024, 01, 21) -- the date of the latest stable version that is available, optionally pass hours, minutes, and seconds for multiple releases in one day
+	Revision = parseCurseDate("20260914171922"), -- hardcoded: bump manually when cutting a release
+	DisplayVersion = "1.0.1-ygg", -- hardcoded base version
 }
+
+-- ReleaseRevision is derived from Revision: every Yggdrasil commit is the
+-- latest stable, so there is only one value to bump per release.
+DBM.ReleaseRevision = DBM.Revision
 
 local fakeBWVersion = 7559
 local bwVersionResponseString = ""
@@ -92,6 +95,9 @@ DBM.HighestRelease = DBM.ReleaseRevision --Updated if newer version is detected,
 -- just use the latest release revision
 if not DBM.Revision then
 	DBM.Revision = DBM.ReleaseRevision
+end
+if not DBM.DisplayVersion then
+	DBM.DisplayVersion = "1.0.1-ygg"
 end
 
 function DBM:ShowRealDate(curseDate)
@@ -1666,6 +1672,15 @@ do
 		local NoDBM = 0
 		local NoBigwigs = 0
 		local OldMod = 0
+		local NoYgg = 0
+		-- Highest Yggdrasil revision in raid is the only valid outdated reference.
+		-- Foreign (non-ygg) DBMs are excluded from version tracking entirely.
+		local highestYgg = 0
+		for i = 1, #sortMe do
+			if sortMe[i].revision and sortMe[i].isYgg and sortMe[i].revision > highestYgg then
+				highestYgg = sortMe[i].revision
+			end
+		end
 		for i = #sortMe, 1, -1 do
 			if not sortMe[i].revision then
 				NoDBM = NoDBM + 1
@@ -1673,9 +1688,16 @@ do
 			if not (sortMe[i].bwversion) then
 				NoBigwigs = NoBigwigs + 1
 			end
-			--Table sorting sorts dbm to top, bigwigs underneath. Highest version dbm always at top. so sortMe[1]
-			--This check compares all dbm version to highest RELEASE version in raid.
-			if sortMe[i].revision and (sortMe[i].revision < sortMe[1].version) or sortMe[i].bwversion and (sortMe[i].bwversion < fakeBWVersion) then
+			if sortMe[i].revision and not sortMe[i].isYgg then
+				-- Foreign DBM: never version-tracked; whisper once per session instead.
+				NoYgg = NoYgg + 1
+				local whisperTarget = sortMe[i].shortname or sortMe[i].name
+				if whisperTarget and whisperTarget ~= playerName and self:AntiSpam(3600, "YGGVER-"..whisperTarget) then
+					sendWhisper(whisperTarget, "Hey, I see you're using an incompatible DBM version for Yggdrasil. Yggdrasil's DBM is available on github.com/YggdrasilWotLK/DBM-Yggdrasil or the Yggdrasil website downloads portal.")
+				end
+			--Table sorting sorts dbm to top, bigwigs underneath. Highest Yggdrasil version is the reference.
+			--This check compares all Yggdrasil dbm versions to highest Yggdrasil RELEASE version in raid.
+			elseif sortMe[i].revision and sortMe[i].isYgg and highestYgg > 0 and (sortMe[i].revision < highestYgg) or sortMe[i].bwversion and (sortMe[i].bwversion < fakeBWVersion) then
 				OldMod = OldMod + 1
 				local name = sortMe[i].name
 				local playerColor = RAID_CLASS_COLORS[DBM:GetRaidClass(name)]
@@ -1809,6 +1831,7 @@ do
 				raid[playerName].revision = DBM.Revision
 				raid[playerName].version = DBM.ReleaseRevision
 				raid[playerName].displayVersion = DBM.DisplayVersion
+				raid[playerName].isYgg = tostring(DBM.DisplayVersion):lower():find("ygg", 1, true) ~= nil
 				raid[playerName].locale = GetLocale()
 				raid[playerName].enabledIcons = tostring(not DBM.Options.DontSetIcons)
 				raidGuids[UnitGUID("player") or ""] = playerName
@@ -1950,6 +1973,7 @@ do
 			raid[playerName].revision = DBM.Revision
 			raid[playerName].version = DBM.ReleaseRevision
 			raid[playerName].displayVersion = DBM.DisplayVersion
+			raid[playerName].isYgg = tostring(DBM.DisplayVersion):lower():find("ygg", 1, true) ~= nil
 			raid[playerName].locale = GetLocale()
 			raidGuids[UnitGUID("player")] = playerName
 		end
@@ -3622,6 +3646,9 @@ do
 			raid[sender].VPVersion = VPVersion
 			raid[sender].locale = locale
 			raid[sender].enabledIcons = iconEnabled or "false"
+			-- Yggdrasil builds carry "-ygg" in the display version; anything else
+			-- is a foreign DBM whose timers we must not version-track against.
+			raid[sender].isYgg = tostring(displayVersion):lower():find("ygg", 1, true) ~= nil
 			DBM:Debug("Received version info from "..sender.." : Rev - "..revision..", Ver - "..version..", Rev Diff - "..(revision - DBM.Revision), 3)
 		end
 		DBM:RAID_ROSTER_UPDATE()
@@ -4284,7 +4311,7 @@ do
 	end
 
 	function DBM:ShowUpdateReminder(newVersion, newRevision, text, url)
-		urlText = url or L.UPDATEREMINDER_URL or "https://github.com/Zidras/DBM-Warmane"
+		urlText = url or L.UPDATEREMINDER_URL or "https://github.com/YggdrasilWotLK/DBM-Yggdrasil"
 		if not frame then
 			createFrame()
 		else

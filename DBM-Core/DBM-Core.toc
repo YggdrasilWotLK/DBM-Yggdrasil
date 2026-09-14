@@ -14,9 +14,9 @@
 ## SavedVariablesPerCharacter: DBM_UsedProfile, DBM_UseDualProfile, DBM_CharSavedRevision, DBM_SavedOptions
 ## LoadOnDemand: 0
 ## DefaultState: enabled
-## Author: Barsoom, Bunny67, Zidras, DBM-Frostmourne contributors, original DBM team, Nick.
-## Version: Mania-Nick, forked from DBM-Warmane by Zidras v. 9.2.21_alpha
-## X-Website: https://github.com/Zidras/DBM-Warmane/
+## Author: mostlynick3 (forked from DBM-Warmane by Zidras; upstream: original DBM team)
+## Version: 1.0.1-ygg
+## X-Website: https://github.com/YggdrasilWotLK/DBM-Yggdrasil
 
 compat.lua
 
