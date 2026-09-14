@@ -6,31 +6,28 @@ mod:SetCreatureID(9156)
 
 mod:RegisterCombat("combat")
 
---[[
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START"
+	"SPELL_CAST_START 13342"
 )
 
---local warningSoul	= mod:NewTargetAnnounce(32346, 2)
+local warnFireblast		= mod:NewSpellAnnounce(13342, 3, nil, "Healer")
+local warnSpirits			= mod:NewSpellAnnounce(14744, 3)
 
-local specWarnMaddeningCall			= mod:NewSpecialWarningInterrupt(86620, "HasInterrupt", nil, nil, 1, 2)
-
-local timerMaddeningCallCD			= mod:NewAITimer(180, 86620, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerFireblastCD	= mod:NewCDTimer(7, 13342, nil, "Healer", nil, 3)--Core 2s first, 7s repeat
 
 function mod:OnCombatStart(delay)
-	timerMaddeningCallCD:Start(1-delay)
+	timerFireblastCD:Start(2-delay)--Core 2s first
+end
+
+function mod:OnCombatEnd()
+	timerFireblastCD:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
-	timerMaddeningCallCD:Start()
-	if args.spellId == 86620 and self:CheckInterruptFilter(args.sourceGUID, false, true) then
-		specWarnMaddeningCall:Show(args.sourceName)
-		specWarnMaddeningCall:Play("kickcast")
+	if args.spellId == 13342 then -- Fireblast (core 7s repeat)
+		warnFireblast:Show()
+		timerFireblastCD:Start()
+	elseif args.spellId == 14744 then -- Burning Spirit adds (every 12-14s summons)
+		warnSpirits:Show()
 	end
 end
-
-function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 32346 then
-		warningSoul:Show(args.destName)
-	end
-end--]]

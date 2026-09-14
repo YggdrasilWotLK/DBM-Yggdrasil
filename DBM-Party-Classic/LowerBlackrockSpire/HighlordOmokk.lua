@@ -6,31 +6,32 @@ mod:SetCreatureID(9196)
 
 mod:RegisterCombat("combat")
 
---[[
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START"
+	"SPELL_CAST_START 8269 10101"
 )
 
---local warningSoul	= mod:NewTargetAnnounce(32346, 2)
+local warnFrenzy		= mod:NewSpellAnnounce(8269, 3)
+local warnKnock			= mod:NewSpellAnnounce(10101, 3, nil, "Tank")
 
-local specWarnMaddeningCall			= mod:NewSpecialWarningInterrupt(86620, "HasInterrupt", nil, nil, 1, 2)
-
-local timerMaddeningCallCD			= mod:NewAITimer(180, 86620, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerFrenzyCD		= mod:NewCDTimer(60, 8269, nil, nil, nil, 2)--Core 20s first, 60s repeat
+local timerKnockCD		= mod:NewCDTimer(12, 10101, nil, "Tank", nil, 3)--Core 18s first, 12s repeat
 
 function mod:OnCombatStart(delay)
-	timerMaddeningCallCD:Start(1-delay)
+	timerFrenzyCD:Start(20-delay)--Core 20s first
+	timerKnockCD:Start(18-delay)--Core 18s first
+end
+
+function mod:OnCombatEnd()
+	timerFrenzyCD:Cancel()
+	timerKnockCD:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
-	timerMaddeningCallCD:Start()
-	if args.spellId == 86620 and self:CheckInterruptFilter(args.sourceGUID, false, true) then
-		specWarnMaddeningCall:Show(args.sourceName)
-		specWarnMaddeningCall:Play("kickcast")
+	if args.spellId == 8269 then -- Frenzy (core 60s repeat)
+		warnFrenzy:Show()
+		timerFrenzyCD:Start()
+	elseif args.spellId == 10101 then -- Knock Away (core 12s repeat)
+		warnKnock:Show()
+		timerKnockCD:Start()
 	end
 end
-
-function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 32346 then
-		warningSoul:Show(args.destName)
-	end
-end--]]

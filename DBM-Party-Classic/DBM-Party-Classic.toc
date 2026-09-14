@@ -181,6 +181,7 @@ Scholomance\TheRavenian.lua
 Scholomance\LordAlexeiBarov.lua
 Scholomance\LadyIlluciaBarov.lua
 Scholomance\DarkmasterGandling.lua
+Scholomance\Kormok.lua
 
 Shadowfangkeep\Rethilgore.lua
 Shadowfangkeep\RazorclawtheButcher.lua

@@ -7,31 +7,32 @@ mod:SetCreatureID(9019)--Moira 8929
 
 mod:RegisterCombat("combat")
 
---[[
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START"
+	"SPELL_CAST_START 17492 15636"
 )
 
---local warningSoul	= mod:NewTargetAnnounce(32346, 2)
+local warnHand			= mod:NewSpellAnnounce(17492, 3, nil, "Healer")
+local warnAvatar		= mod:NewSpellAnnounce(15636, 3)
 
-local specWarnMaddeningCall			= mod:NewSpecialWarningInterrupt(86620, "HasInterrupt", nil, nil, 1, 2)
-
-local timerMaddeningCallCD			= mod:NewAITimer(180, 86620, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerHandCD			= mod:NewCDTimer(5, 17492, nil, "Healer", nil, 3)--Core 4-7s first and repeat
+local timerAvatarCD		= mod:NewCDTimer(25, 15636, nil, nil, nil, 3)--Core 10-12s first, 23-27s repeat
 
 function mod:OnCombatStart(delay)
-	timerMaddeningCallCD:Start(1-delay)
+	timerHandCD:Start(5-delay)--Core 4-7s first (mid)
+	timerAvatarCD:Start(11-delay)--Core 10-12s first (mid)
+end
+
+function mod:OnCombatEnd()
+	timerHandCD:Cancel()
+	timerAvatarCD:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
-	timerMaddeningCallCD:Start()
-	if args.spellId == 86620 and self:CheckInterruptFilter(args.sourceGUID, false, true) then
-		specWarnMaddeningCall:Show(args.sourceName)
-		specWarnMaddeningCall:Play("kickcast")
+	if args.spellId == 17492 then -- Hand of Thaurissan (core 4-7s repeat)
+		warnHand:Show()
+		timerHandCD:Start()
+	elseif args.spellId == 15636 then -- Avatar of Flame (core 23-27s repeat)
+		warnAvatar:Show()
+		timerAvatarCD:Start()
 	end
 end
-
-function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 32346 then
-		warningSoul:Show(args.destName)
-	end
-end--]]
