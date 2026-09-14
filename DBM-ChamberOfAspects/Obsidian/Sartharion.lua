@@ -13,8 +13,10 @@ mod:RegisterEventsInCombat(
 	"SPELL_CAST_SUCCESS 57579 59127",
 	"SPELL_AURA_APPLIED 57491",
 	"SPELL_DAMAGE 59128",
+	"SPELL_SUMMON 57578 57697",
 	"CHAT_MSG_RAID_BOSS_EMOTE",
-	"CHAT_MSG_MONSTER_EMOTE"
+	"CHAT_MSG_MONSTER_EMOTE",
+	"UNIT_DIED"
 )
 
 local warnShadowFissure			= mod:NewSpellAnnounce(59127, 4, nil, nil, nil, nil, nil, 2)
@@ -25,6 +27,7 @@ local warnVesperon				= mod:NewAnnounce("WarningVesperon", 2, 61251)
 local warnTenebronWhelpsSoon	= mod:NewAnnounce("WarningWhelpsSoon", 1, 1022, false)
 local warnShadronPortalSoon		= mod:NewAnnounce("WarningPortalSoon", 1, 11420, false)
 local warnVesperonPortalSoon	= mod:NewAnnounce("WarningReflectSoon", 1, 57988, false)
+local warnLavaStrike			= mod:NewSpellAnnounce(57578, 3)
 
 local specWarnFireWall			= mod:NewSpecialWarning("WarningFireWall", nil, nil, nil, 2, 2)
 local specWarnVesperonPortal	= mod:NewSpecialWarning("WarningVesperonPortal", false, nil, nil, 1, 7)
@@ -32,15 +35,16 @@ local specWarnTenebronPortal	= mod:NewSpecialWarning("WarningTenebronPortal", fa
 local specWarnShadronPortal		= mod:NewSpecialWarning("WarningShadronPortal", false, nil, nil, 1, 7)
 
 local timerShadowFissure		= mod:NewCastTimer(5, 59128, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON) --Cast timer until Void Blast. it's what happens when shadow fissure explodes.
-local timerBreath				= mod:NewCDTimer(10, 58956, nil, "Tank|Healer", nil, 5)
-local timerWall					= mod:NewCDTimer(30, 43113, nil, nil, nil, 2)
+local timerShadowFissureCD	= mod:NewCDTimer(22.5, 59127, nil, nil, nil, 3)--Core 20s first, 22.5s repeat per drake
+local timerBreath				= mod:NewCDTimer(20, 58956, nil, "Tank|Healer", nil, 5)--Core 15s first, 20s repeat
+local timerWall					= mod:NewCDTimer(25, 43113, nil, nil, nil, 2)--Core 20s first, 25s repeat
 local timerTenebron				= mod:NewTimer(30, "TimerTenebron", 61248, nil, nil, 1)
 local timerShadron				= mod:NewTimer(80, "TimerShadron", 58105, nil, nil, 1)
 local timerVesperon				= mod:NewTimer(120, "TimerVesperon", 61251, nil, nil, 1)
 local timerTenebronWhelps		= mod:NewTimer(60, "TimerTenebronWhelps", 1022)
 local timerShadronPortal		= mod:NewTimer(94, "TimerShadronPortal", 11420)
-local timerVesperonPortal		= mod:NewTimer(139, "TimerVesperonPortal", 57988)
-local timerVesperonPortal2		= mod:NewTimer(199, "TimerVesperonPortal2", 57988) -- what's the purpose of this?
+local timerVesperonPortal		= mod:NewTimer(150, "TimerVesperonPortal", 57988)--Core landing ~120s + 30s portal
+local berserkTimer				= mod:NewBerserkTimer(900)--Core 15min
 
 mod:AddBoolOption("AnnounceFails", true, "announce")
 
@@ -64,6 +68,7 @@ local function isunitdebuffed(spellID)
 end
 
 local function CheckDrakes(self, delay)
+	if not self:IsInCombat() then return end
 	if self.Options.HealthFrame then
 		DBM.BossHealth:Show(L.name)
 		DBM.BossHealth:AddBoss(28860, "Sartharion")
@@ -71,8 +76,8 @@ local function CheckDrakes(self, delay)
 	if isunitdebuffed(61248) then	-- Power of Tenebron
 		timerTenebron:Start(26 - delay) -- 30
 		warnTenebron:Schedule(21 - delay) -- 25
-		timerTenebronWhelps:Start(- delay)
-		warnTenebronWhelpsSoon:Schedule(55 - delay)
+		timerTenebronWhelps:Start(45 - delay)--Landing ~30s + 15s portal
+		warnTenebronWhelpsSoon:Schedule(40 - delay)
 		if self.Options.HealthFrame then
 			DBM.BossHealth:AddBoss(30452, "Tenebron")
 		end
@@ -80,8 +85,8 @@ local function CheckDrakes(self, delay)
 	if isunitdebuffed(58105) then	-- Power of Shadron
 		timerShadron:Start(74 - delay) -- 75
 		warnShadron:Schedule(69 - delay) -- 70
-		timerShadronPortal:Start(- delay)
-		warnShadronPortalSoon:Schedule(89 - delay)
+		timerShadronPortal:Start(95 - delay)--Landing ~80s + 15s portal
+		warnShadronPortalSoon:Schedule(90 - delay)
 		if self.Options.HealthFrame then
 			DBM.BossHealth:AddBoss(30451, "Shadron")
 		end
@@ -89,10 +94,8 @@ local function CheckDrakes(self, delay)
 	if isunitdebuffed(61251) then	-- Power of Vesperon
 		timerVesperon:Start(119 - delay) -- 120
 		warnVesperon:Schedule(114 - delay) -- 115
-		timerVesperonPortal:Start(- delay)
-		timerVesperonPortal2:Start(- delay)
-		warnVesperonPortalSoon:Schedule(134 - delay)
-		warnVesperonPortalSoon:Schedule(194 - delay)
+		timerVesperonPortal:Start(150 - delay)--Landing ~120s + 30s portal
+		warnVesperonPortalSoon:Schedule(145 - delay)
 		if self.Options.HealthFrame then
 			DBM.BossHealth:AddBoss(30449, "Vesperon")
 		end
@@ -110,15 +113,22 @@ end
 function mod:OnCombatStart(delay)
 	--Cache spellnames so a solo player check doesn't fail in CheckDrakes in 8.0+
 	self:Schedule(5, CheckDrakes, self, delay)
-	timerWall:Start(-delay)
-	warnBreathSoon:Schedule(5-delay)
-	timerBreath:Start(-delay)
+	timerWall:Start(20-delay)--Core 20s first
+	warnBreathSoon:Schedule(10-delay)
+	timerBreath:Start(15-delay)--Core 15s first
+	berserkTimer:Start(-delay)
 
 	twipe(lastvoids)
 	twipe(lastfire)
 end
 
 function mod:OnCombatEnd()
+	self:Unschedule(CheckDrakes)
+	timerWall:Cancel()
+	timerBreath:Cancel()
+	timerShadowFissure:Cancel()
+	timerShadowFissureCD:Cancel()
+	berserkTimer:Cancel()
 	if not self.Options.AnnounceFails then return end
 	if DBM:GetRaidRank() < 1 or not self.Options.Announce then return end
 
@@ -145,17 +155,33 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(56908, 58956) then -- Flame breath
-		warnBreathSoon:Schedule(5.5)
-		timerBreath:Start(10.5)
+	if args:IsSpellID(56908, 58956) then -- Flame breath (core 15s first, 20s repeat)
+		warnBreathSoon:Schedule(15)
+		timerBreath:Start()
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args:IsSpellID(57579, 59127) then
+	if args:IsSpellID(57579, 59127) then -- Shadow fissure (core 22.5s repeat per drake)
 		warnShadowFissure:Show()
 		warnShadowFissure:Play("watchstep")
 		timerShadowFissure:Start()
+		timerShadowFissureCD:Start()
+	end
+end
+
+function mod:SPELL_SUMMON(args)
+	if args:IsSpellID(57578, 57697) then -- Lava Strike (core 5s first)
+		warnLavaStrike:Show()
+	end
+end
+
+function mod:UNIT_DIED(args)
+	local cid = self:GetCIDFromGUID(args.destGUID)
+	if cid == 30452 or cid == 30451 or cid == 30449 then -- Drake died, portals re-arm 30s after summons die
+		timerShadronPortal:Start(30)
+		timerVesperonPortal:Start(30)
+		timerTenebronWhelps:Start(30)
 	end
 end
 
