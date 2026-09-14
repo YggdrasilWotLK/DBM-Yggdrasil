@@ -1633,6 +1633,191 @@ function DBM:RepositionFrames()
 	end
 end
 
+------------------------------------------
+--  Yggdrasil foreign-DBM warning coordination  --
+------------------------------------------
+-- Multiple Yggdrasil DBMs in the same group must not each whisper the same
+-- foreign-DBM user. They elect a single sender via addon messages:
+--   CLAIM  -> "I see foreign user X, let's decide who warns them"
+--   WARNED -> "X has been warned, suppress further warnings for 1 hour"
+-- Guarantees: max 1 sender per target, max 1 warning per target per hour.
+-- NOTE: state lives on `private` and logic on DBM methods (not file-scope
+-- locals) because this file is already at Lua's 200-local limit in main chunk.
+private.yggWarned = private.yggWarned or {} -- [fullTargetName] = GetTime() of last WARNED seen/sent (local clock)
+private.yggPending = private.yggPending or {} -- [fullTargetName] = { short = <shortname>, primary = bool, fallback = bool }
+
+function DBM:YggWarnMsg()
+	return "Hey, I see you're using an incompatible DBM version for Yggdrasil. Yggdrasil's DBM is available on github.com/YggdrasilWotLK/DBM-Yggdrasil or the Yggdrasil website downloads portal."
+end
+
+function DBM:YggIsSelfYgg()
+	return tostring(DBM.DisplayVersion):lower():find("ygg", 1, true) ~= nil
+end
+
+function DBM:YggIsKnownForeign(name)
+	return raid[name] and raid[name].isYgg == false
+end
+
+-- Deterministic election: alphabetically first Yggdrasil client in raid.
+-- Every Yggdrasil client with a converged roster computes the same winner,
+-- so no extra round-trips are needed to agree on the sender.
+function DBM:YggElectSorted()
+	local list = {}
+	for name, v in pairs(raid) do
+		if name and v and v.isYgg then
+			tinsert(list, name)
+		end
+	end
+	if self:YggIsSelfYgg() then
+		local found = false
+		for _, n in ipairs(list) do
+			if n == playerName then
+				found = true
+				break
+			end
+		end
+		if not found then
+			tinsert(list, playerName)
+		end
+	end
+	tsort(list, function(a, b) return a:lower() < b:lower() end)
+	return list
+end
+
+function DBM:YggResolveWarn(targetFull, fallback)
+	local pend = private.yggPending[targetFull]
+	if not pend then return end
+	if fallback then
+		pend.fallback = nil
+	else
+		pend.primary = nil
+	end
+	if not pend.primary and not pend.fallback then
+		private.yggPending[targetFull] = nil
+	end
+	if GetTime() - (private.yggWarned[targetFull] or -1e9) < 3600 then
+		return
+	end
+	if not self:YggIsSelfYgg() then
+		return
+	end
+	local sorted = self:YggElectSorted()
+	if #sorted == 0 then
+		return
+	end
+	local expected = fallback and sorted[2] or sorted[1]
+	if expected ~= playerName then
+		return
+	end
+	-- Winner: only warn if the target is still grouped and still foreign.
+	local info = raid[targetFull]
+	if not info or not info.revision or info.isYgg then
+		return
+	end
+	local short = pend.short or info.shortname or targetFull
+	if short == playerName or targetFull == playerName then
+		return
+	end
+	if self:AntiSpam(3600, "YGGVER-" .. targetFull) then
+		sendWhisper(short, self:YggWarnMsg())
+		private.yggWarned[targetFull] = GetTime()
+		sendSync("DBMv4-YGGW", "WARNED\t" .. targetFull)
+		self:Debug("YGGW warned " .. targetFull .. (fallback and " (fallback sender)" or ""), 2)
+	end
+end
+
+function DBM:YggScheduleResolve(targetFull, targetShort, fallback, delay)
+	local pend = private.yggPending[targetFull]
+	if not pend then
+		pend = { short = targetShort }
+		private.yggPending[targetFull] = pend
+	else
+		pend.short = targetShort or pend.short
+	end
+	if fallback then
+		if pend.fallback then return end
+		pend.fallback = true
+	else
+		if pend.primary then return end
+		pend.primary = true
+	end
+	self:Schedule(delay, self.YggResolveWarn, self, targetFull, fallback)
+end
+
+-- Entry point used by ShowVersions when a foreign DBM is spotted.
+function DBM:YggRequestWarn(targetFull, targetShort)
+	if not targetFull or targetFull == playerName then
+		return
+	end
+	if not self:YggIsSelfYgg() then
+		return
+	end
+	targetShort = targetShort or targetFull
+	if targetShort == playerName then
+		return
+	end
+	-- Solo: nobody to coordinate with, warn directly (local throttle only).
+	if GetNumRaidMembers() == 0 and not IsInGroup() then
+		if self:AntiSpam(3600, "YGGVER-" .. targetFull) then
+			sendWhisper(targetShort, self:YggWarnMsg())
+			private.yggWarned[targetFull] = GetTime()
+		end
+		return
+	end
+	-- Someone already warned this target within the hour: stay silent.
+	if GetTime() - (private.yggWarned[targetFull] or -1e9) < 3600 then
+		return
+	end
+	sendSync("DBMv4-YGGW", "CLAIM\t" .. targetFull .. "\t" .. targetShort)
+	self:YggScheduleResolve(targetFull, targetShort, false, 5)
+	-- Fallback: runner-up takes over if the winner never reports WARNED
+	-- (e.g. winner runs an old version without coordination).
+	self:YggScheduleResolve(targetFull, targetShort, true, 15)
+end
+
+function DBM:YggOnClaim(sender, targetFull, targetShort)
+	if sender == playerName then
+		return
+	end
+	if not targetFull or targetFull == playerName then
+		return
+	end
+	if not self:YggIsSelfYgg() then
+		return
+	end
+	if self:YggIsKnownForeign(sender) then
+		return -- ignore spoofed claims from foreign DBMs
+	end
+	if GetTime() - (private.yggWarned[targetFull] or -1e9) < 3600 then
+		-- A newcomer missed our WARNED broadcast: re-announce (throttled)
+		-- so their pending election resolves to "already warned".
+		if self:AntiSpam(30, "YGGW-REWARN-" .. targetFull) then
+			sendSync("DBMv4-YGGW", "WARNED\t" .. targetFull)
+		end
+		return
+	end
+	self:YggScheduleResolve(targetFull, targetShort or targetFull, false, 5)
+	self:YggScheduleResolve(targetFull, targetShort or targetFull, true, 15)
+end
+
+function DBM:YggOnWarned(sender, targetFull)
+	if not targetFull or targetFull == playerName then
+		return
+	end
+	if sender == playerName then
+		return
+	end
+	if not self:YggIsSelfYgg() then
+		return
+	end
+	if self:YggIsKnownForeign(sender) then
+		return
+	end
+	private.yggWarned[targetFull] = GetTime()
+	private.yggPending[targetFull] = nil
+	self:Debug("YGGW suppressing warnings for " .. targetFull .. " (warned by " .. tostring(sender) .. ")", 3)
+end
+
 ----------------------
 --  Slash Commands  --
 ----------------------
@@ -1698,11 +1883,14 @@ do
 				NoBigwigs = NoBigwigs + 1
 			end
 			if sortMe[i].revision and not sortMe[i].isYgg then
-				-- Foreign DBM: never version-tracked; whisper once per session instead.
+				-- Foreign DBM: never version-tracked. Coordinate with other
+				-- Yggdrasil DBMs over addon messages so only one of us whispers
+				-- each foreign user, at most once per hour.
 				NoYgg = NoYgg + 1
 				local whisperTarget = sortMe[i].shortname or sortMe[i].name
-				if whisperTarget and whisperTarget ~= playerName and self:AntiSpam(3600, "YGGVER-"..whisperTarget) then
-					sendWhisper(whisperTarget, "Hey, I see you're using an incompatible DBM version for Yggdrasil. Yggdrasil's DBM is available on github.com/YggdrasilWotLK/DBM-Yggdrasil or the Yggdrasil website downloads portal.")
+				local fullTarget = sortMe[i].name or whisperTarget
+				if whisperTarget and fullTarget and fullTarget ~= playerName and whisperTarget ~= playerName then
+					DBM:YggRequestWarn(fullTarget, whisperTarget)
 				end
 			--Table sorting sorts dbm to top, bigwigs underneath. Highest Yggdrasil version is the reference.
 			--This check compares all Yggdrasil dbm versions to highest Yggdrasil RELEASE version in raid.
@@ -3661,6 +3849,17 @@ do
 			DBM:Debug("Received version info from "..sender.." : Rev - "..revision..", Ver - "..version..", Rev Diff - "..(revision - DBM.Revision), 3)
 		end
 		DBM:RAID_ROSTER_UPDATE()
+	end
+
+	-- Yggdrasil foreign-DBM warning coordination (see helpers above ShowVersions).
+	-- CLAIM: a Yggdrasil client spotted a foreign DBM and asks the group to elect one warner.
+	-- WARNED: the elected client has warned the target; all others suppress for 1 hour.
+	syncHandlers["DBMv4-YGGW"] = function(sender, cmd, targetFull, targetShort)
+		if cmd == "CLAIM" then
+			DBM:YggOnClaim(sender, targetFull, targetShort)
+		elseif cmd == "WARNED" then
+			DBM:YggOnWarned(sender, targetFull)
+		end
 	end
 
 	guildSyncHandlers["DBMv4-GV"] = function(sender, revision, version, displayVersion)
