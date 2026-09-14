@@ -9,18 +9,21 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 64216 65279",
+	"SPELL_CAST_SUCCESS 64213 64215",
 	"SPELL_HEAL 64218",
 	"SPELL_AURA_APPLIED 64217",
 	"SPELL_AURA_REMOVED 64217"
 )
 
 local warnOverCharge		= mod:NewSpellAnnounce(64218, 4)
+local warnChainLightning	= mod:NewSpellAnnounce(64213, 3)
 
 local specWarnNova			= mod:NewSpecialWarningRun(65279, nil, nil, nil, 4, 2)
 
 local timerNova				= mod:NewCastTimer(65279, nil, nil, nil, 2)
-local timerNovaCD			= mod:NewCDTimer(40, 65279, nil, nil, nil, 2)--Varies, 45-60seconds in between nova's. FM reported possible 5s less
-local timerOvercharge		= mod:NewNextTimer(45, 64218, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
+local timerNovaCD			= mod:NewCDTimer(40, 65279, nil, nil, nil, 2)--Core 40s first and repeat
+local timerOvercharge		= mod:NewNextTimer(40, 64218, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON)--Core 47s first, 40s repeat
+local timerChainCD			= mod:NewCDTimer(25, 64213, nil, nil, nil, 3)--Core 5s first, 25s repeat
 local timerMobOvercharge	= mod:NewTimer(20, "timerMobOvercharge", 64217, nil, nil, 5, DBM_COMMON_L.DAMAGE_ICON, nil, nil, nil, nil, nil, nil, 64218)
 
 local timerEmalonEnrage		= mod:NewBerserkTimer(360, nil, "EmalonEnrage")
@@ -35,8 +38,9 @@ local function ResetRange(self)
 end
 
 function mod:OnCombatStart(delay)
-	timerOvercharge:Start(-delay)
-	timerNovaCD:Start(20-delay)
+	timerOvercharge:Start(47-delay)--Core 47s first
+	timerNovaCD:Start(40-delay)--Core 40s first
+	timerChainCD:Start(5-delay)--Core 5s first
 	timerEmalonEnrage:Start(-delay)
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(10)
@@ -44,6 +48,11 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:OnCombatEnd()
+	timerOvercharge:Cancel()
+	timerNovaCD:Cancel()
+	timerNova:Cancel()
+	timerChainCD:Cancel()
+	timerMobOvercharge:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -64,6 +73,13 @@ function mod:SPELL_CAST_START(args)
 			-- 5s cast
 			self:Schedule(5.5, ResetRange, self)
 		end
+	end
+end
+
+function mod:SPELL_CAST_SUCCESS(args)
+	if args:IsSpellID(64213, 64215) then -- Chain Lightning (core 25s repeat, was untracked)
+		warnChainLightning:Show()
+		timerChainCD:Start()
 	end
 end
 
