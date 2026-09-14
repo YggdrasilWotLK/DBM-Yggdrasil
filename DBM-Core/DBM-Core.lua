@@ -685,7 +685,16 @@ do
 	local args = setmetatable({}, argsMT)
 
 	function argsMT.__index:IsSpellID(...)
-		return tIndexOf({...}, args.spellId) ~= nil
+		-- NOTE: do NOT use the global tIndexOf() here. On some clients/addon setups the
+		-- global is overridden with a variant that returns -1 (instead of nil) on a miss,
+		-- which would make every IsSpellID check evaluate to true. Explicit loop instead.
+		local spellId = args.spellId
+		for i = 1, select("#", ...) do
+			if select(i, ...) == spellId then
+				return true
+			end
+		end
+		return false
 	end
 
 	function argsMT.__index:IsPlayer()

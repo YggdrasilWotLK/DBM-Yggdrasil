@@ -15,7 +15,7 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 68981 74270 74271 74272 72259 74273 74274 74275 72143 72146 72147 72148 72262 70372 70358 70498 70541 73779 73780 73781 72762 73539 73650 72350 69242 73800 73801 73802",
+	"SPELL_CAST_START 68981 74270 74271 74272 72259 74273 74274 74275 72262 70372 70358 70498 70541 73779 73780 73781 72762 73539 73650 72350 69242 73800 73801 73802",
 	"SPELL_CAST_SUCCESS 70337 73912 73913 73914 69409 73797 73798 73799 69200 68980 74325 74326 74327 73654 74295 74296 74297",
 	"SPELL_DISPEL",
 	"SPELL_AURA_APPLIED 72143 72146 72147 72148 28747 72754 73708 73709 73710 73650 72595",
@@ -182,6 +182,7 @@ local warnedAchievement = false
 mod.vb.warned_preP2 = false
 mod.vb.warned_preP3 = false
 mod.vb.ragingSpiritCount = 0
+mod.vb.inTransition = false
 local iceSpheresGUIDs = {}
 local warnedValkyrGUIDs = {}
 local plagueHop = DBM:GetSpellInfo(70338)--Hop spellID only, not cast one.
@@ -259,6 +260,7 @@ function mod:OnCombatStart()
 	self.vb.warned_preP2 = false
 	self.vb.warned_preP3 = false
 	self.vb.ragingSpiritCount = 0
+	self.vb.inTransition = false
 	warnedAchievement = false
 	lastPlague = nil
 	NextPhase(self, 1)
@@ -329,6 +331,24 @@ end
 function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
 	if args:IsSpellID(68981, 74270, 74271, 74272) or args:IsSpellID(72259, 74273, 74274, 74275) then -- Remorseless Winter (phase transition start)
+		-- Guard: Remorseless Winter CAST_START must only start transition timers while a
+		-- transition is actually happening (phase 1 -> ~70%, phase 2 -> ~40%).
+		-- Without this, any duplicate/stale/mistimed CAST_START for these IDs (re)starts and
+		-- resets the PhaseTransition + Raging Spirit timers, even at 100% HP in phase 1.
+		if self.vb.inTransition then return end
+		if self.vb.phase ~= 1 and self.vb.phase ~= 2 then return end
+		if not self:AntiSpam(5, 4) then return end
+		do
+			local hp = self:GetBossHP(36597)
+			if hp then -- boss unit visible: enforce HP thresholds with a small margin
+				if self.vb.phase == 1 and hp > 75 then return end
+				if self.vb.phase == 2 and hp > 45 then return end
+			else -- boss unit not visible: fall back to UNIT_HEALTH pre-phase warnings (73%/43%)
+				if self.vb.phase == 1 and not self.vb.warned_preP2 then return end
+				if self.vb.phase == 2 and not self.vb.warned_preP3 then return end
+			end
+		end
+		self.vb.inTransition = true
 		self.vb.ragingSpiritCount = 1
 		warnRemorselessWinter:Show()
 		timerPhaseTransition:Start()
@@ -354,13 +374,9 @@ function mod:SPELL_CAST_START(args)
 		if self.Options.RangeFrame then
 			DBM.RangeCheck:Show(8)
 		end
-	elseif args:IsSpellID(72143, 72146, 72147, 72148) then -- Shambling Horror enrage effect.
-		timerEnrageCD:Cancel(args.sourceGUID)
-		warnShamblingEnrage:Show(args.sourceName)
-		specWarnEnrage:Show()
-		timerEnrageCD:Start(args.sourceGUID)
 	elseif spellId == 72262 then -- Quake (phase transition end)
 		self.vb.ragingSpiritCount = 0
+		self.vb.inTransition = false
 		warnQuake:Show()
 		timerRagingSpiritCD:Cancel()
 		-- Core: transition 1 ends into phase 2, transition 2 into phase 3.
