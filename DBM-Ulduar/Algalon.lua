@@ -25,7 +25,7 @@ local warnPhase2				= mod:NewPhaseAnnounce(2, 2, nil, nil, nil, nil, nil, 2)
 local warnPhase2Soon			= mod:NewPrePhaseAnnounce(2, 2)
 local announcePreBigBang		= mod:NewPreWarnAnnounce(64584, 10, 3)
 local announceBlackHole			= mod:NewSpellAnnounce(65108, 2)
-local announcePhasePunch		= mod:NewStackAnnounce(65108, 4, nil, "Tank|Healer")
+local announcePhasePunch		= mod:NewStackAnnounce(64412, 4, nil, "Tank|Healer")
 
 local specwarnStarLow			= mod:NewSpecialWarning("warnStarLow", "Tank|Healer", nil, nil, 1, 2)
 local specWarnPhasePunch		= mod:NewSpecialWarningStack(64412, nil, 4, nil, nil, 1, 6)
@@ -34,8 +34,8 @@ local specWarnCosmicSmash		= mod:NewSpecialWarningDodge(64596, nil, nil, nil, 2,
 
 local timerNextBigBang			= mod:NewNextTimer(90.5, 64584, nil, nil, nil, 2)
 local timerBigBangCast			= mod:NewCastTimer(8, 64584, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
-local timerNextCollapsingStar	= mod:NewTimer(15, "NextCollapsingStar", "Interface\\Icons\\INV_Enchant_EssenceCosmicGreater", nil, nil, 2, DBM_COMMON_L.HEALER_ICON)
-local timerCDCosmicSmash		= mod:NewCDTimer(24.6, 64596, nil, nil, nil, 3)
+local timerNextCollapsingStar	= mod:NewTimer(60, "NextCollapsingStar", "Interface\\Icons\\INV_Enchant_EssenceCosmicGreater", nil, nil, 2, DBM_COMMON_L.HEALER_ICON)--Core 16.5s first, 60s repeat
+local timerCDCosmicSmash		= mod:NewCDTimer(25.5, 64596, nil, nil, nil, 3)--Core 25s first, 25.5s repeat
 local timerCastCosmicSmash		= mod:NewCastTimer(4.5, 64596)
 local timerPhasePunch			= mod:NewTargetTimer(45, 64412, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerNextPhasePunch		= mod:NewNextTimer(15.5, 64412, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
@@ -57,6 +57,13 @@ function mod:OnCombatStart()
 end
 
 function mod:OnCombatEnd()
+	timerNextBigBang:Cancel()
+	timerBigBangCast:Cancel()
+	timerNextCollapsingStar:Cancel()
+	timerCDCosmicSmash:Cancel()
+	timerCastCosmicSmash:Cancel()
+	timerNextPhasePunch:Cancel()
+	announcePreBigBang:Cancel()
 	DBM.BossHealth:Clear()
 end
 

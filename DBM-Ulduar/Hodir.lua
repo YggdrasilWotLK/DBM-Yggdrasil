@@ -23,10 +23,10 @@ local specWarnStormCloud	= mod:NewSpecialWarningYou(65123, nil, nil, nil, 1, 2)
 local yellStormCloud		= mod:NewYell(65123)
 local specWarnBitingCold	= mod:NewSpecialWarningMove(62188, nil, nil, nil, 1, 2)
 
-local enrageTimer			= mod:NewBerserkTimer(475)
+local enrageTimer			= mod:NewBerserkTimer(480)--Core 8min
 local timerFlashFreeze		= mod:NewCastTimer(9, 61968, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON..DBM_COMMON_L.DEADLY_ICON)
 local timerFrozenBlows		= mod:NewBuffActiveTimer(20, 63512, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)
-local timerFlashFrCD		= mod:NewCDTimer(60, 61968, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON..DBM_COMMON_L.DEADLY_ICON)
+local timerFlashFrCD		= mod:NewCDTimer(48, 61968, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON..DBM_COMMON_L.DEADLY_ICON)--Core 48-49s
 local timerAchieve			= mod:NewAchievementTimer(179, 3182)
 
 mod:AddSetIconOption("SetIconOnStormCloud", 65123, true, false, {8, 7})
@@ -36,8 +36,14 @@ mod.vb.stormCloudIcon = 8
 function mod:OnCombatStart(delay)
 	enrageTimer:Start(-delay)
 	timerAchieve:Start()
-	timerFlashFrCD:Start(-delay)
+	timerFlashFrCD:Start(48-delay)--Core 48-49s first
 	self.vb.stormCloudIcon = 8
+end
+
+function mod:OnCombatEnd()
+	timerFlashFrCD:Cancel()
+	timerFlashFreeze:Cancel()
+	timerFrozenBlows:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)

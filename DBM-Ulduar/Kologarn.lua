@@ -8,9 +8,8 @@ mod:SetUsedIcons(5, 6, 7, 8)
 mod:RegisterCombat("combat", 32930, 32933, 32934)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 64003 62166 63981",
-	"SPELL_AURA_APPLIED 64290 64292 64002 63355",
-	"SPELL_AURA_APPLIED_DOSE 64002 63355",
+	"SPELL_CAST_SUCCESS 63356 64003 62166 63981",
+	"SPELL_AURA_APPLIED 64290 64292",
 	"SPELL_AURA_REMOVED 64290 64292",
 	"SPELL_DAMAGE 63783 63982 63346 63976",
 	"SPELL_MISSED 63783 63982 63346 63976",
@@ -26,23 +25,19 @@ mod:SetBossHealthInfo(
 )
 
 -- General
-local enrageTimer				= mod:NewBerserkTimer(600)
 local timerTimeForDisarmed		= mod:NewTimer(10, "achievementDisarmed")	-- 10 HC / 12 nonHC
 
 --NOTE: Two crunch armors are setup to appear in gui twice on purpose, because they are very different mechanically. One is meant to be ignored and one is meant to be tank swap
 -- Kologarn
 mod:AddTimerLine(L.name)
 local warnFocusedEyebeam		= mod:NewTargetNoFilterAnnounce(63346, 4)
-local warnCrunchArmor			= mod:NewStackAnnounce(64002, 2, nil, "Tank|Healer")
 
-local specWarnCrunchArmor2		= mod:NewSpecialWarningStack(64002, nil, 2, nil, 2, 1, 6)
 local specWarnEyebeam			= mod:NewSpecialWarningRun(63346, nil, nil, nil, 4, 2)
 local specWarnEyebeamNear		= mod:NewSpecialWarningClose(63346, nil, nil, nil, 1, 2)
 local yellBeam					= mod:NewYell(63346)
 
-local timerCrunch10				= mod:NewTargetTimer(6, 63355)
-local timerNextSmash			= mod:NewCDTimer(14.4, 64003, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- 3s variance (2022/07/05 log review) - 16.7, 14.4, 14.4, 16.8, 14.4, 14.4 || 13.7, 16.8, 14.4, 14.4, 14.4 || 16.0, 14.3, 16.8, 14.4 || 16.8, 14.4, 14.4, 14.4, 16.8 || 14.1, 14.4, 16.8, 14.4
-local timerNextEyebeam			= mod:NewCDTimer(18.2, 63346, nil, nil, nil, 3, nil, DBM_COMMON_L.IMPORTANT_ICON) -- 17s variance! (2022/07/05 log review) - 28, 31, 27 || 21, 19, 17, 33 || 25 || 33, 23 || 30, 16
+local timerNextSmash			= mod:NewCDTimer(14, 63356, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- Core 8s first, 14s repeat
+local timerNextEyebeam			= mod:NewCDTimer(20, 63346, nil, nil, nil, 3, nil, DBM_COMMON_L.IMPORTANT_ICON) -- Core 10s first, 20s repeat
 
 mod:AddSetIconOption("SetIconOnEyebeamTarget", 63346, true, false, {8})
 
@@ -50,15 +45,15 @@ mod:AddSetIconOption("SetIconOnEyebeamTarget", 63346, true, false, {8})
 mod:AddTimerLine(L.Health_Right_Arm)
 local warnGrip					= mod:NewTargetNoFilterAnnounce(64292, 2)
 
-local timerNextGrip				= mod:NewCDTimer(25, 62166, nil, nil, nil, 3) -- 25.0 (2022/07/05 log review)
-local timerRespawnRightArm		= mod:NewTimer(30, "timerRightArm", nil, nil, nil, 1)
+local timerNextGrip				= mod:NewCDTimer(25, 62166, nil, nil, nil, 3) -- Core 15s first, 25s repeat
+local timerRespawnRightArm		= mod:NewTimer(50, "timerRightArm", nil, nil, nil, 1)--Core 50s
 
 mod:AddSetIconOption("SetIconOnGripTarget", 64292, true, false, {7, 6, 5})
 
 -- Left Arm
 mod:AddTimerLine(L.Health_Left_Arm)
-local timerNextShockwave		= mod:NewCDTimer(25, 63982, nil, nil, nil, 2) -- 25.0 (2022/07/05 log review)
-local timerRespawnLeftArm		= mod:NewTimer(30, "timerLeftArm", nil, nil, nil, 1)
+local timerNextShockwave		= mod:NewCDTimer(17, 63983, nil, nil, nil, 2) -- Core 17s first and repeat
+local timerRespawnLeftArm		= mod:NewTimer(50, "timerLeftArm", nil, nil, nil, 1)--Core 50s
 
 -- 5/23 00:33:48.648  SPELL_AURA_APPLIED,0x0000000000000000,nil,0x80000000,0x0480000001860FAC,"Hâzzad",0x4000512,63355,"Crunch Armor",0x1,DEBUFF
 -- 6/3 21:41:56.140 UNIT_DIED,0x0000000000000000,nil,0x80000000,0xF1500080A60274A0,"Rechter Arm",0xa48
@@ -78,15 +73,24 @@ local function GripAnnounce(self)
 end
 
 function mod:OnCombatStart(delay)
-	enrageTimer:Start(-delay)
-	timerNextSmash:Start(5-delay) -- 2s variance (2022/07/05 log review) - [5-7]
-	timerNextEyebeam:Start(21-delay) -- 21 (2022/07/05 log review)
-	timerNextShockwave:Start(19-delay) -- 19 (2022/07/05 log review)
-	timerNextGrip:Start(-delay)
+	timerNextSmash:Start(8-delay) -- Core 8s first
+	timerNextEyebeam:Start(10-delay) -- Core 10s first
+	timerNextShockwave:Start(17-delay) -- Core 17s first
+	timerNextGrip:Start(15-delay) -- Core 15s first
+end
+
+function mod:OnCombatEnd()
+	timerNextSmash:Cancel()
+	timerNextEyebeam:Cancel()
+	timerNextShockwave:Cancel()
+	timerNextGrip:Cancel()
+	timerRespawnRightArm:Cancel()
+	timerRespawnLeftArm:Cancel()
+	self:Unschedule(GripAnnounce)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args.spellId == 64003 then
+	if args:IsSpellID(63356, 64003) then -- Overhead Smash (both 10/25 IDs)
 		timerNextSmash:Start()
 	elseif args.IsSpellID(62166, 63981) then -- Stone Grip
 		timerNextGrip:Start()
@@ -105,24 +109,8 @@ function mod:SPELL_AURA_APPLIED(args)
 		else
 			self:Schedule(0.3, GripAnnounce, self)
 		end
-	elseif args:IsSpellID(64002, 63355) then	-- Crunch Armor
-		local amount = args.amount or 1
-		if amount >= 2 then
-			if args:IsPlayer() then
-				specWarnCrunchArmor2:Show(amount)
-				specWarnCrunchArmor2:Play("stackhigh")
-			else
-				warnCrunchArmor:Show(args.destName, amount)
-			end
-		else
-			warnCrunchArmor:Show(args.destName, amount)
-		end
-		if self:IsDifficulty("normal10") then
-			timerCrunch10:Start(args.destName)  -- We track duration timer only in 10-man since it's only 6sec and tanks don't switch.
-		end
 	end
 end
-mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED
 
 function mod:SPELL_AURA_REMOVED(args)
 	if args:IsSpellID(64290, 64292) then

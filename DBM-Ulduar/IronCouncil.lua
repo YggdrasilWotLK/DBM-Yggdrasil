@@ -8,10 +8,10 @@ mod:SetUsedIcons(1, 2, 3, 4, 5, 6, 7, 8)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 61920 63479 61879 61903 63493 62274 63489 62273",
-	"SPELL_CAST_SUCCESS 63490 62269 64321 61974 61869 63481",
-	"SPELL_AURA_APPLIED 61903 63493 62269 63490 62277 63967 64637 61888 63486 61887 61912 63494 63483 61915",
-	"SPELL_AURA_REMOVED 64637 61888 63483 61915 61912 63494",
+	"SPELL_CAST_START 61920 63479 61879 61903 63493 62274 63489 62273 61911 63495",
+	"SPELL_CAST_SUCCESS 63490 62269 61973 61869 63481",
+	"SPELL_AURA_APPLIED 61903 63493 62269 63490 62277 63967 64637 61888 63486 61887 61911 63495 61912 63494 63483 61915",
+	"SPELL_AURA_REMOVED 64637 61888 63483 61915 61911 63495 61912 63494",
 	"UNIT_DIED"
 )
 
@@ -30,16 +30,18 @@ mod:AddRangeFrameOption(20, nil, true)
 -- High Voltage ... 63498
 mod:AddTimerLine(L.StormcallerBrundir)
 local warnChainlight			= mod:NewSpellAnnounce(64215, 2, nil, false, 2)
+local warnStaticDisruption	= mod:NewTargetAnnounce(61911, 3)
 
 local specwarnLightningTendrils	= mod:NewSpecialWarningRun(63486, nil, nil, nil, 4, 2)
 local specwarnOverload			= mod:NewSpecialWarningRun(63481, nil, nil, nil, 4, 2)
 local specWarnLightningWhirl	= mod:NewSpecialWarningInterrupt(63483, "HasInterrupt", nil, nil, 1, 2)
 
 local timerOverload				= mod:NewCastTimer(6, 63481, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON)
-local timerOverloadCD			= mod:NewCDTimer(60, 63481, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)
+local timerOverloadCD			= mod:NewCDTimer(32, 63481, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)--Core 25-40s
 local timerLightningWhirl		= mod:NewCastTimer(5, 63483, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
-local timerLightningWhirlCD		= mod:NewCDTimer(32, 63483)
+local timerLightningWhirlCD		= mod:NewCDTimer(17, 63483)--Core 10-25s
 local timerLightningTendrils	= mod:NewBuffActiveTimer(35, 63486, nil, nil, nil, 6)
+local timerChainLightningCD		= mod:NewCDTimer(13, 61879, nil, nil, nil, 3)--Core 9-17s
 mod:AddBoolOption("AlwaysWarnOnOverload", false, "announce", nil, nil, nil, 63481)
 
 -- Runemaster Molgeim
@@ -55,6 +57,7 @@ local specwarnRuneofDeath		= mod:NewSpecialWarningMove(63490, nil, nil, nil, 1, 
 local specWarnRuneofShields		= mod:NewSpecialWarningDispel(62274, "MagicDispeller", nil, nil, 1, 2)
 
 local timerRuneofShields		= mod:NewBuffActiveTimer(15, 62274, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
+local timerRuneofShieldsCD	= mod:NewCDTimer(30, 62274, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)--Core 27-34s
 local timerRuneofDeath			= mod:NewCDTimer(30, 63490, nil, nil, nil, 3)
 local timerRuneofPower			= mod:NewCDTimer(30, 64320, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerRuneofSummoning		= mod:NewCDTimer(30, 62273, nil, nil, nil, 1)
@@ -64,7 +67,10 @@ local timerRuneofSummoning		= mod:NewCDTimer(30, 62273, nil, nil, nil, 1)
 mod:AddTimerLine(L.Steelbreaker)
 local warnFusionPunch			= mod:NewSpellAnnounce(61903, 4)
 local warnOverwhelmingPower		= mod:NewTargetAnnounce(61888, 2)
-local warnStaticDisruption		= mod:NewTargetAnnounce(63494, 3)
+local warnStaticDisruption		= mod:NewTargetAnnounce(61911, 3)
+
+local timerStaticDisruptionCD	= mod:NewCDTimer(30, 61911, nil, nil, nil, 3)--Core 20-40s
+local timerFusionPunchCD		= mod:NewCDTimer(17, 61903, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 15-20s
 
 local timerOverwhelmingPower	= mod:NewTargetTimer(25, 61888, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.DEADLY_ICON, nil, 3)
 local timerFusionPunchCast		= mod:NewCastTimer(3, 61903, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.MAGIC_ICON)
@@ -96,7 +102,11 @@ end
 function mod:OnCombatStart(delay)
 	enrageTimer:Start(-delay)
 	timerRuneofPower:Start(30)
-	timerOverloadCD:Start(40)
+	timerOverloadCD:Start(32)--Core 25-40s
+	timerChainLightningCD:Start(13)--Core 9-17s
+	timerFusionPunchCD:Start(15)--Core 15s first
+	timerRuneofShieldsCD:Start(20)--Core 20s first
+	timerRuneofDeath:Start(35)--Core 35s first
 	self:ScheduleMethod(30, "RuneOfPower")
 	table.wipe(disruptTargets)
 	self.vb.disruptIcon = 7
@@ -106,6 +116,18 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:OnCombatEnd()
+	self:UnscheduleMethod("RuneOfPower")
+	self:Unschedule(warnStaticDisruptionTargets)
+	timerOverloadCD:Cancel()
+	timerLightningWhirlCD:Cancel()
+	timerChainLightningCD:Cancel()
+	timerRuneofDeath:Cancel()
+	timerRuneofPower:Cancel()
+	timerRuneofShieldsCD:Cancel()
+	timerRuneofSummoning:Cancel()
+	timerStaticDisruptionCD:Cancel()
+	timerFusionPunchCD:Cancel()
+	warnRuneofDeathIn10Sec:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -126,13 +148,16 @@ function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
 	if spellId == 61920 then -- Supercharge - Unleashes one last burst of energy as the caster dies, increasing all allies damage by 25% and granting them an additional ability.
 		warnSupercharge:Show()
-	elseif args:IsSpellID(63479, 61879) then	-- Chain light
+	elseif args:IsSpellID(63479, 61879) then	-- Chain light (core 9-17s repeat)
 		warnChainlight:Show()
-	elseif args:IsSpellID(61903, 63493) then	-- Fusion Punch
+		timerChainLightningCD:Start()
+	elseif args:IsSpellID(61903, 63493) then	-- Fusion Punch (core 15-20s repeat)
 		warnFusionPunch:Show()
 		timerFusionPunchCast:Start()
-	elseif args:IsSpellID(62274, 63489) then	-- Shield of Runes
+		timerFusionPunchCD:Start()
+	elseif args:IsSpellID(62274, 63489) then	-- Shield of Runes (core 27-34s repeat)
 		warnShieldofRunes:Show()
+		timerRuneofShieldsCD:Start()
 	elseif spellId == 62273 then			-- Rune of Summoning
 		warnRuneofSummoning:Show()
 		timerRuneofSummoning:Start()
@@ -144,7 +169,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnRuneofDeath:Show()
 		timerRuneofDeath:Start()
 		warnRuneofDeathIn10Sec:Schedule(20)
-	elseif args:IsSpellID(64321, 61974) then	-- Rune of Power
+	elseif args.spellId == 61973 then	-- Rune of Power (core ID, was 64321/61974)
 		self:BossTargetScanner(32927, "RuneTarget", 0.1, 16, true, true)--Scan only boss unitIDs, scan only hostile targets
 		timerRuneofPower:Start()
 	elseif args:IsSpellID(61869, 63481) then	-- Overload
@@ -181,22 +206,31 @@ function mod:SPELL_AURA_APPLIED(args)
 			end
 		end
 		if self:IsDifficulty("normal10") then
-			timerOverwhelmingPower:Start(60, args.destName)
+			timerOverwhelmingPower:Start(61, args.destName)
 		else
-			timerOverwhelmingPower:Start(35, args.destName)
+			timerOverwhelmingPower:Start(36, args.destName)
 		end
 		if self.Options.SetIconOnOverwhelmingPower then
 			if self:IsDifficulty("normal10") then
-				self:SetIcon(args.destName, 8, 60) -- skull for 60 seconds (until meltdown)
+				self:SetIcon(args.destName, 8, 61) -- skull for 60 seconds (until meltdown)
 			else
-				self:SetIcon(args.destName, 8, 35) -- skull for 35 seconds (until meltdown)
+				self:SetIcon(args.destName, 8, 36) -- skull for 35 seconds (until meltdown)
 			end
 		end
 	elseif args:IsSpellID(63486, 61887) then	-- Lightning Tendrils
 		timerLightningTendrils:Start()
 		specwarnLightningTendrils:Show()
 		specwarnLightningTendrils:Play("justrun")
-	elseif args:IsSpellID(61912, 63494) then	-- Static Disruption (Hard Mode)
+	elseif args:IsSpellID(61911, 63495) then	-- Static Disruption cast (61912/63494 are the aura)
+		timerStaticDisruptionCD:Start()
+		disruptTargets[#disruptTargets + 1] = args.destName
+		if self.Options.SetIconOnStaticDisruption and self.vb.disruptIcon > 0 then
+			self:SetIcon(args.destName, self.vb.disruptIcon, 20)
+		end
+		self.vb.disruptIcon = self.vb.disruptIcon - 1
+		self:Unschedule(warnStaticDisruptionTargets)
+		self:Schedule(0.3, warnStaticDisruptionTargets, self)
+	elseif args:IsSpellID(61912, 63494) then	-- Static Disruption aura fallback
 		disruptTargets[#disruptTargets + 1] = args.destName
 		if self.Options.SetIconOnStaticDisruption and self.vb.disruptIcon > 0 then
 			self:SetIcon(args.destName, self.vb.disruptIcon, 20)

@@ -18,7 +18,7 @@ mod:RegisterEventsInCombat(
 )
 
 -- General
-local enrageTimer					= mod:NewBerserkTimer(900)
+local enrageTimer					= mod:NewBerserkTimer(600)--Core 10min
 
 -- Stage One
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(1))
@@ -45,8 +45,8 @@ local specWarnFuseArmorOther		= mod:NewSpecialWarningTaunt(64771, nil, nil, nil,
 
 local timerDeepBreathCooldown		= mod:NewCDTimer(20.1, 64021, nil, nil, nil, 5) -- ~3s variance (25 man log review 2022/07/10) - 23.0, 20.1
 local timerDeepBreathCast			= mod:NewCastTimer(2.5, 64021)
-local timerGrounded					= mod:NewTimer(45, "timerGrounded", nil, nil, nil, 6)
-local timerFuseArmorCD				= mod:NewCDTimer(10.1, 64771, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- 10s variance (25 man log review 2022/07/10) - 10.1, 20.1
+local timerGrounded					= mod:NewTimer(34.5, "timerGrounded", nil, nil, nil, 6)--Core ~30s warn + 2.5s breath + 2s fly-up
+local timerFuseArmorCD				= mod:NewCDTimer(10, 64771, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- Core 10s repeat
 
 mod:GroupSpells(63236, 64733) -- Devouring Flame (cast and damage)
 
@@ -87,12 +87,23 @@ function mod:OnCombatStart(delay)
 	end
 end
 
+function mod:OnCombatEnd()
+	timerGrounded:Cancel()
+	timerDeepBreathCooldown:Cancel()
+	timerDeepBreathCast:Cancel()
+	timerFuseArmorCD:Cancel()
+	warnTurretsReadySoon:Cancel()
+	warnTurretsReady:Cancel()
+end
+
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(63317, 64021) then	-- Flame Breath
 		timerDeepBreathCast:Start()
 		timerDeepBreathCooldown:Start()
 	elseif args.spellId == 63236 then
 		self:BossTargetScanner(args.sourceGUID, "FlameTarget", 0.1, 12)
+	elseif args.spellId == 64771 then -- Fuse Armor (core casts 64771 directly)
+		timerFuseArmorCD:Start()
 	end
 end
 
@@ -141,7 +152,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(emote)
 		timerTurret3:Stop()
 		timerTurret4:Stop()
 		timerGrounded:Stop()
-		timerFuseArmorCD:Start(19) -- REVIEW! variance? (25 man log review 2022/07/10) - 19
+		timerFuseArmorCD:Start(10) -- Core 10s initial in phase 2
 	end
 end
 
@@ -167,8 +178,8 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 	end
 end
 
-function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
-	if spellName == GetSpellInfo(64821) then--Fuse Armor
+function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName, _, _, spellId)
+	if spellId == 64771 then--Fuse Armor fallback (core cast ID)
 		timerFuseArmorCD:Start()
 	end
 end

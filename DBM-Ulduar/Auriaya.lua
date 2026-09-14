@@ -25,34 +25,47 @@ local specWarnVoid		= mod:NewSpecialWarningMove(64675, nil, nil, nil, 1, 2)
 local specWarnSonic		= mod:NewSpecialWarningMoveTo(64688, nil, nil, nil, 2, 2)
 
 local enrageTimer		= mod:NewBerserkTimer(600)
-local timerDefender	= mod:NewTimer(30, "timerDefender", 64455, nil, nil, 1)
+local timerDefender	= mod:NewTimer(25, "timerDefender", 64455, nil, nil, 1)--Core 60s first, 25s respawn
 local timerFear			= mod:NewCastTimer(64386, nil, nil, nil, 4)
-local timerNextFear	= mod:NewNextTimer(30, 64386, nil, nil, nil, 4)
-local timerNextSwarm	= mod:NewNextTimer(36, 64396, nil, nil, nil, 1)
-local timerNextSonic	= mod:NewNextTimer(25, 64688, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerNextFear	= mod:NewNextTimer(35, 64386, nil, nil, nil, 4)--Core 35s first and repeat
+local timerNextSwarm	= mod:NewNextTimer(40, 64396, nil, nil, nil, 1)--Core 70s first, 40s repeat
+local timerNextSonic	= mod:NewNextTimer(50, 64688, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)--Core 45s first, 50s repeat
 local timerSonic		= mod:NewCastTimer(64688, nil, nil, nil, 2)
+local timerBlastCD	= mod:NewCDTimer(35, 64389, nil, "HasInterrupt", nil, 5)--Core 36s first, 35s repeat
 
 mod.vb.catLives = 9
 
 function mod:OnCombatStart(delay)
 	self.vb.catLives = 9
 	enrageTimer:Start(-delay)
-	timerNextFear:Start(40-delay)
-	timerNextSonic:Start(60-delay)
-	timerDefender:Start(60-delay)
+	timerNextFear:Start(35-delay)--Core 35s first
+	timerNextSonic:Start(45-delay)--Core 45s first
+	timerDefender:Start(60-delay)--Core 60s first
+	timerBlastCD:Start(36-delay)--Core 36s first
+	timerNextSwarm:Start(70-delay)--Core 70s first
+end
+
+function mod:OnCombatEnd()
+	timerNextFear:Cancel()
+	timerNextSonic:Cancel()
+	timerNextSwarm:Cancel()
+	timerDefender:Cancel()
+	timerBlastCD:Cancel()
+	warnFearSoon:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(64678, 64389) then -- Sentinel Blast
+	if args:IsSpellID(64678, 64389) then -- Sentinel Blast (core 35s repeat)
 		specWarnBlast:Show(args.sourceName)
 		specWarnBlast:Play("kickcast")
-	elseif args.spellId == 64386 then -- Terrifying Screech
+		timerBlastCD:Start()
+	elseif args.spellId == 64386 then -- Terrifying Screech (core 35s repeat)
 		specWarnFear:Show()
 		specWarnFear:Play("fearsoon")
 		timerFear:Start()
-		timerNextFear:Schedule(2)
-		warnFearSoon:Schedule(34)
-	elseif args:IsSpellID(64688, 64422) then --Sonic Screech
+		timerNextFear:Start()
+		warnFearSoon:Schedule(30)
+	elseif args:IsSpellID(64688, 64422) then --Sonic Screech (core 50s repeat)
 		specWarnSonic:Show(TANK)
 		specWarnSonic:Play("gathershare")
 		timerSonic:Start()
@@ -85,10 +98,10 @@ function mod:UNIT_DIED(args)
 		if self.vb.catLives > 0 then
 			if self.vb.catLives == 1 then
 				warnCatDiedOne:Show()
-				timerDefender:Start()
+				timerDefender:Start(25)--Core 25s respawn
 			else
 				warnCatDied:Show(self.vb.catLives)
-				timerDefender:Start()
+				timerDefender:Start(25)--Core 25s respawn
 			end
 			if self.Options.HealthFrame then
 				DBM.BossHealth:RemoveBoss(34035)

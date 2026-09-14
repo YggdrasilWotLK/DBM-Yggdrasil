@@ -12,7 +12,7 @@ mod:RegisterEventsInCombat(
 	"SPELL_INTERRUPT 62661",
 	"SPELL_AURA_APPLIED 62662",
 	"SPELL_AURA_REMOVED 62662",
-	"SPELL_CAST_SUCCESS 62660 63276 63364",
+	"SPELL_CAST_SUCCESS 62660 63276 63145",
 	"CHAT_MSG_RAID_BOSS_EMOTE"
 )
 
@@ -31,12 +31,13 @@ local specWarnSearingFlames		= mod:NewSpecialWarningInterruptCount(62661, "HasIn
 
 local timerEnrage				= mod:NewBerserkTimer(600)
 local timerSearingFlamesCast	= mod:NewCastTimer(2, 62661, nil, nil, nil, 5, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerSearingFlamesCD	= mod:NewCDTimer(11, 62661, nil, "HasInterrupt", nil, 5, nil, DBM_COMMON_L.INTERRUPT_ICON)--Core 10s first, 8s/15s repeat
 local timerSurgeofDarkness		= mod:NewBuffActiveTimer(10, 62662, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerNextSurgeofDarkness	= mod:NewCDTimer(61.7, 62662, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerSaroniteVapors		= mod:NewNextCountTimer(30, 63322, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerShadowCrashCD		= mod:NewCDTimer(9, 62660, nil, "Ranged", nil, 3)
+local timerNextSurgeofDarkness	= mod:NewCDTimer(63, 62662, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 63s first and repeat
+local timerSaroniteVapors		= mod:NewNextCountTimer(30, 63081, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)--Core summon 63081
+local timerShadowCrashCD		= mod:NewCDTimer(10, 62660, nil, "Ranged", nil, 3)--Core 13s first, 10s repeat
 local timerLifeLeech			= mod:NewTargetTimer(10, 63276, nil, false, 2, 3, nil, DBM_COMMON_L.IMPORTANT_ICON)
-local timerLifeLeechCD			= mod:NewCDTimer(20.4, 63276, nil, nil, nil, 3, nil, DBM_COMMON_L.IMPORTANT_ICON)
+local timerLifeLeechCD			= mod:NewCDTimer(40, 63276, nil, nil, nil, 3, nil, DBM_COMMON_L.IMPORTANT_ICON)--Core 20s first, 40s repeat
 
 mod:AddSetIconOption("SetIconOnShadowCrash", 62660, true, false, {8})
 mod:AddSetIconOption("SetIconOnLifeLeach", 63276, true, false, {7})
@@ -84,17 +85,30 @@ end
 function mod:OnCombatStart(delay)
 	self.vb.interruptCount = 0
 	self.vb.vaporsCount = 0
-	timerShadowCrashCD:Start(10.9-delay)
-	timerLifeLeechCD:Start(16.9-delay)
-	timerSaroniteVapors:Start(30-delay, 1)
+	timerShadowCrashCD:Start(13-delay)--Core 13s first
+	timerLifeLeechCD:Start(20-delay)--Core 20s first
+	timerSaroniteVapors:Start(30-delay, 1)--Core 30s first
+	timerSearingFlamesCD:Start(10-delay)--Core 10s first
 	timerEnrage:Start(-delay)
 	timerHardmode:Start(-delay)
-	timerNextSurgeofDarkness:Start(-delay)
+	timerNextSurgeofDarkness:Start(63-delay)--Core 63s first
+end
+
+function mod:OnCombatEnd()
+	timerShadowCrashCD:Cancel()
+	timerLifeLeechCD:Cancel()
+	timerLifeLeech:Cancel()
+	timerSaroniteVapors:Cancel()
+	timerSearingFlamesCD:Cancel()
+	timerSearingFlamesCast:Cancel()
+	timerNextSurgeofDarkness:Cancel()
+	timerSurgeofDarkness:Cancel()
+	timerHardmode:Cancel()
 end
 
 function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
-	if spellId == 62661 then	-- Searing Flames
+	if spellId == 62661 then	-- Searing Flames (core 8s/15s repeat)
 		self.vb.interruptCount = self.vb.interruptCount + 1
 		if self.vb.interruptCount == 4 then
 			self.vb.interruptCount = 1
@@ -103,7 +117,8 @@ function mod:SPELL_CAST_START(args)
 		specWarnSearingFlames:Show(args.sourceName, kickCount)
 		specWarnSearingFlames:Play("kick"..kickCount.."r")
 		timerSearingFlamesCast:Start()
-	elseif spellId == 62662 then
+		timerSearingFlamesCD:Start()
+	elseif spellId == 62662 then -- Surge of Darkness (core 63s repeat)
 		local tanking, status = UnitDetailedThreatSituation("player", "boss1")
 		if tanking or (status == 3) then--Player is current target
 			specWarnSurgeDarkness:Show()
@@ -157,7 +172,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 				end
 			end
 		end
-	elseif args.spellId == 63364 then
+	elseif args.spellId == 63145 then -- Saronite Animus summoned (core 63145, was 63364 barrier)
 		specWarnAnimus:Show()
 		specWarnAnimus:Play("bigmob")
 	end
@@ -167,8 +182,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(emote)
 	if emote == L.EmoteSaroniteVapors or emote:find(L.EmoteSaroniteVapors) then
 		self.vb.vaporsCount = self.vb.vaporsCount + 1
 		warnSaroniteVapor:Show(self.vb.vaporsCount)
-		if self.vb.vaporsCount < 6 then
-			timerSaroniteVapors:Start(nil, self.vb.vaporsCount+1)
-		end
+		-- Core repeats past 6 if hardmode failed (vapor killed); keep counting.
+		timerSaroniteVapors:Start(nil, self.vb.vaporsCount+1)
 	end
 end

@@ -16,7 +16,7 @@ mod:RegisterEventsInCombat(
 )
 
 -- General
-local enrageTimer					= mod:NewBerserkTimer(360)
+local enrageTimer					= mod:NewBerserkTimer(600)--Core 10min
 local timerAchieve					= mod:NewAchievementTimer(205, 2937)
 
 mod:AddRangeFrameOption(12, nil, true)
@@ -52,17 +52,17 @@ function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	enrageTimer:Start(-delay)
 	timerAchieve:Start()
-	if self:IsDifficulty("normal10") then
-		timerTympanicTantrumCD:Start(35-delay)
-	else
-		timerTympanicTantrumCD:Start(60-delay)
-	end
+	timerTympanicTantrumCD:Start(60-delay)--Core 60s both modes
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(12)
 	end
 end
 
 function mod:OnCombatEnd()
+	timerTympanicTantrumCD:Cancel()
+	timerTympanicTantrumCast:Cancel()
+	timerTympanicTantrum:Cancel()
+	timerHeart:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -104,7 +104,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	elseif spellId == 63849 then
 		self:SetStage(2)
 		timerHeart:Start()
-		timerTympanicTantrumCD:Start(65) -- maybe?
+		timerTympanicTantrumCD:Start(60) -- Core reschedules 1min after heart phase
 	end
 end
 
@@ -118,7 +118,7 @@ function mod:SPELL_AURA_REMOVED(args)
 			self:SetIcon(args.destName, 0)
 		end
 	elseif args.spellId == 63849 then
-		self:setStage(1)
+		self:SetStage(1)
 		timerHeart:Stop()
 	end
 end

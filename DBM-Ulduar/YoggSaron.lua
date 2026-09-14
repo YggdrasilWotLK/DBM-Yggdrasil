@@ -7,9 +7,9 @@ mod:RegisterCombat("combat_yell", L.YellPull)
 mod:SetUsedIcons(8, 7, 6, 2, 1)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 64059 64189 63138",
+	"SPELL_CAST_START 64059 64189",
 	"SPELL_CAST_SUCCESS 64144 64465 64167 64163",
-	"SPELL_SUMMON 62979",
+	"SPELL_SUMMON 63031",
 	"SPELL_AURA_APPLIED 63802 63830 63881 64126 64125 63138 63894 64167 64163 64465",
 	"SPELL_AURA_REMOVED 63802 63894 64167 64163 63830 63138 63881 64465",
 	"SPELL_AURA_REMOVED_DOSE 63050",
@@ -36,9 +36,9 @@ mod:AddBoolOption("ShowSaraHealth", false)
 
 -- Guardian of Yogg-Saron
 -- mod:AddTimerLine(L.GuardianofYoggSaron)
-local warnGuardianSpawned			= mod:NewAnnounce("WarningGuardianSpawned", 3, 62979, nil, nil, nil, 62979)
+local warnGuardianSpawned			= mod:NewAnnounce("WarningGuardianSpawned", 3, 63031, nil, nil, nil, 63031)
 
-local specWarnGuardianLow			= mod:NewSpecialWarning("SpecWarnGuardianLow", false, nil, nil, nil, nil, nil, 62979, 62979)
+local specWarnGuardianLow			= mod:NewSpecialWarning("SpecWarnGuardianLow", false, nil, nil, nil, nil, nil, 63031, 63031)
 
 -- Stage Two: Descent Into Madness
 mod:AddTimerLine(L.S2DescentIntoMadness)
@@ -57,8 +57,8 @@ local specWarnBrainLink			= mod:NewSpecialWarningYou(63802, nil, nil, nil, 1, 2)
 local specWarnMalady				= mod:NewSpecialWarningYou(63830, nil, nil, nil, 1, 2)
 local specWarnMaladyNear			= mod:NewSpecialWarningClose(63830, nil, nil, nil, 1, 2)
 
-local timerBrainLinkCD				= mod:NewCDTimer(32, 63802, nil, nil, nil, 3)
-local timerMaladyCD					= mod:NewCDTimer(18.1, 63830, nil, nil, nil, 3)
+local timerBrainLinkCD				= mod:NewCDTimer(30, 63802, nil, nil, nil, 3)--Core 0ms first, 30s repeat
+local timerMaladyCD					= mod:NewCDTimer(20, 63830, nil, nil, nil, 3)--Core 7s first, 20s repeat
 
 mod:AddSetIconOption("SetIconOnBrainLinkTarget", 63802, true, false, {1, 2})
 mod:AddSetIconOption("SetIconOnFearTarget", 63830, true, false, {6})
@@ -91,7 +91,7 @@ local timerBrainPortal				= mod:NewTimer(20, "NextPortal", 57687, nil, nil, 5, n
 -- Laughing Skull
 -- mod:AddTimerLine(L.LaughingSkull)
 local timerLunaticGaze				= mod:NewCastTimer(4, 64163, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON) -- Laughing Skull
-local timerNextLunaticGaze			= mod:NewCDTimer(8.5, 64163, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON) -- Laughing Skull
+local timerNextLunaticGaze			= mod:NewCDTimer(12, 64163, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON) -- Core 7s first, 12s repeat (P3)
 
 -- Brain of Yogg-Saron
 -- mod:AddTimerLine(L.BrainofYoggSaron)
@@ -111,9 +111,9 @@ mod:AddSetIconOption("SetIconOnBeacon", 64465, true, true, {1, 2, 3, 4, 5, 6, 7,
 
 -- Immortal Guardian
 -- mod:AddTimerLine(L.ImmortalGuardian)
-local warnEmpowerSoon				= mod:NewSoonAnnounce(64486, 4)
+local warnEmpowerSoon				= mod:NewSoonAnnounce(64465, 4)
 
-local timerEmpower					= mod:NewCDTimer(46, 64486, nil, nil, nil, 3)
+local timerEmpower					= mod:NewCDTimer(40, 64465, nil, nil, nil, 3)--Core reschedules 40s after each beacon empowerment
 local timerEmpowerDuration			= mod:NewBuffActiveTimer(10, 64486, nil, nil, nil, 3)
 
 -- Hard Mode
@@ -125,7 +125,7 @@ local warnDeafeningRoarSoon			= mod:NewPreWarnAnnounce(64189, 5, 3)
 local specWarnDeafeningRoar			= mod:NewSpecialWarningSpell(64189, nil, nil, nil, 1, 2)
 
 local timerCastDeafeningRoar		= mod:NewCastTimer(2.3, 64189, nil, nil, nil, 2)
-local timerNextDeafeningRoar		= mod:NewNextTimer(30, 64189, nil, nil, nil, 2)
+local timerNextDeafeningRoar		= mod:NewNextTimer(50, 64189, nil, nil, nil, 2)--Core 50s first and repeat (hard mode only)
 
 local targetWarningsShown = {}
 local brainLinkTargets = {}
@@ -157,6 +157,20 @@ function mod:OnCombatStart()
 end
 
 function mod:OnCombatEnd()
+	timerBrainPortal:Cancel()
+	timerMadness:Cancel()
+	timerLunaticGaze:Cancel()
+	timerNextLunaticGaze:Cancel()
+	timerBrainLinkCD:Cancel()
+	timerMaladyCD:Cancel()
+	timerEmpower:Cancel()
+	timerEmpowerDuration:Cancel()
+	timerNextDeafeningRoar:Cancel()
+	warnBrainPortalSoon:Cancel()
+	specWarnBrainPortalSoon:Cancel()
+	specWarnMadnessOutNow:Cancel()
+	warnEmpowerSoon:Cancel()
+	warnDeafeningRoarSoon:Cancel()
 	if self.Options.InfoFrame then
 		DBM.InfoFrame:Hide()
 	end
@@ -179,21 +193,19 @@ end
 
 function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
-	if spellId == 64059 then	-- Induce Madness
+	if spellId == 64059 then	-- Induce Madness (core 60s channel, portals on 80s loop)
 		timerMadness:Start()
 		warnMadness:Show()
-		timerBrainPortal:Schedule(60)
-		warnBrainPortalSoon:Schedule(78)
-		specWarnBrainPortalSoon:Schedule(78)
+		timerBrainPortal:Schedule(80)
+		warnBrainPortalSoon:Schedule(75)
+		specWarnBrainPortalSoon:Schedule(75)
 		specWarnMadnessOutNow:Schedule(55)
-	elseif spellId == 64189 then		--Deafening Roar
+	elseif spellId == 64189 then		--Deafening Roar (core 50s)
 		timerNextDeafeningRoar:Start()
-		warnDeafeningRoarSoon:Schedule(55)
+		warnDeafeningRoarSoon:Schedule(45)
 		timerCastDeafeningRoar:Start()
 		specWarnDeafeningRoar:Show()
 		specWarnDeafeningRoar:Play("silencesoon")
-	elseif spellId == 63138 then		--Sara's Fervor
-		self:BossTargetScanner(args.sourceGUID, "FervorTarget", 0.1, 12, true, nil, nil, nil, true)
 	end
 end
 
@@ -201,19 +213,16 @@ function mod:SPELL_CAST_SUCCESS(args)
 	local spellId = args.spellId
 	if spellId == 64144 and self:GetUnitCreatureId(args.sourceGUID) == 33966 then
 		warnCrusherTentacleSpawned:Show()
-	elseif spellId == 64465 then -- Shadow Beacon
-		timerEmpower:Start()
-		timerEmpowerDuration:Start()
-		warnEmpowerSoon:Schedule(40)
-	elseif args:IsSpellID(64167, 64163) and self:AntiSpam(3, 3) then	-- Lunatic Gaze
+	elseif spellId == 64465 then -- Shadow Beacon (AURA handler owns the CD)
+		warnEmpowerSoon:Schedule(35)
+	elseif args:IsSpellID(64167, 64163) and self:AntiSpam(3, 3) then	-- Lunatic Gaze (core 12s repeat)
 		timerLunaticGaze:Start()
-		timerBrainPortal:Start(60)
-		warnBrainPortalSoon:Schedule(55)
+		timerNextLunaticGaze:Start()
 	end
 end
 
 function mod:SPELL_SUMMON(args)
-	if args.spellId == 62979 then
+	if args.spellId == 63031 then -- Guardian of Yogg-Saron (core ID, was 62979)
 		self.vb.Guardians = self.vb.Guardians + 1
 		warnGuardianSpawned:Show(self.vb.Guardians)
 	end
@@ -237,8 +246,8 @@ function mod:SPELL_AURA_APPLIED(args)
 		else
 			self:Schedule(0.5, warnBrainLinkWarning, self)
 		end
-	elseif args:IsSpellID(63830, 63881) then   -- Malady of the Mind (Death Coil)
-		--timerMaladyCD:Start()
+	elseif args:IsSpellID(63830, 63881) then   -- Malady of the Mind (core 20s repeat)
+		timerMaladyCD:Start()
 		if self.Options.SetIconOnFearTarget then
 			self:SetIcon(args.destName, 6, 30)
 		end
@@ -280,11 +289,11 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif spellId == 63894 and self.vb.phase < 2 then	-- Shadowy Barrier of Yogg-Saron (this is happens when p2 starts)
 		self:SetStage(2)
-		timerMaladyCD:Start(13)--VERIFY ME
-		timerBrainLinkCD:Start(19)--VERIFY ME
-		timerBrainPortal:Start(57)
-		warnBrainPortalSoon:Schedule(53)
-		specWarnBrainPortalSoon:Schedule(53)
+		timerMaladyCD:Start(7)--Core 7s first
+		timerBrainLinkCD:Start(5)--Core 0ms first; 5s grace for transition
+		timerBrainPortal:Start(60)--Core 60s first
+		warnBrainPortalSoon:Schedule(55)
+		specWarnBrainPortalSoon:Schedule(55)
 		warnP2:Show()
 		warnP2:Play("ptwo")
 		if self.Options.ShowSaraHealth then
@@ -295,7 +304,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args:IsSpellID(64167, 64163) then	-- Lunatic Gaze (reduces sanity)
 		timerLunaticGaze:Start()
-	elseif spellId == 64465 then -- Shadow Beacon
+	elseif spellId == 64465 then -- Shadow Beacon (core reschedules 40s per empowerment)
 		if self.Options.SetIconOnBeacon then
 			self:ScanForMobs(args.destGUID, 2, self.vb.beaconIcon, 1, 0.2, 10, "SetIconOnBeacon")
 		end
@@ -305,7 +314,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 		timerEmpower:Start()
 		timerEmpowerDuration:Start()
-		warnEmpowerSoon:Schedule(40)
+		warnEmpowerSoon:Schedule(35)
 	end
 end
 
@@ -356,8 +365,8 @@ function mod:OnSync(msg)
 		timerEmpower:Start()
 		warnP3:Show()
 		warnP3:Play("pthree")
-		warnEmpowerSoon:Schedule(40)
-		timerNextDeafeningRoar:Start(30)
-		warnDeafeningRoarSoon:Schedule(25)
+		warnEmpowerSoon:Schedule(35)
+		timerNextDeafeningRoar:Start(50)--Core 50s (hard mode only)
+		warnDeafeningRoarSoon:Schedule(45)
 	end
 end

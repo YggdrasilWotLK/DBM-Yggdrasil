@@ -41,9 +41,10 @@ local specWarnPlasmaBlast			= mod:NewSpecialWarningDefensive(64529, nil, nil, ni
 
 local timerProximityMines			= mod:NewCDTimer(25, 63027, nil, nil, nil, 3)
 local timerShockBlast				= mod:NewCastTimer(4, 63631, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
-local timerNextShockBlast			= mod:NewNextTimer(40, 63631, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerNextShockBlast			= mod:NewNextTimer(30, 63631, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)--Core 20s first, 30s repeat
 local timerNapalmShell				= mod:NewBuffActiveTimer(6, 63666, nil, "Healer", 2, 5, nil, DBM_COMMON_L.IMPORTANT_ICON..DBM_COMMON_L.HEALER_ICON)
-local timerPlasmaBlastCD			= mod:NewCDTimer(30, 64529, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerNapalmCD				= mod:NewCDTimer(14, 63666, nil, "Healer", 2, 5, nil, DBM_COMMON_L.IMPORTANT_ICON)--Core 3s first, 14s repeat
+local timerPlasmaBlastCD			= mod:NewCDTimer(22, 64529, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 10s first, 22s repeat
 
 mod:AddSetIconOption("SetIconOnNapalm", 63666, false, false, {1, 2, 3, 4, 5, 6, 7})
 mod:AddSetIconOption("SetIconOnPlasmaBlast", 64529, false, false, {8})
@@ -87,7 +88,7 @@ mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(2)..": "..L.MobPhase2)
 local warnFrostBomb					= mod:NewSpellAnnounce(64623, 3)
 
 local timerFrostBombExplosion		= mod:NewCastTimer(15, 65333, nil, nil, nil, 3)
-local timerNextFrostBomb			= mod:NewNextTimer(30, 64623, nil, nil, nil, 3, nil, DBM_COMMON_L.HEROIC_ICON)
+local timerNextFrostBomb			= mod:NewNextTimer(45, 64623, nil, nil, nil, 3, nil, DBM_COMMON_L.HEROIC_ICON)--Core 45s repeat (HM only)
 local timerNextFlameSuppressant		= mod:NewNextTimer(60, 65192, nil, nil, nil, 3)
 
 -- Stage Three
@@ -156,8 +157,10 @@ local function NextPhase(self)
 		timerProximityMines:Stop()
 		timerFlameSuppressant:Stop()
 		timerPlasmaBlastCD:Stop()
+		timerNapalmCD:Cancel()
 		timerP1toP2:Start()
 		timerNextP3Wx2LaserBarrage:Schedule(30)
+		timerRocketStrikeCD:Start(16)--Core 16s first
 		if self.Options.HealthFrame then
 			DBM.BossHealth:Clear()
 			DBM.BossHealth:AddBoss(33651, L.MobPhase2)
@@ -215,8 +218,9 @@ function mod:OnCombatStart(delay)
 	self.vb.napalmShellIcon = 7
 	table.wipe(napalmShellTargets)
 	NextPhase(self)
-	timerPlasmaBlastCD:Start(24-delay)
-	timerNextShockBlast:Start(35-delay) -- normal mode. Will be overriden in hard mode yell
+	timerPlasmaBlastCD:Start(10-delay)--Core 10s first
+	timerNextShockBlast:Start(20-delay) -- Core 20s first
+	timerNapalmCD:Start(3-delay)--Core 3s first
 	if DBM:GetRaidRank() == 2 then
 		lootmethod, _, masterlooterRaidID = GetLootMethod()
 	end
@@ -290,9 +294,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(63666, 65026) and args:IsDestTypePlayer() then	-- Napalm Shell
+	if args:IsSpellID(63666, 65026) and args:IsDestTypePlayer() then	-- Napalm Shell (core 14s repeat)
 		napalmShellTargets[#napalmShellTargets + 1] = args.destName
 		timerNapalmShell:Start()
+		timerNapalmCD:Start()
 		if self.Options.SetIconOnNapalm and self.vb.napalmShellIcon > 0 then
 			self:SetIcon(args.destName, self.vb.napalmShellIcon, 6)
 		end

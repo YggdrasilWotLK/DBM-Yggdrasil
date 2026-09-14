@@ -9,7 +9,7 @@ mod:RegisterCombat("combat_yell", L.YellPhase1)
 mod:RegisterKill("yell", L.YellKill)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 62605 64390",
+	"SPELL_CAST_START 62605 62131 64390",
 	"SPELL_AURA_APPLIED 62042 62507 62130 62526 62527",
 	"SPELL_CAST_SUCCESS 62042 62466 62130 62604",
 	"SPELL_DAMAGE 62017",
@@ -32,6 +32,7 @@ local specWarnLightningShock		= mod:NewSpecialWarningMove(62017, nil, nil, nil, 
 
 local timerHardmode					= mod:NewTimer(150, "TimerHardmode", 62042, nil, nil, 0, nil, nil, nil, nil, nil, nil, nil, 62507)
 local timerStormhammer				= mod:NewBuffActiveTimer(16, 62042, nil, nil, nil, 3)--Cast timer? Review if i ever do this boss again.
+local timerStormhammerCD			= mod:NewCDTimer(16, 62042, nil, nil, nil, 3)--Core 8s first, 16s repeat
 
 mod:AddSetIconOption("SetIconOnRuneDetonation", 62527, false, false, {7})
 
@@ -43,8 +44,8 @@ local warnLightningCharge			= mod:NewSpellAnnounce(62466, 2)
 local specWarnUnbalancingStrikeSelf	= mod:NewSpecialWarningDefensive(62130, nil, nil, nil, 1, 2)
 local specWarnUnbalancingStrike		= mod:NewSpecialWarningTaunt(62130, nil, nil, nil, 1, 2)
 
-local timerLightningCharge			= mod:NewCDTimer(16, 62466, nil, nil, nil, 3)
-local timerUnbalancingStrike		= mod:NewCDTimer(25.6, 62130, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerLightningCharge			= mod:NewCDTimer(10, 62466, nil, nil, nil, 3)--Core 10s orb cycle
+local timerUnbalancingStrike		= mod:NewCDTimer(20, 62130, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 8s first, 20s repeat
 local timerChainLightning			= mod:NewNextTimer(15, 64390)
 
 mod:AddBoolOption("AnnounceFails", false, "announce", nil, nil, nil, 62466)
@@ -64,6 +65,9 @@ function mod:OnCombatStart()
 	self:SetStage(1)
 	enrageTimer:Start()
 	timerHardmode:Start()
+	timerStormhammerCD:Start(8)--Core 8s first
+	timerUnbalancingStrike:Start(8)--Core 8s first (phase 2)
+	timerChainLightning:Start(13)--Core 13s first
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(8)
 	end
@@ -76,6 +80,11 @@ local function sortFails1C(e1, e2)
 end
 
 function mod:OnCombatEnd()
+	timerStormhammerCD:Cancel()
+	timerLightningCharge:Cancel()
+	timerUnbalancingStrike:Cancel()
+	timerChainLightning:Cancel()
+	timerFBVolley:Cancel()
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Hide()
 	end
@@ -98,7 +107,7 @@ function mod:SPELL_CAST_START(args)
 	if spellId == 62605 then		-- Frost Nova by Sif
 		timerFrostNovaCast:Start()
 		timerFrostNova:Start()
-	elseif spellId == 64390 then	-- Chain Lightning by Thorim
+	elseif args:IsSpellID(62131, 64390) then	-- Chain Lightning by Thorim (both IDs)
 		timerChainLightning:Start()
 	end
 end
@@ -134,12 +143,13 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	local spellId = args.spellId
-	if spellId == 62042 then		-- Storm Hammer
+	if spellId == 62042 then		-- Storm Hammer (core 16s repeat)
 		timerStormhammer:Schedule(2)
-	elseif spellId == 62466 then	-- Lightning Charge
+		timerStormhammerCD:Start()
+	elseif spellId == 62466 then	-- Lightning Charge (core 10s orb cycle)
 		warnLightningCharge:Show()
 		timerLightningCharge:Start()
-	elseif spellId == 62130 then	-- Unbalancing Strike
+	elseif spellId == 62130 then	-- Unbalancing Strike (core 20s repeat)
 		timerUnbalancingStrike:Start()
 	elseif spellId == 62604 then	-- Frostbolt Volley by Sif
 		timerFBVolley:Start()
