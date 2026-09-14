@@ -98,6 +98,7 @@ end
 
 function mod:ShadowNovaTarget(targetname)
 	if not targetname then return end
+	if not self:AntiSpam(5, "Nova") then return end--Emote path already warned
 	if targetname == UnitName("player") then
 		specWarnNova:Show()
 		specWarnNova:Play("targetyou")
@@ -115,6 +116,7 @@ end
 
 function mod:ConflagrationTarget(targetname)
 	if not targetname then return end
+	if not self:AntiSpam(5, "Conflag") then return end--Emote path already warned
 	if targetname == UnitName("player") then
 		specWarnConflag:Show()
 		specWarnConflag:Play("targetyou")
@@ -145,13 +147,15 @@ function mod:SPELL_CAST_START(args)
 	end
 end
 
--- CHAT_MSG_RAID_BOSS_EMOTE bugged on Warmane: https://www.warmane.com/bugtracker/report/106891
+-- CHAT_MSG_RAID_BOSS_EMOTE fires on Yggdrasilcore too, so this path is a
+-- fallback for when the BossTargetScanner above finds no target: whichever
+-- fires first warns (shared AntiSpam key), the other only restarts timers.
 function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 	if (msg == L.Nova or msg:find(L.Nova)) and target then
-		DBM:AddMsg("Nova emote is working again. Notify me (Zidras) on discord or open a bug report.")
 		target = DBM:GetUnitFullName(target)
 		timerNova:Start()
 		timerNovaCD:Start()
+		if not self:AntiSpam(5, "Nova") then return end
 		if target == UnitName("player") then
 			specWarnNova:Show()
 			specWarnNova:Play("targetyou")
@@ -166,10 +170,10 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 			self:SetIcon(target, 8, 5)
 		end
 	elseif (msg == L.Conflag or msg:find(L.Conflag)) and target then
-		DBM:AddMsg("Conflagration emote is working again. Notify me (Zidras) on discord or open a bug report.")
 		target = DBM:GetUnitFullName(target)
 		timerConflag:Start()
 		timerConflagCD:Start()
+		if not self:AntiSpam(5, "Conflag") then return end
 		if target == UnitName("player") then
 			specWarnConflag:Show()
 			specWarnConflag:Play("targetyou")
