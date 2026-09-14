@@ -144,8 +144,10 @@ function mod:SPELL_CAST_START(args)
 		timerBreathCD:Start()
 	elseif args:IsSpellID(56272, 60072) then--P1 Arcane Breath (core 12-15s repeat)
 		timerArcaneBreathCD:Start()
-	elseif spellId == 57430 then
-		self:ScheduleMethod(0.1, "StaticFieldTarget")
+	elseif spellId == 57430 then -- Static Field (START+SUCCESS share AntiSpam key below)
+		if self:AntiSpam(5, "StaticField") then
+			self:ScheduleMethod(0.1, "StaticFieldTarget")
+		end
 		--warnStaticField:Show()
 		timerStaticFieldCD:Start()
 	end
@@ -164,8 +166,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 		if timerSpark:GetTime() < 11 and timerSpark:IsStarted() then
 			timerSpark:Update(18, 30)
 		end
-	elseif spellId == 57430 then
-		self:ScheduleMethod(0.1, "StaticFieldTarget")
+	elseif spellId == 57430 then -- Fallback; shares AntiSpam with START
+		if self:AntiSpam(5, "StaticField") then
+			self:ScheduleMethod(0.1, "StaticFieldTarget")
+		end
 		--warnStaticField:Show()
 		timerStaticFieldCD:Start()
 	end

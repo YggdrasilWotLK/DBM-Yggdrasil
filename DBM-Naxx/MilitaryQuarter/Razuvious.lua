@@ -42,19 +42,23 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(55543, 29107) then -- Disrupting Shout (also start here in case SUCCESS is missed)
+	if args:IsSpellID(55543, 29107) then -- Disrupting Shout (SUCCESS fallback shares AntiSpam key below)
+		if self:AntiSpam(5, "Shout") then
+			warnShoutNow:Show()
+			warnShoutSoon:Schedule(10)
+		end
 		timerShout:Start()
-		warnShoutNow:Show()
-		warnShoutSoon:Schedule(10)
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	local spellId = args.spellId
-	if args:IsSpellID(55543, 29107) then  -- Disrupting Shout
+	if args:IsSpellID(55543, 29107) then  -- Disrupting Shout fallback
+		if self:AntiSpam(5, "Shout") then
+			warnShoutNow:Show()
+			warnShoutSoon:Schedule(10)
+		end
 		timerShout:Start()
-		warnShoutNow:Show()
-		warnShoutSoon:Schedule(10)
 	elseif spellId == 29060 then -- Taunt (cast by MC'd Understudy, resets boss)
 		timerTaunt:Start(20, args.sourceGUID)
 	end
