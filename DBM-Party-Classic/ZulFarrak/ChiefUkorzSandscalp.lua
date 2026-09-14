@@ -14,7 +14,7 @@ mod:RegisterEventsInCombat(
 local warningEnrage			= mod:NewTargetNoFilterAnnounce(8269, 2)
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 8269 and args:IsDestTypePlayer() then
+	if args.spellId == 8269 and args:IsDestTypeHostile() then--Enrage is a boss self-buff
 		warningEnrage:Show(args.destName)
 	end
 end

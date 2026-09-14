@@ -19,10 +19,10 @@ local timerActivateBomb			= mod:NewNextTimer(30, 11511, nil, nil, nil, 2)
 
 function mod:OnCombatStart(delay)
 	timerKnockAwayCD:Start(1-delay)
-	timerActivateBomb:Start(-delay)
+	timerActivateBomb:Start(30-delay)
 end
 
-function mod:SPELL_CAST_SUCESS(args)
+function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(10101, 11130) then
 		warningKnockAway:Show()
 		timerKnockAwayCD:Start()

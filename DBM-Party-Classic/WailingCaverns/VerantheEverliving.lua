@@ -19,7 +19,7 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:SPELL_CAST_START(args)
-	if args.spellId == 8142 and args:IsDestTypePlayer() then
+	if args.spellId == 8142 and args:IsSrcTypeHostile() then--CAST_START has no dest; check source
 		warnVines:Show(args.sourceName)
 		timerVinesCD:Start()
 	end

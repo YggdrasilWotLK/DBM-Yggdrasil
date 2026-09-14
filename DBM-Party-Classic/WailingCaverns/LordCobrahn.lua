@@ -8,7 +8,7 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 8040 23381",
-	"SPELL_CAST_SUCCESS 7965",
+	"SPELL_CAST_SUCCESS 7965 17330",
 	"SPELL_AURA_APPLIED 8040 17330"
 )
 
@@ -20,7 +20,7 @@ local specWarnDruidsSlumber			= mod:NewSpecialWarningInterrupt(8040, "HasInterru
 
 local timerDruidsSlumberCD			= mod:NewAITimer(180, 8040, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON..DBM_COMMON_L.MAGIC_ICON)
 local timerHealingTouchCD			= mod:NewAITimer(180, 23381, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
-local timerPoisonCD					= mod:NewAITimer(180, 23381, nil, "RemovePoison", nil, 5, nil, DBM_COMMON_L.POISON_ICON)
+local timerPoisonCD					= mod:NewAITimer(180, 17330, nil, "RemovePoison", nil, 5, nil, DBM_COMMON_L.POISON_ICON)
 
 function mod:OnCombatStart(delay)
 	timerDruidsSlumberCD:Start(1-delay)

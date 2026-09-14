@@ -39,5 +39,6 @@ function mod:SPELL_AURA_APPLIED(args)
 		warningFear:Show(args.destName)
 	elseif args.spellId == 6713 and args:IsDestTypePlayer() then
 		warningDisarm:Show(args.destName)
+		timerDisarmCD:Start()--Instant abilities may not log SUCCESS; restart on aura too
 	end
 end

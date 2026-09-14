@@ -7,8 +7,7 @@ mod:SetCreatureID(4829)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 3815",
-	"SPELL_CAST_SUCCESS 3490"
+	"SPELL_CAST_SUCCESS 3815 3490"
 )
 
 local warningPoisonCloud		= mod:NewSpellAnnounce(3815, 4)
@@ -26,11 +25,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 3815 then
 		warningPoisonCloud:Show()
 		timerPoisonCloudCD:Start()
-	end
-end
-
-function mod:SPELL_CAST_SUCCESS(args)
-	if args.spellId == 3490 then
+	elseif args.spellId == 3490 then
 		warningFrenziedRage:Show()
 		timerFrenziedRageCD:Start()
 	end

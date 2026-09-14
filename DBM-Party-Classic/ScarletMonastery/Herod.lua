@@ -21,11 +21,11 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 8269 and args:IsDestTypeHostile() then
+	if args.spellId == 8989 and args:IsDestTypeHostile() then--Whirlwind (was 8269 copy-paste, never warned)
 		specWarnWhirlwind:Show()
 		specWarnWhirlwind:Play("justrun")
 		timerWhirlwindCD:Start()
-	elseif args.spellId == 8269 and args:IsDestTypeHostile() then
+	elseif args.spellId == 8269 and args:IsDestTypeHostile() then--Enrage self-buff
 		warningEnrage:Show(args.destName)
 	end
 end
