@@ -11,7 +11,7 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 68958 17086 18351 18564 18576 18584 18596 18609 18617 18435 68970 18431 18500 18392",
+	"SPELL_CAST_START 68958 17086 18351 18564 18576 18584 18596 18609 18617 18435 68970 18431 18500 18392 68959",
 	"SPELL_DAMAGE 68867 69286",
 	"UNIT_DIED",
 	"UNIT_HEALTH boss1"
@@ -107,6 +107,9 @@ function mod:SPELL_CAST_START(args)
 	if spellId == 68958 then -- Blast Nova (guard, core 15s repeat)
 		specWarnBlastNova:Show()
 		timerBlastNovaCD:Start()
+	elseif spellId == 68959 then -- Ignite Weapon (guard self-buff, core 18-21s; signals guard activity, no fixed CD)
+		specWarnAdds:Show()
+		specWarnAdds:Play("bigmob")
 	elseif args:IsSpellID(17086, 18351, 18564, 18576) or args:IsSpellID(18584, 18596, 18609, 18617) then	-- 1 ID for each direction
 		specWarnBreath:Show()
 		timerBreath:Start()
