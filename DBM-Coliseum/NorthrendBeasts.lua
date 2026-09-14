@@ -26,7 +26,6 @@ mod:RegisterEventsInCombat(
 )
 
 -- General
-local enrageTimer			= mod:NewBerserkTimer(223)
 local timerCombatStart		= mod:NewCombatTimer(23)
 local timerNextBoss			= mod:NewTimer(190, "TimerNextBoss", 2457, nil, nil, 1)
 
@@ -58,15 +57,15 @@ local specWarnToxin			= mod:NewSpecialWarningMoveTo(66823, nil, nil, nil, 1, 2)
 local specWarnBile			= mod:NewSpecialWarningYou(66869, nil, nil, nil, 1, 2)
 
 local timerSubmerge			= mod:NewCDTimer(45, 66948, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp")
-local timerEmerge			= mod:NewBuffActiveTimer(10, 66947, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp")
+local timerEmerge			= mod:NewBuffActiveTimer(6, 66947, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp")--Core 6s emerge
 local timerSweepCD			= mod:NewCDTimer(21, 66794, nil, "Melee", nil, 3)
 local timerAcidicSpewCD		= mod:NewCDTimer(21, 66819, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerMoltenSpewCD		= mod:NewCDTimer(21, 66820, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerParalyticSprayCD	= mod:NewCDTimer(21, 66901, nil, nil, nil, 3)
 local timerBurningSprayCD	= mod:NewCDTimer(21, 66902, nil, nil, nil, 3)
 local timerParalyticBiteCD	= mod:NewCDTimer(25, 66824, nil, "Melee", nil, 3)
-local timerBurningBiteCD	= mod:NewCDTimer(15, 66879, nil, "Melee", nil, 3)
-local timerSlimePoolCD		= mod:NewCDTimer(12, 66883, nil, "Melee", nil, 3)
+local timerBurningBiteCD	= mod:NewCDTimer(20, 66879, nil, "Melee", nil, 3)--Core 20s mobile bite
+local timerSlimePoolCD		= mod:NewCDTimer(30, 66883, nil, "Melee", nil, 3)--Core 30s repeat
 
 mod:AddSetIconOption("SetIconOnBileTarget", 66869, false, 0, {1, 2, 3, 4, 5, 6, 7, 8})
 
@@ -82,7 +81,7 @@ local specWarnFrothingRage	= mod:NewSpecialWarningDispel(66759, "RemoveEnrage", 
 
 local timerBreath			= mod:NewCastTimer(5, 66689, nil, nil, nil, 3)--3 or 5? is it random target or tank?
 local timerStaggeredDaze	= mod:NewBuffActiveTimer(15, 66758, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
-local timerNextCrash		= mod:NewCDTimer(51, 66683, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)
+local timerNextCrash		= mod:NewCDTimer(40, 66683, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)--Core 30s first, 30-50s repeat
 
 mod:AddSetIconOption("SetIconOnChargeTarget", 52311, true, 0, {8})
 mod:AddBoolOption("ClearIconsOnIceHowl", true)
@@ -208,12 +207,12 @@ function mod:SPELL_CAST_START(args)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args:IsSpellID(67641, 66883, 67642, 67643) then			-- Slime Pool Cloud Spawn
+	if args:IsSpellID(67641, 66883, 67642, 67643) then			-- Slime Pool Cloud Spawn (core 30s repeat)
 		warnSlimePool:Show()
-		timerSlimePoolCD:Show()
+		timerSlimePoolCD:Start()
 	elseif args:IsSpellID(66824, 67612, 67613, 67614) then		-- Paralytic Bite
 		timerParalyticBiteCD:Start()
-	elseif args:IsSpellID(66879, 67624, 67625, 67626) then		-- Burning Bite
+	elseif args:IsSpellID(66879, 67624, 67625, 67626) then		-- Burning Bite (core 20s)
 		timerBurningBiteCD:Start()
 	end
 end
@@ -300,7 +299,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 	if (msg:match(L.Charge) or msg:find(L.Charge)) and target then
 		target = DBM:GetUnitFullName(target)
 		warnCharge:Show(target)
-		timerNextCrash:Start(59)
+		timerNextCrash:Start(40)--Core 30-50s repeat
 		if self.Options.ClearIconsOnIceHowl then
 			self:ClearIcons()
 		end
@@ -348,13 +347,10 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 	elseif msg == L.Phase3 or msg:find(L.Phase3) then
 		updateHealthFrame(3)
 		self:SetStage(3)
-		if self:IsHeroic() then
-			enrageTimer:Start()
-		end
 		self:UnscheduleMethod("WormsSubmerge")
 		self:UnscheduleMethod("WormsEmerge")
 		timerCombatStart:Start(10)
-		timerNextCrash:Start() -- 10 + 41
+		timerNextCrash:Start(30) -- Core 30s first
 		timerNextBoss:Cancel()
 		timerSubmerge:Cancel()
 		timerEmerge:Cancel()

@@ -35,15 +35,15 @@ local specWarnPursue		= mod:NewSpecialWarningRun(67574, nil, nil, 2, 4, 2)
 local specWarnShadowStrike	= mod:NewSpecialWarningSpell(66134, "Tank", nil, 2, 1) --Don't have a good voice for this. Need a "stun mob now"
 local specWarnPCold			= mod:NewSpecialWarningYou(66013, false, nil, nil, 1, 2)
 
-local timerAdds				= mod:NewTimer(45, "timerAdds", 45419, nil, nil, 1, DBM_COMMON_L.TANK_ICON)
+local timerAdds				= mod:NewTimer(45, "timerAdds", 45419, nil, nil, 1, DBM_COMMON_L.TANK_ICON)--Core 5-8s first, 45s repeat
 local timerSubmerge			= mod:NewTimer(80, "TimerSubmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)
-local timerEmerge			= mod:NewTimer(65, "TimerEmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)
+local timerEmerge			= mod:NewTimer(60, "TimerEmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)--Core 60s (+2s)
 local timerFreezingSlash	= mod:NewCDTimer(20, 66012, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerPCold			= mod:NewBuffActiveTimer(15, 66013, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerShadowStrike		= mod:NewNextTimer(30, 66134, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, nil, 3)
 local timerHoP				= mod:NewBuffActiveTimer(10, 10278, nil, nil, nil, 5) --So we will track bops to make this easier.
 
-local enrageTimer			= mod:NewBerserkTimer(570)
+local enrageTimer			= mod:NewBerserkTimer(600)--Core 10min
 
 mod:AddSetIconOption("PursueIcon", 67574, true, 0, {8})
 mod:AddSetIconOption("SetIconsOnPCold", 66013, true, 7, {1, 2, 3, 4, 5})
@@ -93,18 +93,33 @@ end
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	self.vb.Burrowed = false
-	timerAdds:Start(10-delay)
-	warnAdds:Schedule(10-delay)
-	self:Schedule(10-delay, Adds, self)
+	timerAdds:Start(6-delay)--Core 5-8s first
+	warnAdds:Schedule(6-delay)
+	self:Schedule(6-delay, Adds, self)
 	warnSubmergeSoon:Schedule(70-delay)
-	timerSubmerge:Start(-delay)
+	timerSubmerge:Start(80-delay)--Core 80s
 	enrageTimer:Start(-delay)
-	timerFreezingSlash:Start(15-delay)
+	timerFreezingSlash:Start(11-delay)--Core 7-15s first
 	if self:IsHeroic() then
-		timerShadowStrike:Start()
+		timerShadowStrike:Start(30-delay)--Core 30-45s per burrower
 		preWarnShadowStrike:Schedule(25.5-delay)
 		self:Schedule(30-delay, ShadowStrike, self)
 	end
+end
+
+function mod:OnCombatEnd()
+	self:Unschedule(Adds)
+	self:Unschedule(ShadowStrike)
+	self:Unschedule(EmergeFix)
+	timerAdds:Cancel()
+	timerSubmerge:Cancel()
+	timerEmerge:Cancel()
+	timerFreezingSlash:Cancel()
+	timerShadowStrike:Cancel()
+	preWarnShadowStrike:Cancel()
+	warnAdds:Cancel()
+	warnEmergeSoon:Cancel()
+	warnSubmergeSoon:Cancel()
 end
 
 function mod:AnnouncePcoldIcons(uId, icon)

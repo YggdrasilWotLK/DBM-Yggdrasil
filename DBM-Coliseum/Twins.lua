@@ -57,15 +57,21 @@ function mod:OnCombatStart(delay)
 	timerSpecial:Start(-delay)
 	warnSpecial:Schedule(40-delay)
 	timerAchieve:Start(-delay)
-	if self:IsHeroic() then
-		enrageTimer:Start(360-delay)
-	else
-		enrageTimer:Start(480-delay)
+	enrageTimer:Start(-delay)--Core 6min heroic / 10min normal, DBM uses 360s base; normal extended below
+	if not self:IsHeroic() then
+		enrageTimer:Stop()
+		enrageTimer:Start(600-delay)--Core 10min normal
 	end
 	self.vb.debuffIcon = 1
 end
 
 function mod:OnCombatEnd()
+	timerSpecial:Cancel()
+	timerHeal:Cancel()
+	timerLightTouch:Cancel()
+	timerDarkTouch:Cancel()
+	enrageTimer:Cancel()
+	warnSpecial:Cancel()
 	if self.Options.InfoFrame then
 		DBM.InfoFrame:Hide()
 	end
@@ -196,30 +202,34 @@ do
 			specWarnEmpoweredDarkness:Show()
 		elseif args:IsPlayer() and args:IsSpellID(65748, 67216, 67217, 67218) then	-- Empowered Light
 			specWarnEmpoweredLight:Show()
-		elseif args:IsSpellID(65950, 67296, 67297, 67298) then	-- Touch of Light
-			if args:IsPlayer() and self.Options.SpecialWarnOnDebuff then
-				specWarnSpecial:Show()
+		elseif args:IsSpellID(65950, 67296, 67297, 67298) then	-- Touch of Light (core heroic-only)
+			if self:IsHeroic() then
+				if args:IsPlayer() and self.Options.SpecialWarnOnDebuff then
+					specWarnSpecial:Show()
+				end
+				timerLightTouch:Start(args.destName)
+				if self.Options.SetIconOnDebuffTarget then
+					self:SetIcon(args.destName, self.vb.debuffIcon, 15)
+				end
+				self.vb.debuffIcon = self.vb.debuffIcon + 1
+				debuffTargets[#debuffTargets + 1] = args.destName
+				self:Unschedule(warnDebuff)
+				self:Schedule(0.9, warnDebuff, self)
 			end
-			timerLightTouch:Start(args.destName)
-			if self.Options.SetIconOnDebuffTarget then
-				self:SetIcon(args.destName, self.vb.debuffIcon, 15)
+		elseif args:IsSpellID(66001, 67281, 67282, 67283) then	-- Touch of Darkness (core heroic-only)
+			if self:IsHeroic() then
+				if args:IsPlayer() and self.Options.SpecialWarnOnDebuff then
+					specWarnSpecial:Show()
+				end
+				timerDarkTouch:Start(args.destName)
+				if self.Options.SetIconOnDebuffTarget then
+					self:SetIcon(args.destName, self.vb.debuffIcon)
+				end
+				self.vb.debuffIcon = self.vb.debuffIcon + 1
+				debuffTargets[#debuffTargets + 1] = args.destName
+				self:Unschedule(warnDebuff)
+				self:Schedule(0.75, warnDebuff, self)
 			end
-			self.vb.debuffIcon = self.vb.debuffIcon + 1
-			debuffTargets[#debuffTargets + 1] = args.destName
-			self:Unschedule(warnDebuff)
-			self:Schedule(0.9, warnDebuff, self)
-		elseif args:IsSpellID(66001, 67281, 67282, 67283) then	-- Touch of Darkness
-			if args:IsPlayer() and self.Options.SpecialWarnOnDebuff then
-				specWarnSpecial:Show()
-			end
-			timerDarkTouch:Start(args.destName)
-			if self.Options.SetIconOnDebuffTarget then
-				self:SetIcon(args.destName, self.vb.debuffIcon)
-			end
-			self.vb.debuffIcon = self.vb.debuffIcon - 1
-			debuffTargets[#debuffTargets + 1] = args.destName
-			self:Unschedule(warnDebuff)
-			self:Schedule(0.75, warnDebuff, self)
 		elseif args:IsSpellID(67246, 65879, 65916, 67244) or args:IsSpellID(67245, 67248, 67249, 67250) then	-- Power of the Twins
 			self:Schedule(0.1, showPowerWarning, self, args:GetDestCreatureID())
 		elseif args:IsSpellID(65874, 67256, 67257, 67258) or args:IsSpellID(65858, 67259, 67260, 67261) then  -- Shield of Darkness/Lights

@@ -121,8 +121,7 @@ local specWarnBloodlust	= mod:NewSpecialWarningDispel(65980, "MagicDispeller", n
 local specWarnHeroism		= mod:NewSpecialWarningDispel(65983, "MagicDispeller", nil, nil, 1, 2)
 
 local timerBladestorm		= mod:NewBuffActiveTimer(8, 65947, nil, nil, nil, 2)
-local timerShadowstepCD		= mod:NewCDTimer(30, 66178, nil, nil, nil, 3)
-local timerBlindCD			= mod:NewCDTimer(120, 65960)
+local timerBlindCD			= mod:NewCDTimer(15, 65960)--Core 10-15s
 local timerDeathgripCD		= mod:NewCDTimer(35, 66017, nil, nil, nil, 3)
 local timerBladestormCD		= mod:NewCDTimer(90, 65947, nil, nil, nil, 2)
 local timerFrostTrapCD		= mod:NewCDTimer(30, 65880)
@@ -133,19 +132,15 @@ local timerHoJCD			= mod:NewCDTimer(40, 66613)
 local timerRepentanceCD		= mod:NewCDTimer(60, 66008)
 local timerHoPCD			= mod:NewCDTimer(300, 66009)
 local timerSilenceCD		= mod:NewCDTimer(45, 65542)
-local timerHeroismCD		= mod:NewCDTimer(300, 65983)
-local timerBloodlustCD		= mod:NewCDTimer(300, 65980)
+local timerHeroismCD		= mod:NewCDTimer(600, 65983)--Core 10min
+local timerBloodlustCD		= mod:NewCDTimer(600, 65980)--Core 10min
 
 function mod:SPELL_CAST_SUCCESS(args)
 	local spellId = args.spellId
 	-- Death Knight
-	if args:IsSpellID(66017, 68753, 68754, 68755) and args:IsDestTypePlayer() then	-- Death Grip
+	if args:IsSpellID(66017, 68753, 68754, 68755) and args:IsDestTypePlayer() then	-- Death Grip (core 35s)
 		warnDeathgrip:Show(args.destName)
-		if self:IsDifficulty("heroic25") then
-			timerShadowstepCD:Start(20)
-		else
-			timerShadowstepCD:Start()
-		end
+		timerDeathgripCD:Start()
 	elseif spellId == 66020 and args:IsDestTypePlayer() then	-- Chains of Ice
 		warnChainsofIce:Show(args.destName)
 	-- Paladin
@@ -219,13 +214,8 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnTranquility:Show()
 		specWarnTranquility:Show(args.sourceName)
 	-- Rogue
-	elseif args:IsSpellID(66178, 68759, 68760, 68761) then			-- Shadowstep
+	elseif args:IsSpellID(66178, 68759, 68760, 68761) then			-- Shadowstep (never cast in core, warn only)
 		warnShadowstep:Show()
-		if self:IsDifficulty("heroic25") then
-			timerShadowstepCD:Start(20)
-		else
-			timerShadowstepCD:Start()
-		end
 	elseif spellId == 65960 then								-- Blind
 		warnBlind:Show(args.destName)
 		timerBlindCD:Start()
@@ -261,7 +251,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	elseif spellId == 65809 then								-- Fear
 		warnFear:Show(args.destName)
 	-- Warrior
-	elseif args:IsSpellID(65927, 65929) then						-- Charge
+	elseif args:IsSpellID(65927, 65929, 68764) then						-- Charge (core warrior ID 68764)
 		warnCharge:Show(args.destName)
 	-- Shaman
 	elseif spellId == 66054 then								-- Hex
@@ -292,7 +282,6 @@ mod.SPELL_MISSED = mod.SPELL_DAMAGE
 function mod:UNIT_DIED(args)
 	local cid = self:GetCIDFromGUID(args.destGUID)
 	if cid == 34472 or cid == 34454 then -- Rogue
-		timerShadowstepCD:Cancel()
 		timerBlindCD:Cancel()
 		DBM.BossHealth:RemoveBoss(34472)
 		DBM.BossHealth:RemoveBoss(34454)

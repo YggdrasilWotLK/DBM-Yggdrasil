@@ -14,7 +14,7 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 66532 66963 66964 66965",
+	"SPELL_CAST_START 66532 66963 66964 66965 66528",
 	"SPELL_CAST_SUCCESS 66228 67106 67107 67108 67901 67902 67903 66258 66269 67898 67899 67900 66197 68123 68124 68125",
 	"SPELL_AURA_APPLIED 67051 67050 67049 66237 66197 68123 68124 68125 66334 67905 67906 67907 66532 66963 66964 66965",
 	"SPELL_AURA_REMOVED 67051 67050 67049 66237",
@@ -29,6 +29,7 @@ local warnPortalSoon			= mod:NewSoonAnnounce(66269, 3)
 local warnVolcanoSoon			= mod:NewSoonAnnounce(66258, 3)
 local warnFlame					= mod:NewTargetAnnounce(66197, 4)
 local warnFlesh					= mod:NewTargetNoFilterAnnounce(66237, 4, nil, "Healer")
+local warnFelLightning			= mod:NewSpellAnnounce(66528, 3)
 
 local specWarnFlame				= mod:NewSpecialWarningRun(66877, nil, nil, 2, 4, 2)
 local specWarnFlameGTFO			= mod:NewSpecialWarningMove(66877, nil, nil, 2, 4, 2)
@@ -42,13 +43,13 @@ local SpecWarnFelFireballDispel	= mod:NewSpecialWarningDispel(66532, "RemoveMagi
 local timerCombatStart			= mod:NewCombatTimer(76)--roleplay for first pull
 local timerFlame				= mod:NewTargetTimer(8, 66197, nil, nil, nil, 3)--There are 8 debuff Ids. Since we detect first to warn, use an 8sec timer to cover duration of trigger spell and damage debuff.
 local timerFlameCD				= mod:NewCDTimer(30, 66197, nil, nil, nil, 3)
-local timerNetherPowerCD		= mod:NewCDTimer(42.5, 67009, nil, "MagicDispeller", nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
+local timerNetherPowerCD		= mod:NewCDTimer(35, 67009, nil, "MagicDispeller", nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)--Core 25-45s init and repeat
 local timerFlesh				= mod:NewTargetTimer(12, 66237, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerFleshCD				= mod:NewCDTimer(23, 66237, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerPortalCD				= mod:NewCDTimer(120, 66269, nil, nil, nil, 1)
 local timerVolcanoCD			= mod:NewCDTimer(120, 66258, nil, nil, nil, 1)
-
-local enrageTimer				= mod:NewBerserkTimer(600)
+local timerFelFireballCD		= mod:NewCDTimer(12, 66532, nil, nil, nil, 3)--Core 5s first, 10-15s repeat
+local timerFelLightningCD		= mod:NewCDTimer(12, 66528, nil, nil, nil, 3)--Core 10-15s
 
 mod:AddSetIconOption("LegionFlameIcon", 66197, true, 0, {7})
 mod:AddSetIconOption("IncinerateFleshIcon", 66237, true, 0, {8})
@@ -69,13 +70,23 @@ function mod:OnCombatStart(delay)
 	warnPortalSoon:Schedule(17-delay)
 	timerVolcanoCD:Start(82-delay)
 	warnVolcanoSoon:Schedule(77-delay)
-	timerNetherPowerCD:Start(15-delay)
-	timerFleshCD:Start(14-delay)
+	timerNetherPowerCD:Start(35-delay)--Core 25-45s first
+	timerFleshCD:Start(25-delay)--Core 24-26s first
 	timerFlameCD:Start(20-delay)
-	enrageTimer:Start(-delay)
+	timerFelFireballCD:Start(5-delay)--Core 5s first
+	timerFelLightningCD:Start(12-delay)--Core 10-15s first
 end
 
 function mod:OnCombatEnd()
+	timerPortalCD:Cancel()
+	timerVolcanoCD:Cancel()
+	timerNetherPowerCD:Cancel()
+	timerFleshCD:Cancel()
+	timerFlameCD:Cancel()
+	timerFelFireballCD:Cancel()
+	timerFelLightningCD:Cancel()
+	warnPortalSoon:Cancel()
+	warnVolcanoSoon:Cancel()
 	if self.Options.InfoFrame then
 		DBM.InfoFrame:Hide()
 	end
@@ -133,9 +144,13 @@ do
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(66532, 66963, 66964, 66965) and self:CheckInterruptFilter(args.sourceGUID, false, true) then	-- Fel Fireball (track cast for interupt, only when targeted)
+	if args:IsSpellID(66532, 66963, 66964, 66965) and self:CheckInterruptFilter(args.sourceGUID, false, true) then	-- Fel Fireball (core 10-15s repeat, only when targeted)
 		SpecWarnFelFireball:Show(args.sourceName)
 		SpecWarnFelFireball:Play("kickcast")
+		timerFelFireballCD:Start()
+	elseif args.spellId == 66528 then -- Fel Lightning (core 10-15s, was untracked)
+		warnFelLightning:Show()
+		timerFelLightningCD:Start()
 	end
 end
 
