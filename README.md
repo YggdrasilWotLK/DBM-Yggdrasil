@@ -12,7 +12,7 @@ This addon is based on [DBM-Warmane](https://github.com/Zidras/DBM-Warmane) by Z
 
 ## Installation
 
-1. [Download the repository from this link](https://github.com/YggdrasilWotLK/DBM-Yggdrasil/archive/refs/heads/main.zip).
+1. [Download the addon from this link](https://github.com/YggdrasilWotLK/DBM-Yggdrasil/archive/refs/heads/main.zip).
 2. In the .zip file, open folder `DBM-Yggdrasil-main` and copy all addon folders into your WoW 3.3.5a client's Interface/AddOns directory.
 3. Restart or reload your UI.
 
