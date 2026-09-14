@@ -24,9 +24,7 @@ local timerDamageShield		= mod:NewBuffActiveTimer(10, 35159, nil, nil, nil, 5)
 local enrageTimer			= mod:NewBerserkTimer(180)
 
 function mod:OnCombatStart(delay)
-	if self:IsHeroic() then
-		enrageTimer:Start(-delay)
-	end
+	enrageTimer:Start(-delay)--Core 3min both difficulties (was heroic-only)
 end
 
 function mod:SPELL_CAST_START(args)

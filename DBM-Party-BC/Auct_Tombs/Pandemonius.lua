@@ -14,7 +14,7 @@ mod:RegisterEventsInCombat(
 
 local specWarnShell			= mod:NewSpecialWarningReflect(32358, nil, nil, 2, 1, 2)
 
-local timerShell			= mod:NewBuffActiveTimer(7, 32358, nil, nil, nil, 5)
+local timerShell			= mod:NewBuffActiveTimer(6, 32358, nil, nil, nil, 5)--DBC 6s duration
 
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(32358, 38759) then

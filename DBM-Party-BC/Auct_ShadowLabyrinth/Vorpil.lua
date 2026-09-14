@@ -14,15 +14,20 @@ mod:RegisterEventsInCombat(
 
 local warnTeleport		= mod:NewSpellAnnounce(33563)
 
-local timerTeleport		= mod:NewNextTimer(37, 33563, nil, nil, nil, 6)
+local timerTeleportMin		= mod:NewNextTimer(36.4, 33563, nil, nil, nil, 6)--Core repeat min 36.4s: earliest recast
+local timerTeleport		= mod:NewNextTimer(44.95, 33563, nil, nil, nil, 6)--Core 36.4s first, 36.4-44.95s repeat RNG; max bar
 
 function mod:OnCombatStart(delay)
-	timerTeleport:Start(40-delay)
+	timerTeleportMin:Start(36-delay)--Core 36.4s first
+	timerTeleport:Start(36-delay)--Core 36.4s first
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 33563 then
 		warnTeleport:Show()
-		timerTeleport:Start()
+		timerTeleportMin:Cancel()
+		timerTeleport:Cancel()
+		timerTeleportMin:Start(36.4)
+		timerTeleport:Start(44.95)
 	end
 end

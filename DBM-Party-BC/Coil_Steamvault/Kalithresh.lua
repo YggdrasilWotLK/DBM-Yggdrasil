@@ -12,7 +12,8 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_SUCCESS 31543",
-	"SPELL_AURA_APPLIED 31534"
+	"SPELL_AURA_APPLIED 31534",
+	"SPELL_AURA_REMOVED 31534"
 )
 
 local WarnChannel		= mod:NewSpellAnnounce(31543, 2)
@@ -32,5 +33,11 @@ function mod:SPELL_AURA_APPLIED(args)
 		timerReflect:Start(args.destName)
 		specWarnReflect:Show(args.destName)
 		specWarnReflect:Play("stopattack")
+	end
+end
+
+function mod:SPELL_AURA_REMOVED(args)
+	if args.spellId == 31534 then
+		timerReflect:Stop()
 	end
 end

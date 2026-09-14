@@ -15,7 +15,7 @@ mod:RegisterEventsInCombat(
 
 local specWarnChannel		= mod:NewSpecialWarning("warningFelCrystal", "-Healer", nil, nil, 1, 2)
 
-local timerChannelCD		= mod:NewTimer(47, "timerFelCrystal", 44320, nil, nil, 1)
+local timerChannelCD		= mod:NewTimer(30, "timerFelCrystal", 44320, nil, nil, 1)--Core 14s first, 30s repeat
 
 function mod:OnCombatStart(delay)
 	timerChannelCD:Start(15-delay)

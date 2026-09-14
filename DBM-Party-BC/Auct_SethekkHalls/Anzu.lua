@@ -30,7 +30,7 @@ local timerScreech		  = mod:NewCastTimer(5, 40184, nil, nil, nil, 2)
 local timerScreechDebuff	= mod:NewBuffActiveTimer(6, 40184, nil, nil, nil, 3)
 local timerCyclone		  = mod:NewTargetTimer(6, 40321, nil, nil, nil, 3)
 local timerSpellBomb		= mod:NewTargetTimer(8, 40303, nil, nil, nil, 3)
-local timerScreechCD		= mod:NewCDTimer(30, 40184, nil, nil, nil, 2)--Best guess on screech CD. Might need tweaking.
+local timerScreechCD		= mod:NewCDTimer(23, 40184, nil, nil, nil, 2)--Core 14s first, 23s repeat
 
 mod.vb.warnedbirds1 = false
 mod.vb.warnedbirds2 = false
@@ -55,7 +55,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		warnCyclone:Show(args.destName)
 		timerCyclone:Start(args.destName)
 	elseif args.spellId == 40184 then
-		timerScreechDebuff:Show()
+		timerScreechDebuff:Start()
 	elseif args.spellId == 40303 then
 		warnSpellBomb:Show(args.destName)
 		timerSpellBomb:Start(args.destName)
@@ -69,10 +69,10 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:UNIT_HEALTH(uId)
-	if not self.vb.warnedbirds1 and self:GetUnitCreatureId(uId) == 23035 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.70 then
+	if not self.vb.warnedbirds1 and self:GetUnitCreatureId(uId) == 23035 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.66 then--Core 66%
 		self.vb.warnedbirds1 = true
 		warnBirds:Show()
-	elseif not self.vb.warnedbirds2 and self:GetUnitCreatureId(uId) == 23035 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.37 then
+	elseif not self.vb.warnedbirds2 and self:GetUnitCreatureId(uId) == 23035 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.33 then--Core 33%
 		self.vb.warnedbirds2 = true
 		warnBirds:Show()
 	end

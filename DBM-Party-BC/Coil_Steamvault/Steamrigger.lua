@@ -25,9 +25,7 @@ local timerNet			= mod:NewTargetTimer(6, 35107, nil, nil, nil, 3)
 local enrageTimer		= mod:NewBerserkTimer(300)
 
 function mod:OnCombatStart(delay)
-	if self:IsHeroic() then
-		enrageTimer:Start(-delay)
-	end
+	enrageTimer:Start(-delay)--Core 5min both difficulties (was heroic-only)
 end
 
 function mod:SPELL_AURA_APPLIED(args)

@@ -7,13 +7,13 @@ mod:SetModelID(19780)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"UNIT_SPELLCAST_SUCCEEDED"
+	"SPELL_CAST_SUCCESS 32371"
 )
 
 local specWarnAdds	= mod:NewSpecialWarningAdds(32371, "-Healer", nil, nil, 1, 2)
 
-function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
-	if spellName == GetSpellInfo(32371) then
+function mod:SPELL_CAST_SUCCESS(args)
+	if args.spellId == 32371 then -- Ethereal Beacon (ID check instead of locale name-match)
 		self:SendSync("Adds")
 	end
 end

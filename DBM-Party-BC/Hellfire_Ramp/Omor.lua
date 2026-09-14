@@ -10,8 +10,8 @@ mod:SetUsedIcons(8)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 37566",
-	"SPELL_AURA_REMOVED 37566"
+	"SPELL_AURA_APPLIED 37566 30695",
+	"SPELL_AURA_REMOVED 37566 30695"
 )
 
 local warnBane		= mod:NewTargetNoFilterAnnounce(37566)
@@ -31,7 +31,7 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 37566 then
+	if args:IsSpellID(37566, 30695) then -- Treacherous Aura (37566 heroic / 30695 normal, core casts 30695)
 		timerBane:Start(args.destName)
 		if self.Options.SetIconOnBaneTarget then
 			self:SetIcon(args.destName, 8, 15)
@@ -50,7 +50,7 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args.spellId == 37566 then
+	if args:IsSpellID(37566, 30695) then
 		timerBane:Stop(args.destName)
 		if self.Options.SetIconOnBaneTarget then
 			self:SetIcon(args.destName, 0)

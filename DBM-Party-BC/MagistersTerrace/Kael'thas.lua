@@ -10,7 +10,7 @@ mod:SetModelID(22906)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 36819",
+	"SPELL_CAST_START 36819 44224",
 	"SPELL_CAST_SUCCESS 44194 36819",
 	"SPELL_AURA_APPLIED 46165",
 	"SPELL_AURA_REMOVED 46165",
@@ -25,10 +25,10 @@ local specwarnPyroblast		= mod:NewSpecialWarningInterrupt(36819, "HasInterrupt",
 local specwarnPhoenix		= mod:NewSpecialWarningSwitch(44194, "-Healer", nil, nil, 1, 2)
 
 local timerPyroblast		= mod:NewCastTimer(4, 36819, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
-local timerShockBarrior		= mod:NewNextTimer(60, 46165, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
-local timerPhoenix			= mod:NewCDTimer(45, 44194, nil, nil, nil, 1)--45-70?
-local timerGravityLapse		= mod:NewBuffActiveTimer(35, 44194, nil, nil, nil, 6)
-local timerGravityLapseCD	= mod:NewNextTimer(13.5, 44194, nil, nil, nil, 6)
+local timerShockBarrior		= mod:NewNextTimer(50, 46165, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)--Core 50s repeat (heroic)
+local timerPhoenix			= mod:NewCDTimer(60, 44194, nil, nil, nil, 1)--Core 15s first, 60s repeat
+local timerGravityLapse		= mod:NewBuffActiveTimer(30, 44224, nil, nil, nil, 6)--Core 30s channel
+local timerGravityLapseCD	= mod:NewNextTimer(45, 44224, nil, nil, nil, 6)--Core ~30s channel + feedback + 10s
 
 mod.vb.interruptable = false
 
@@ -36,8 +36,9 @@ function mod:OnCombatStart(delay)
 	self.vb.interruptable = false
 	self:SetStage(1)
 	if self:IsHeroic() then
-		timerShockBarrior:Start(-delay)
+		timerShockBarrior:Start(50-delay)--Core 50s first (heroic)
 	end
+	timerPhoenix:Start(15-delay)--Core 15s first
 end
 
 function mod:SPELL_CAST_START(args)
@@ -45,10 +46,10 @@ function mod:SPELL_CAST_START(args)
 	if spellId == 36819 then
 		self.vb.interruptable = true
 		timerPyroblast:Start()
-	elseif spellId == 44224 then
+	elseif spellId == 44224 then -- Gravity Lapse (registered above; old branch was dead)
 		WarnGravityLapse:Show()
 		timerGravityLapse:Start()
-		timerGravityLapseCD:Schedule(35)--Show after current lapse has ended
+		timerGravityLapseCD:Start()
 		if self.vb.phase < 2 then
 			self:SetStage(2)
 			timerShockBarrior:Stop()
@@ -81,8 +82,8 @@ function mod:SPELL_AURA_REMOVED(args)
 	end
 end
 
-function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
-	if spellName == GetSpellInfo(47109) and self.vb.phase < 2 then--Power Feedback
+function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName, _, _, spellId)
+	if (spellId == 44233 or spellName == GetSpellInfo(47109)) and self.vb.phase < 2 then--Power Feedback 44233 (47109 kept as fallback)
 		self:SetStage(2)
 		timerShockBarrior:Stop()
 		timerPhoenix:Stop()

@@ -21,10 +21,11 @@ local warnSharpShooterGuard		= mod:NewAnnounce("warnSharpShooter", 2, 134170)
 
 local specWarnBladeDance		= mod:NewSpecialWarningSpell(30739, nil, nil, nil, 2, 2)
 
-local timerHeathenCD			= mod:NewTimer(21, "timerHeathen", 134170, nil, nil, 1)
-local timerReaverCD				= mod:NewTimer(21, "timerReaver", 134170, nil, nil, 1)
-local timerSharpShooterCD		= mod:NewTimer(21, "timerSharpShooter", 134170, nil, nil, 1)
-local timerBladeDanceCD			= mod:NewCDTimer(35, 30739, nil, nil, nil, 2)
+local timerHeathenCD			= mod:NewTimer(20.6, "timerHeathen", 134170, nil, nil, 1)--Core 20.6s portal cycle
+local timerReaverCD				= mod:NewTimer(20.6, "timerReaver", 134170, nil, nil, 1)
+local timerSharpShooterCD		= mod:NewTimer(20.6, "timerSharpShooter", 134170, nil, nil, 1)
+local timerBladeDanceMin			= mod:NewCDTimer(32.85, 30739, nil, nil, nil, 2)--Core repeat min 32.85s: earliest recast
+local timerBladeDanceCD			= mod:NewCDTimer(41.35, 30739, nil, nil, nil, 2)--Core 30s first, 32.85-41.35s repeat RNG; max bar
 
 mod.vb.addSet = 0
 mod.vb.addType = 0
@@ -43,15 +44,24 @@ local function Adds(self)
 		timerHeathenCD:Start()
 		self.vb.addType = 0
 	end
-	self:Schedule(21, Adds, self)
+	self:Schedule(20.6, Adds, self)
 end
 
 function mod:OnCombatStart(delay)
 	self.vb.addSet = 0
 	self.vb.addType = 0
-	timerHeathenCD:Start(27.5-delay)
-	self:Schedule(27.5, Adds, self)--When reaches stairs, not when enters/spawns way down hallway.
-	timerBladeDanceCD:Start(72-delay)
+	timerHeathenCD:Start(20.6-delay)--Core 20.6s first
+	self:Schedule(20.6-delay, Adds, self)--When reaches stairs, not when enters/spawns way down hallway.
+	timerBladeDanceCD:Start(30-delay)--Core 30s first
+end
+
+function mod:OnCombatEnd()
+	self:Unschedule(Adds)
+	timerHeathenCD:Cancel()
+	timerReaverCD:Cancel()
+	timerSharpShooterCD:Cancel()
+	timerBladeDanceMin:Cancel()
+	timerBladeDanceCD:Cancel()
 end
 
 --Change to no sync if blizz adds IEEU(boss1)
@@ -64,7 +74,10 @@ end
 function mod:OnSync(msg)
 	if msg == "BladeDance" and self:AntiSpam(3, 1) then
 		specWarnBladeDance:Show()
-		timerBladeDanceCD:Start()
+		timerBladeDanceMin:Cancel()
+		timerBladeDanceCD:Cancel()
+		timerBladeDanceMin:Start(32.85)
+		timerBladeDanceCD:Start(41.35)
 		specWarnBladeDance:Play("aesoon")
 	end
 end

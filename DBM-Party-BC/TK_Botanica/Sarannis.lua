@@ -16,7 +16,7 @@ function mod:OnCombatStart(delay)
 	if self:IsNormal() then
 		self:RegisterShortTermEvents("UNIT_HEALTH")
 	else
-		self:RegisterShortTermEvnts("UNIT_SPELLCAST_SUCCEEDED")
+		self:RegisterShortTermEvents("UNIT_SPELLCAST_SUCCEEDED")
 		timerReinforcements:Start(60 - delay)
 		warnReinforcementsSoon:Schedule(55 - delay)
 	end
@@ -30,7 +30,7 @@ do
 	local UnitHealth, UnitHealthMax = UnitHealth, UnitHealthMax
 
 	function mod:UNIT_HEALTH(uId)
-		if self:GetUnitCreatureId(uId) == 17976 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.60 then
+		if self:GetUnitCreatureId(uId) == 17976 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.55 then--Core single cast at 55% on normal
 			warnReinforcementsSoon:Show()
 			self:UnregisterShortTermEvents()
 		end

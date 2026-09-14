@@ -15,7 +15,8 @@ mod:RegisterEventsInCombat(
 
 local warnFear		= mod:NewSpellAnnounce(33547, 3)
 
-local timerFear		= mod:NewNextTimer(25, 33547, nil, nil, nil, 2)
+local timerFearMin		= mod:NewNextTimer(23, 33547, nil, nil, nil, 2)--Core 23-33s RNG: earliest recast
+local timerFear		= mod:NewNextTimer(33, 33547, nil, nil, nil, 2)--Core 23-33s first and repeat RNG; max bar
 
 local enrageTimer	= mod:NewBerserkTimer(180)
 
@@ -28,6 +29,9 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 33547 then
 		warnFear:Show()
-		timerFear:Start()
+		timerFearMin:Cancel()
+		timerFear:Cancel()
+		timerFearMin:Start(23)
+		timerFear:Start(33)
 	end
 end

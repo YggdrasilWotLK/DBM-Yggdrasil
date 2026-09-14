@@ -19,11 +19,13 @@ local WarnPrison		= mod:NewTargetNoFilterAnnounce(32361, 3)
 
 local specWarnQuake		= mod:NewSpecialWarningSpell(33919, nil, nil, nil, 2, 2)
 
-local timerPrisonCD		= mod:NewCDTimer(17.8, 32361, nil, nil, nil, 2)
+local timerPrisonMin		= mod:NewCDTimer(15, 32361, nil, nil, nil, 2)--Core repeat min 15s: earliest recast
+local timerPrisonCD		= mod:NewCDTimer(22, 32361, nil, nil, nil, 2)--Core 12-22s first, 15-22s repeat RNG; max bar
 local timerPrison		= mod:NewTargetTimer(5, 32361, nil, nil, nil, 3)
 
 function mod:OnCombatStart()
-	timerPrisonCD:Start()
+	timerPrisonMin:Start(12)--Core first min 12s
+	timerPrisonCD:Start(22)--Core first max 22s
 end
 
 function mod:SPELL_CAST_START(args)
@@ -37,7 +39,10 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 32361 then
 		WarnPrison:Show(args.destName)
 		timerPrison:Start(args.destName)
-		timerPrisonCD:Start()
+		timerPrisonMin:Cancel()
+		timerPrisonCD:Cancel()
+		timerPrisonMin:Start(15)
+		timerPrisonCD:Start(22)
 	end
 end
 

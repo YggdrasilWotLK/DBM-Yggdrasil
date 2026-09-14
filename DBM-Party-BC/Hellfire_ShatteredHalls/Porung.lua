@@ -4,7 +4,7 @@ local L		= mod:GetLocalizedStrings()
 mod.statTypes = "normal,heroic,mythic"
 
 mod:SetRevision("20220518110528")
-mod:SetCreatureID(20923)
+mod:SetCreatureID(20923, 17461)--Heroic Porung + normal Blood Guard (module never started on normal otherwise)
 
 mod:SetModelID(17725)
 mod:SetModelOffset(0, 0, -0.1)

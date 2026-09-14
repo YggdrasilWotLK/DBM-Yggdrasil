@@ -19,15 +19,20 @@ mod:RegisterEventsInCombat(
 --If target scanning works on fissure, special warning and yell
 local warnShadowFissure		= mod:NewSpellAnnounce(30496, 3)
 
-local timerShadowFissureCD	= mod:NewNextTimer(8.5, 30496, nil, nil, nil, 3)--8.5-8.8
+local timerShadowFissureMin	= mod:NewNextTimer(8.45, 30496, nil, nil, nil, 3)--Core repeat min 8.45s: earliest recast
+local timerShadowFissureCD	= mod:NewNextTimer(9.45, 30496, nil, nil, nil, 3)--Core first 8.1-17.3s, repeat 8.45-9.45s RNG; max bar
 
 function mod:OnCombatStart(delay)
-	timerShadowFissureCD:Start(8.3-delay)
+	timerShadowFissureMin:Start(8.1-delay)--Core first min 8.1s
+	timerShadowFissureCD:Start(17.3-delay)--Core first max 17.3s
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 30496 then
 		warnShadowFissure:Show()
-		timerShadowFissureCD:Start()
+		timerShadowFissureMin:Cancel()
+		timerShadowFissureCD:Cancel()
+		timerShadowFissureMin:Start(8.45)
+		timerShadowFissureCD:Start(9.45)
 	end
 end

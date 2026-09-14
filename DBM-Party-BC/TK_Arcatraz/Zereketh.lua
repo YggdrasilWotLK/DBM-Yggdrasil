@@ -10,8 +10,10 @@ mod:RegisterCombat("combat")
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 36127 39005",
 	"SPELL_CAST_SUCCESS 36119 30533",
-	"SPELL_AURA_APPLIED 39367 32863",
-	"SPELL_AURA_REMOVED 39367 32863"
+	"SPELL_AURA_APPLIED 39367 32863 36123",
+	"SPELL_AURA_REMOVED 39367 32863 36123",
+	"SPELL_DAMAGE 36121 39004",
+	"SPELL_MISSED 36121 39004"
 )
 
 local warnVoid		= mod:NewSpellAnnounce(36119, 3)
@@ -48,7 +50,7 @@ do
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(39367, 32863) then
+	if args:IsSpellID(39367, 32863, 36123) then--36123 is the core SoC ID, others kept as fallback
 		if self:CheckDispelFilter() then
 			specwarnSoC:Show(args.destName)
 			specwarnSoC:Play("dispelnow")
@@ -58,7 +60,7 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args:IsSpellID(39367, 32863) then
+	if args:IsSpellID(39367, 32863, 36123) then
 		timerSoC:Stop(args.destName)
 	end
 end
