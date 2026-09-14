@@ -10,7 +10,7 @@ mod:RegisterCombat("combat")
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 45866",
 	"SPELL_CAST_START 45855",
-	"SPELL_SUMMON 45392",
+	"SPELL_SUMMON 45392 45391"--45391 is the core summon ID, 45392 kept as fallback,
 	"CHAT_MSG_RAID_BOSS_EMOTE",
 	"CHAT_MSG_MONSTER_YELL",
 	"UNIT_SPELLCAST_SUCCEEDED"

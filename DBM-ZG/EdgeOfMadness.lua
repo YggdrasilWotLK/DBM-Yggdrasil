@@ -7,7 +7,7 @@ mod:SetCreatureID(15083)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 24684 24699 24683",
+	"SPELL_CAST_SUCCESS 24684 24699 24683 24664 8269"--24664 Sleep + 8269 Frenzy are the core IDs; old IDs kept as fallback where DBC-real,
 	"SPELL_AURA_APPLIED 24664 8269",
 	"SPELL_SUMMON 24728 24683"
 )
@@ -35,10 +35,10 @@ function mod:SPELL_CAST_SUCCESS(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 24684 and args:IsDestTypePlayer() and  self:AntiSpam(3, 1) then
+	if args:IsSpellID(24684, 24664) and args:IsDestTypePlayer() and  self:AntiSpam(3, 1) then--24664 is the core Sleep ID
 		warnSleep:Show()
 		timerSleep:Start()
-	elseif args.spellId == 24699 and args:IsDestTypeHostile() then
+	elseif args:IsSpellID(24699, 8269) and args:IsDestTypeHostile() then--8269 is the core Frenzy ID
 		warnFrenzy:Show()
 	end
 end

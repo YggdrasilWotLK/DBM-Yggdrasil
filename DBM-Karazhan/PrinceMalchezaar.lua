@@ -37,7 +37,7 @@ local timerEnfeeble				= mod:NewBuffFadesTimer(9, 30843)
 
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
-	timerNextInfernal:Start(14.5-delay)--14-21?
+	timerNextInfernal:Start(40-delay)--Core 40s first
 	timerEnfeebleCD:Start(30-delay)
 end
 
@@ -49,7 +49,7 @@ function mod:SPELL_CAST_START(args)
 		else
 			warningNovaCast:Show()
 		end
-		timerNovaCD:Start(self.vb.phase == 3 and 18.1 or 30)
+		timerNovaCD:Start(self.vb.phase == 3 and 18.1 or 35.5)--Core 35.5 P1/P2, 18.1 P3
 	end
 end
 

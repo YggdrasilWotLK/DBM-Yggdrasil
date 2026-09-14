@@ -10,9 +10,9 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_SUCCESS 42005",
-	"SPELL_AURA_APPLIED 42005 40481 40491 40604",
-	"SPELL_AURA_APPLIED_DOSE 40481 42005",
-	"SPELL_AURA_REFRESH 42005 40481",
+	"SPELL_AURA_APPLIED 42005 40481 40484 40491 40604",--40484 is the core wound ID, 40481 kept as fallback
+	"SPELL_AURA_APPLIED_DOSE 40481 40484 42005",
+	"SPELL_AURA_REFRESH 42005 40481 40484",
 	"SPELL_AURA_REMOVED 42005",
 	"SPELL_AURA_REMOVED_DOSE 42005"
 )
@@ -89,7 +89,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		if self.Options.InfoFrame then
 			DBM.InfoFrame:UpdateTable(bloodStacks)
 		end
-	elseif spellId == 40481 and not self.vb.rage then
+	elseif args:IsSpellID(40481, 40484) and not self.vb.rage then--Core ID added
 		local amount = args.amount or 1
 		if (amount % 5 == 0) then
 			warnWound:Show(args.destName, amount)

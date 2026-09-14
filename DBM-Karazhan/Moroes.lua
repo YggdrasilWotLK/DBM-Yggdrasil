@@ -27,7 +27,7 @@ local specWarnGreaterHeal	= mod:NewSpecialWarningInterrupt(35096, "HasInterrupt"
 local specWarnHolyLight		= mod:NewSpecialWarningInterrupt(29562, "HasInterrupt", nil, nil, 1, 2)
 
 local timerVanishCD			= mod:NewCDTimer(35.1, 29448, nil, nil, nil, 6)--35.1-51.8
-local timerGougeCD			= mod:NewCDTimer(22.6, 29448, nil, "Tank", nil, 6)--22.6-43.6
+local timerGougeCD			= mod:NewCDTimer(22.6, 29425, nil, "Tank", nil, 6)--22.6-43.6 (was 29448 Vanish ID)
 local timerGouge			= mod:NewTargetTimer(6, 29425, nil, false, nil, 3)
 local timerBlind			= mod:NewTargetTimer(10, 34694, nil, false, nil, 3)
 local timerMortalStrike		= mod:NewTargetTimer(5, 29572, nil, "Tank|Healer", nil, 5)
@@ -63,14 +63,14 @@ function mod:SPELL_AURA_APPLIED(args)
 		timerVanishCD:Start()
 	elseif args.spellId == 29425 then
 		warningGouge:Show(args.destName)
-		timerGouge:Show(args.destName)
+		timerGouge:Start(args.destName)
 		timerGougeCD:Start()
 	elseif args.spellId == 34694 then
 		warningBlind:Show(args.destName)
-		timerBlind:Show(args.destName)
+		timerBlind:Start(args.destName)
 	elseif args.spellId == 29572 then
 		warningMortalStrike:Show(args.destName)
-		timerMortalStrike:Show(args.destName)
+		timerMortalStrike:Start(args.destName)
 	elseif args.spellId == 37023 then--Frenzy, he's no longer going to vanish.
 		warningFrenzy:Show()
 		timerVanishCD:Cancel()

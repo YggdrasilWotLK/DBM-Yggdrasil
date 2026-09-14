@@ -35,7 +35,7 @@ local timerMeleeImmune		= mod:NewTargetTimer(15, 41450, nil, "Physical", 2, 5, n
 local timerSpellImmune		= mod:NewTargetTimer(15, 41451, nil, "-Physical", 2, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
 local timerDevAura			= mod:NewBuffActiveTimer(30, 41452, nil, "Physical", 2, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
 local timerResAura			= mod:NewBuffActiveTimer(30, 41453, nil, "-Physical", 2, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
-local timerNextCoH			= mod:NewCDTimer(14, 41455, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerNextCoH			= mod:NewCDTimer(20, 41455, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
 
 local berserkTimer			= mod:NewBerserkTimer(900)
 
@@ -105,6 +105,6 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 41455 then
-		timerNextCoH:Start(13.3)
+		timerNextCoH:Start(20)--Core 20s (was 13.3)
 	end
 end

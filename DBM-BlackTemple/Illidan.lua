@@ -91,8 +91,8 @@ function mod:OnCombatStart(delay)
 	berserkTimer:Start(-delay)
 	if not self:IsTrivial() then
 		self:RegisterShortTermEvents(
-			"SPELL_DAMAGE 40841",
-			"SPELL_MISSED 40841",
+			"SPELL_DAMAGE 40841 40832",--40832 is the core flame crash ID, 40841 kept as fallback
+			"SPELL_MISSED 40841 40832",
 			"UNIT_HEALTH"
 		)
 	end
@@ -197,7 +197,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 end
 
 function mod:SPELL_DAMAGE(_, _, _, destGUID, _, _, spellId)
-	if spellId == 40841 and destGUID == UnitGUID("player") and self:AntiSpam(4, 5) then--Flame Crash
+	if args:IsSpellID(40841, 40832) and destGUID == UnitGUID("player") and self:AntiSpam(4, 5) then--Flame Crash (core ID added)
 		specWarnGTFO:Show()
 		specWarnGTFO:Play("runaway")
 	end
@@ -224,7 +224,7 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if msg == L.Pull or msg:find(L.Pull) then
 		timerCombatStart:Start()
 	elseif msg == L.Eyebeam or msg:find(L.Eyebeam) then
-		warnEyebeam:Show()
+		warnEyebeam:Show()--40018 DBC-real; core casts 39908 via yell path, covered here
 	elseif msg == L.Demon or msg:find(L.Demon) then
 		self.vb.flameBursts = 0
 		warnDemon:Show()

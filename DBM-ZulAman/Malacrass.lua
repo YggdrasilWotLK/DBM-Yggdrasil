@@ -11,6 +11,7 @@ mod:RegisterCombat("yell", L.YellPull)
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 43501 43421",
 	"SPELL_CAST_START 43548 43451 43431",
+	"SPELL_CAST_START 43429",
 	"SPELL_CAST_SUCCESS 43383 43329",
 	"SPELL_SUMMON 43436"
 )
@@ -87,7 +88,14 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnBoltSoon:Schedule(35)
 		timerBolt:Start()
 		timerBoltCD:Start()
-	elseif args:IsSpellID(43329) then
+	elseif args:IsSpellID(43329) then--Summon Elemental Soul (DBC real, kept as fallback)
+		warnPatch:Show()
+		timerPatch:Start()
+	end
+end
+
+function mod:SPELL_CAST_START(args)
+	if args.spellId == 43429 then--Consecration cast (core ID; SUCCESS branch above is fallback)
 		warnPatch:Show()
 		timerPatch:Start()
 	end

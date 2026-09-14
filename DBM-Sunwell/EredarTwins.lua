@@ -109,7 +109,7 @@ function mod:ShadowNovaTarget(targetname)
 		warnNova:Show(targetname)
 	end
 	if self.Options.NovaIcon then
-		self:SetIcon(targetname, 7, 5)
+		self:SetIcon(targetname, 8, 5)--Matches NovaIcon {8} option (was 7)
 	end
 end
 
@@ -126,7 +126,7 @@ function mod:ConflagrationTarget(targetname)
 		warnConflag:Show(targetname)
 	end
 	if self.Options.ConflagIcon then
-		self:SetIcon(targetname, 8, 5)
+		self:SetIcon(targetname, 7, 5)--Matches ConflagIcon {7} option (was 8)
 	end
 end
 
@@ -163,7 +163,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 			warnNova:Show(target)
 		end
 		if self.Options.NovaIcon then
-			self:SetIcon(target, 7, 5)
+			self:SetIcon(target, 8, 5)
 		end
 	elseif (msg == L.Conflag or msg:find(L.Conflag)) and target then
 		DBM:AddMsg("Conflagration emote is working again. Notify me (Zidras) on discord or open a bug report.")
@@ -181,7 +181,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 			warnConflag:Show(target)
 		end
 		if self.Options.ConflagIcon then
-			self:SetIcon(target, 8, 5)
+			self:SetIcon(target, 7, 5)
 		end
 	end
 end

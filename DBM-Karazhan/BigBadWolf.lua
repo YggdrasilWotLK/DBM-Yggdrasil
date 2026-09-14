@@ -9,8 +9,8 @@ mod:SetUsedIcons(8)
 mod:RegisterCombat("yell", L.DBM_BBW_YELL_1)
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 30753 30752",
-	"SPELL_AURA_REMOVED 30753"
+	"SPELL_AURA_APPLIED 30753 30768 30752",
+	"SPELL_AURA_REMOVED 30753 30768"
 )
 
 local warningFear		= mod:NewSpellAnnounce(30752, 3)
@@ -25,7 +25,7 @@ local timerFearCD		= mod:NewNextTimer(24, 30752, nil, nil, nil, 2)
 mod:AddSetIconOption("RRHIcon", 30753, true, false, {8})
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 30753 then
+	if args:IsSpellID(30753, 30768) then--30768 is the core cast ID, 30753 kept as fallback
 		timerRRH:Start(args.destName)
 		if self:IsInCombat() then--Because sometimes debuff goes out half sec after combat end
 			timerRRHCD:Start()
@@ -47,7 +47,7 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args.spellId == 30753 and self.Options.RRHIcon then
+	if args:IsSpellID(30753, 30768) and self.Options.RRHIcon then
 		self:SetIcon(args.destName, 0)
 	end
 end

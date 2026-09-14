@@ -23,10 +23,12 @@ mod:RegisterEventsInCombat(
 local timerHeroism			= mod:NewBuffActiveTimer(10, 37471)
 local timerBloodlust		= mod:NewBuffActiveTimer(10, 37472)
 local timerRecentlyInGame	= mod:NewBuffFadesTimer(10, 30529, nil, nil, nil, 5)
-local timerNextCheat		= mod:NewTimer(108, "timerCheat", 39342, nil, nil, 3)
+local timerNextCheatMin	= mod:NewTimer(45, "timerCheatMin", 39342, nil, nil, 3)--Core 45-100s RNG: earliest recast
+local timerNextCheat		= mod:NewTimer(100, "timerCheat", 39342, nil, nil, 3)--Core 45-100s RNG; max bar
 
 function mod:OnCombatStart(delay)
-	timerNextCheat:Start(108-delay)
+	timerNextCheatMin:Start(45-delay)
+	timerNextCheat:Start(100-delay)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
@@ -45,6 +47,9 @@ end
 
 function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 	if msg == L.EchoCheats then
-		timerNextCheat:Start()--All other cheats should be every 108 like clockwork. Only the second is random. Ie, 111, 120, 108 repeating, OR 111, 108 repeating.
+		timerNextCheatMin:Cancel()
+		timerNextCheat:Cancel()
+		timerNextCheatMin:Start(45)
+		timerNextCheat:Start(100)--All other cheats should be every 108 like clockwork. Only the second is random. Ie, 111, 120, 108 repeating, OR 111, 108 repeating.
 	end
 end

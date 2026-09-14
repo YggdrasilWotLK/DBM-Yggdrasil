@@ -21,7 +21,7 @@ local warnSpine			= mod:NewTargetNoFilterAnnounce(39837, 3)
 local specWarnSpineTank	= mod:NewSpecialWarningTaunt(39837, nil, nil, nil, 1, 2)
 local yellSpine			= mod:NewYell(39837)
 
-local timerShield		= mod:NewCDTimer(56, 39872, nil, nil, nil, 5)
+local timerShield		= mod:NewCDTimer(65, 39872--Core 60s + 10s delay ~= 70; was 56, nil, nil, nil, 5)
 
 local berserkTimer		= mod:NewBerserkTimer(480)
 

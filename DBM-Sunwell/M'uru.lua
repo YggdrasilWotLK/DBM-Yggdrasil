@@ -7,7 +7,7 @@ mod:SetCreatureID(25741)--25741 Muru, 25840 Entropius
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 45996",
+	"SPELL_AURA_APPLIED 45996 45998 46269",
 	"SPELL_CAST_SUCCESS 46177",
 	"SPELL_SUMMON 46268 46282",
 	"UNIT_DIED"
@@ -80,7 +80,7 @@ function mod:OnCombatStart(delay)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args.spellId == 45996 and args:GetDestCreatureID() == 25741 then
+	if args:IsSpellID(45996, 45998, 46269) and args:GetDestCreatureID() == 25741 then--45998/46269 are the core IDs, 45996 kept as fallback
 		warnDarkness:Show()
 		specWarnVoid:Show()
 		timerNextDarkness:Start()

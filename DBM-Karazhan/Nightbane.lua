@@ -28,7 +28,7 @@ local specWarnSmoke			= mod:NewSpecialWarningTarget(30128, "Healer", nil, nil, 1
 
 local timerNightbane		= mod:NewCombatTimer(36)
 local timerFearCD			= mod:NewCDTimer(31.5, 36922, nil, nil, nil, 2)
-local timerAirPhase			= mod:NewTimer(57, "timerAirPhase", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
+local timerAirPhase			= mod:NewTimer(35, "timerAirPhase"--Core 35s land schedule (was 57), "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
 local timerBone				= mod:NewBuffActiveTimer(11, 37098, nil, nil, nil, 1)
 
 mod:AddSetIconOption("SetIconOnCharred", 30128, true, false, {1})
@@ -89,9 +89,9 @@ do
 			timerAirPhase:Stop()
 			timerAirPhase:Start()
 			self:Unschedule(clearSetIcon)
-			self:Schedule(57, clearSetIcon, self)
+			self:Schedule(35, clearSetIcon, self)
 		elseif msg == L.DBM_NB_YELL_GROUND or msg == L.DBM_NB_YELL_GROUND2 then--needed. because if you deal more 25% damage in air phase, air phase repeated and shorten. So need to update exact ground phase.
-			timerAirPhase:Update(43, 57)
+			timerAirPhase:Update(21, 35)
 			self:Unschedule(clearSetIcon)
 			self:Schedule(14, clearSetIcon, self)
 		end

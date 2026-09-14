@@ -24,7 +24,7 @@ local specWarnHeal		= mod:NewSpecialWarningInterrupt(23954, "HasInterrupt", nil,
 local timerSonicBurst	= mod:NewBuffActiveTimer(10, 23918, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
 local timerScreech		= mod:NewBuffActiveTimer(4, 22884, nil, nil, nil, 3)
 local timerPain			= mod:NewTargetTimer(18, 23952, nil, "RemoveMagic|Healer", nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
-local timerHealCD		= mod:NewNextTimer(20, 23954, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
+local timerHealCD		= mod:NewNextTimer(25, 23954, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)--Core 25s (was 20)
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 23954 and args:IsSrcTypeHostile() then
@@ -54,7 +54,7 @@ function mod:SPELL_AURA_APPLIED(args)
 end
 
 function mod:SPELL_AURA_REMOVED(args)
-	if args.spellID == 23952 and args:IsDestTypePlayer() then
+	if args.spellId == 23952 and args:IsDestTypePlayer() then
 		timerPain:Stop(args.destName)
 	end
 end

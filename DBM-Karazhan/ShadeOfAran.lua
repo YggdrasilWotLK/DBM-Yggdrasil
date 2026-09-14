@@ -26,7 +26,7 @@ local specWarnFlameWreath	= mod:NewSpecialWarning("DBM_ARAN_DO_NOT_MOVE", nil, n
 local specWarnArcane		= mod:NewSpecialWarningRun(29973, nil, nil, nil, 4, 7)
 local specWarnBlizzard		= mod:NewSpecialWarningGTFO(29951, nil, nil, nil, 1, 6)
 
-local timerSpecial			= mod:NewTimer(28.9, "timerSpecial", "132866", nil, nil, 2)
+local timerSpecial			= mod:NewTimer(37, "timerSpecial", "132866", nil, nil, 2)
 local timerFlameCast		= mod:NewCastTimer(5, 30004, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerArcaneExplosion	= mod:NewCastTimer(10, 29973, nil, nil, nil, 2)
 local timerFlame			= mod:NewBuffActiveTimer(20.2, 29946, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
@@ -34,7 +34,7 @@ local timerBlizzad			= mod:NewBuffActiveTimer(30, 29951, nil, nil, nil, 3)
 local timerElementals		= mod:NewBuffActiveTimer(90, 37053, nil, nil, nil, 6)
 local timerChains			= mod:NewTargetTimer(10, 29991, nil, nil, nil, 3, nil, DBM_COMMON_L.MAGIC_ICON)
 
-local berserkTimer			= mod:NewBerserkTimer(900)
+local berserkTimer			= mod:NewBerserkTimer(720)--Core 12min shadow phase
 
 mod:AddSetIconOption("WreathIcons", 29946, true, false, {5, 6, 7, 8})
 mod:AddSetIconOption("ElementalIcons", 37053, true, true, {1, 2, 3, 4})
@@ -94,7 +94,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnFlameWreath:Show()
 			specWarnFlameWreath:Play("stopmove")
 		end
-		if self.Options.WreathIcons then
+		if self.Options.WreathIconss then
 			self:SetIcon(args.destName, self.vb.flameWreathIcon, 20)
 		end
 		self.vb.flameWreathIcon = self.vb.flameWreathIcon - 1
@@ -106,7 +106,7 @@ end
 function mod:SPELL_AURA_REMOVED(args)
 	if args.spellId == 29991 then
 		timerChains:Cancel(args.destName)
-	elseif args.spellId == 29946 and self.Options.WreathIcon then
+	elseif args.spellId == 29946 and self.Options.WreathIcons then
 		self:SetIcon(args.destName, 0)
 	end
 end
@@ -115,7 +115,7 @@ function mod:SPELL_SUMMON(args)
 	if args:IsSpellID(29962, 37051, 37052, 37053) then -- Summon Water elementals
 		if self:AntiSpam(5, 1) then
 			warningElementals:Show()
-			timerElementals:Show()
+			timerElementals:Start()
 		end
 		if self.Options.ElementalIcons then
 			self:ScanForMobs(args.destGUID, 2, self.vb.mobIcon, 1, 0.1, 10, "ElementalIcons")--creatureID, iconSetMethod, mobIcon, maxIcon, scanInterval, scanningTime, optionName, isFriendly, secondCreatureID, skipMarked

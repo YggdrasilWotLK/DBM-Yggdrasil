@@ -31,8 +31,8 @@ function mod:OnCombatStart(delay)
 	timerPortalPhase:Start(63.5-delay)
 	if not self:IsTrivial() then
 		self:RegisterShortTermEvents(
-			"SPELL_PERIODIC_DAMAGE 30533",
-			"SPELL_PERIODIC_MISSED 30533"
+			"SPELL_PERIODIC_DAMAGE 30533 30522",
+			"SPELL_PERIODIC_MISSED 30533 30522"
 		)
 	end
 end
@@ -55,7 +55,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 end
 
 function mod:SPELL_PERIODIC_DAMAGE(_, _, _, destGUID, _, _, spellId, spellName)
-	if spellId == 30533 and destGUID == UnitGUID("player") and self:AntiSpam() then
+	if (spellId == 30533 or spellId == 30522) and destGUID == UnitGUID("player") and self:AntiSpam() then--30522 is the core burn aura, 30533 kept as fallback
 		specWarnVoid:Show(spellName)
 		specWarnVoid:Play("watchfeet")
 	end

@@ -23,7 +23,7 @@ local warnArcaneInfusion= mod:NewSpellAnnounce(30403, 4)
 local timerEvo			= mod:NewBuffActiveTimer(20, 30254, nil, nil, nil, 6)
 --local timerNextEvo		= mod:NewNextTimer(115, 30254, nil, nil, nil, 6)
 
-local berserkTimer		= mod:NewBerserkTimer(720)
+local berserkTimer		= mod:NewBerserkTimer(600)--Core 10min Astral Deconstruction
 
 mod:AddRangeFrameOption("10", nil, true)
 
