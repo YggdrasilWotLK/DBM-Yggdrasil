@@ -24,7 +24,7 @@ local specWarnHeal			= mod:NewSpecialWarningInterrupt(30528, "HasInterrupt", nil
 
 local timerHeal				= mod:NewCastTimer(2, 30528, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
 local timerPhase2			= mod:NewTimer(120, "timerP2", "135566", nil, nil, 6)
-local timerBlastNovaCD		= mod:NewCDCountTimer(54, 30616, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerBlastNovaCD		= mod:NewCDCountTimer(64, 30616, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)--Core 54.35-55.4s repeat + 10s delay = ~64-65s effective (was 54)
 local timerDebris			= mod:NewNextTimer(15, 36449, nil, nil, nil, 2, nil, DBM_COMMON_L.HEALER_ICON..DBM_COMMON_L.TANK_ICON)--Only happens once per fight, after the phase 3 yell.
 
 mod.vb.blastNovaCounter = 1
