@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Sindragosa", "DBM-Icecrown", 4)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220624005857")
+mod:SetRevision("20260919194947")
 mod:SetCreatureID(36853)
 mod:SetUsedIcons(1, 2, 3, 4, 5, 6)
 mod:SetMinSyncRevision(20220623000000)

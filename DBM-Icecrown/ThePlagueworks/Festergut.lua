@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Festergut", "DBM-Icecrown", 2)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220624005857")
+mod:SetRevision("20260919194947")
 mod:SetCreatureID(36626)
 mod:RegisterCombat("combat")
 mod:SetUsedIcons(1, 2, 3)

@@ -27,43 +27,41 @@ jobs:
           if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD~1"; fi
           STAMP=$(git show -s --format=%cd --date=format-local:%Y%m%d%H%M%S "${{ github.sha }}")
           echo "stamp $STAMP"
-          for f in $(git diff --name-only "$BEFORE" "${{ github.sha }}" -- '*.lua'); do
-            if [ -f "$f" ] && grep -q 'SetRevision("[0-9]*")' "$f"; then
-              python3 - "$f" "$STAMP" <<'PYEOF'
-              import re, sys
-              f, stamp = sys.argv[1], sys.argv[2]
-              src = open(f).read()
-              nsrc, n = re.subn(r'SetRevision\("[0-9]+"\)', 'SetRevision("%s")' % stamp, src)
-              if n:
-                  open(f, 'w').write(nsrc)
-                  print('revision', f)
-              PYEOF
-            fi
-          done
+          git diff --name-only "$BEFORE" "${{ github.sha }}" -- '*.lua' | python3 -c '
+          import os, re, sys
+          stamp = sys.argv[1].encode()
+          for f in sys.stdin.read().split():
+              if os.path.isfile(f):
+                  src = open(f, "rb").read()
+                  nsrc, n = re.subn(rb"SetRevision\(\"[0-9]+\"\)", b"SetRevision(\"" + stamp + b"\")", src)
+                  if n and nsrc != src:
+                      open(f, "wb").write(nsrc)
+                      print("revision", f)
+          ' "$STAMP"
 
       - name: Bump version stamps
         run: |
           NOW=$(date -u +%Y%m%d%H%M%S)
-          python3 - <<EOF
-          import glob, re
-          now = "$NOW"
+          python3 -c '
+          import glob, re, sys
+          now = sys.argv[1]
           def bumped_ver(ver):
-              core, *suffix = ver.split('-', 1)
-              nums = core.split('.')
+              core, *suffix = ver.split("-", 1)
+              nums = core.split(".")
               nums[-1] = str(int(nums[-1]) + 1)
-              return '.'.join(nums) + ('-' + suffix[0] if suffix else '')
+              return ".".join(nums) + ("-" + suffix[0] if suffix else "")
           def bump(m):
               return m.group(0)[:m.start(1) - m.start(0)] + bumped_ver(m.group(1))
-          targets = sorted(glob.glob('**/*.toc', recursive=True))
-          targets.append('DBM-Core/DBM-Core.lua')
+          targets = sorted(glob.glob("**/*.toc", recursive=True))
+          targets.append("DBM-Core/DBM-Core.lua")
           for f in targets:
               src = open(f).read()
-              nsrc, n = re.subn(r'(?:## Version: |DisplayVersion = ")([^"\s]+)', bump, src)
-              nsrc, n2 = re.subn(r'parseCurseDate\("\d+"\)', 'parseCurseDate("%s")' % now, nsrc)
+              nsrc, n = re.subn(r"(?:## Version: |DisplayVersion = \")([^\"\s]+)", bump, src)
+              nsrc, n2 = re.subn(r"parseCurseDate\(\"\d+\"\)", "parseCurseDate(\"%s\")" % now, nsrc)
               if n + n2:
-                  open(f, 'w').write(nsrc)
-                  print('bumped', f)
-          EOF
+                  open(f, "w").write(nsrc)
+                  print("bumped", f)
+          ' "$NOW"
 
       - name: Commit and push
         run: |

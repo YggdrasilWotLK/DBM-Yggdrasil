@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Deathwhisper", "DBM-Icecrown", 1)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220703230401")
+mod:SetRevision("20260919194947")
 mod:SetCreatureID(36855)
 mod:SetUsedIcons(1, 2, 3, 7, 8)
 
