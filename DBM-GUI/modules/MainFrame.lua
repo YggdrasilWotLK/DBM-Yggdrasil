@@ -184,12 +184,6 @@ do
 	end)
 end
 
-local frameTranslation = frame:CreateFontString("$parentTranslation", "ARTWORK", "GameFontDisableSmall")
-frameTranslation:SetPoint("LEFT", frameRevision, "RIGHT", 20, 0)
-if L.TranslationBy then
-	frameTranslation:SetText(L.TranslationByPrefix .. L.TranslationBy)
-end
-
 local frameOkay = CreateFrame("Button", "$parentOkay", frame, "UIPanelButtonTemplate")
 frameOkay:SetSize(96, 22)
 frameOkay:SetPoint("BOTTOMRIGHT", -16, 14)
@@ -214,7 +208,7 @@ frameWebsite:SetText(L.Website)
 local frameWebsiteButtonA = CreateFrame("Button", nil, frame)
 frameWebsiteButtonA:SetAllPoints(frameWebsite)
 frameWebsiteButtonA:SetScript("OnMouseUp", function()
-	DBM:ShowUpdateReminder(nil, nil, CL.COPY_URL_DIALOG, "https://discord.gg/YkhCgmUk")
+	DBM:ShowUpdateReminder(nil, nil, CL.COPY_URL_DIALOG, "https://github.com/YggdrasilWotLK/DBM-Yggdrasil")
 end)
 
 local frameWebsiteButton = CreateFrame("Button", "$parentWebsiteButton", frame, "UIPanelButtonTemplate")

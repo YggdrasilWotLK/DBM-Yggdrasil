@@ -12,7 +12,7 @@ L.MainFrame				= "Deadly Boss Mods"
 
 L.TranslationByPrefix		= "向后移植 "
 L.TranslationBy			= "Barsoom, Bunny67, Zidras, Nick"
-L.Website					= "拜访我们的Discord |cFF73C2FBhttps://discord.gg/YkhCgmUk|r."
+L.Website					= "在 DBM-Yggdrasil 上报告错误 |cFF73C2FBhttps://github.com/YggdrasilWotLK/DBM-Yggdrasil|r"
 L.WebsiteButton				= "网页"
 
 L.OTabBosses	= "模块"

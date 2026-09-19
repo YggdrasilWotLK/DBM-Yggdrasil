@@ -5,7 +5,7 @@ local L = DBM_GUI_L
 
 L.TranslationByPrefix		= "백포트 "
 L.TranslationBy			= "Barsoom, Bunny67, Zidras, Nick"
-L.Website					= "디스코드 채널 |cFF73C2FBhttps://discord.gg/YkhCgmUk|r를 방문해 보세요."
+L.Website					= "DBM-Yggdrasil에 버그를 신고하세요 |cFF73C2FBhttps://github.com/YggdrasilWotLK/DBM-Yggdrasil|r"
 L.WebsiteButton				= "웹사이트"
 
 L.OTabBosses	= "보스"--Deprecated and will be deleted once tabs no longer use this

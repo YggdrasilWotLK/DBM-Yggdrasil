@@ -7,7 +7,7 @@ L.MainFrame = "Deadly Boss Mods"
 L.DBMWarmane				= "DBM for"
 L.TranslationByPrefix		= "Retail backport by "
 L.TranslationBy			= "Barsoom, Bunny67, Zidras, Nick"
-L.Website					= "Visit us on discord at |cFF73C2FBhttps://discord.gg/YkhCgmUk|r"
+L.Website					= "Report bugs on DBM-Yggdrasil |cFF73C2FBhttps://github.com/YggdrasilWotLK/DBM-Yggdrasil|r"
 L.WebsiteButton				= "Website"
 
 L.OTabBosses	= "Bosses"--Deprecated and will be deleted once tabs no longer use this
