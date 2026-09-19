@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Chromaggus", "DBM-BWL", 1)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914171913")
+mod:SetRevision("20260919191218")
 mod:SetCreatureID(14020)
 
 mod:SetModelID(14367)
