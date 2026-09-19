@@ -15,7 +15,7 @@
 ## LoadOnDemand: 0
 ## DefaultState: enabled
 ## Author: mostlynick3 (forked from DBM-Warmane by Zidras; upstream: original DBM team)
-## Version: 1.0.7-ygg
+## Version: 1.0.8-ygg
 ## X-Website: https://github.com/YggdrasilWotLK/DBM-Yggdrasil
 
 compat.lua
