@@ -22,7 +22,7 @@ local warningHolyFire		= mod:NewTargetNoFilterAnnounce(29522, 2)
 --local specWarnHolyFire		= mod:NewSpecialWarningMoveAway(29522, nil, nil, nil, 1, 2)
 
 local timerRepentance		= mod:NewBuffActiveTimer(12.6, 29511, nil, nil, nil, 2)
-local timerRepentanceCD		= mod:NewCDTimer(29.1, 29511, nil, nil, nil, 6)--29.1-49
+local timerRepentanceCD		= mod:NewCDRangeTimer(25, 35, 29511, nil, nil, nil, 6)--25-35
 local timerHolyFire			= mod:NewTargetTimer(12, 29522, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
 
 mod:AddRangeFrameOption(10, 29522)
@@ -45,7 +45,7 @@ function mod:SPELL_CAST_START(args)
 	if args.spellId == 29511 then
 		warningRepentance:Show()
 		timerRepentance:Start()
-		timerRepentanceCD:Start()
+		timerRepentanceCD:StartRange(25, 35)
 	end
 end
 

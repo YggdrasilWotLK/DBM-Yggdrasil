@@ -14,7 +14,7 @@ mod:RegisterEventsInCombat(
 
 local warnConsume		= mod:NewSpellAnnounce(49380,1)--Core ID 49380 (was phantom 59803)
 
-local timerExplosionCD	= mod:NewCDTimer(17, 49555)--Core 15-19s repeat
+local timerExplosionCD	= mod:NewCDRangeTimer(15, 19, 49555)--Core 15-19s repeat
 local timerNextConsume	= mod:NewNextTimer(15, 49380)--Core 15s repeat
 
 function mod:OnCombatStart(delay)
@@ -29,7 +29,7 @@ end
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 49555 then
-		timerExplosionCD:Start()
+		timerExplosionCD:StartRange(15, 19)
 	elseif args.spellId == 49380 then -- Consume (core ID; SUCCESS fallback shares AntiSpam key below)
 		if self:AntiSpam(5, "Consume") then
 			warnConsume:Show()
@@ -49,6 +49,6 @@ end
 
 function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg)
 	if msg == L.YellExplosion or msg:find(L.YellExplosion) then
-		timerExplosionCD:Start()
+		timerExplosionCD:StartRange(15, 19)
 	end
 end

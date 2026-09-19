@@ -38,9 +38,9 @@ local specWarnPCold			= mod:NewSpecialWarningYou(66013, false, nil, nil, 1, 2)
 local timerAdds				= mod:NewTimer(45, "timerAdds", 45419, nil, nil, 1, DBM_COMMON_L.TANK_ICON)--Core 5-8s first, 45s repeat
 local timerSubmerge			= mod:NewTimer(80, "TimerSubmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp", nil, nil, 6, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)
 local timerEmerge			= mod:NewTimer(60, "TimerEmerge", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)--Core 60s (+2s)
-local timerFreezingSlash	= mod:NewCDTimer(20, 66012, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerFreezingSlash	= mod:NewCDRangeTimer(15, 20, 66012, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerPCold			= mod:NewBuffActiveTimer(15, 66013, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerShadowStrike		= mod:NewNextTimer(30, 66134, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, nil, 3)
+local timerShadowStrike		= mod:NewNextRangeTimer(30, 45, 66134, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, nil, 3)
 local timerHoP				= mod:NewBuffActiveTimer(10, 10278, nil, nil, nil, 5) --So we will track bops to make this easier.
 
 local enrageTimer			= mod:NewBerserkTimer(600)--Core 10min
@@ -67,7 +67,7 @@ local function ShadowStrike(self)
 	self:Unschedule(ShadowStrike)
 	if self:IsInCombat() then
 		timerShadowStrike:Cancel()
-		timerShadowStrike:Start()
+		timerShadowStrike:StartRange(30, 45)
 		preWarnShadowStrike:Cancel()
 		preWarnShadowStrike:Schedule(25.5)
 		self:Schedule(30, ShadowStrike, self)
@@ -93,15 +93,15 @@ end
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	self.vb.Burrowed = false
-	timerAdds:Start(6-delay)--Core 5-8s first
+		timerAdds:StartRange(5-delay, 8-delay)--Core 5-8s first
 	warnAdds:Schedule(6-delay)
 	self:Schedule(6-delay, Adds, self)
 	warnSubmergeSoon:Schedule(70-delay)
 	timerSubmerge:Start(80-delay)--Core 80s
 	enrageTimer:Start(-delay)
-	timerFreezingSlash:Start(11-delay)--Core 7-15s first
+		timerFreezingSlash:StartRange(7-delay, 15-delay)--Core 7-15s first
 	if self:IsHeroic() then
-		timerShadowStrike:Start(30-delay)--Core 30-45s per burrower
+		timerShadowStrike:StartRange(30-delay, 45-delay)--Core 30-45s per burrower
 		preWarnShadowStrike:Schedule(25.5-delay)
 		self:Schedule(30-delay, ShadowStrike, self)
 	end
@@ -202,7 +202,7 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 66012 then							-- Freezing Slash (caught one log where AURA_APPLIED was not present in one of the casts, so start timer on cast success instead)
-		timerFreezingSlash:Start()
+		timerFreezingSlash:StartRange(15, 20)
 	end
 end
 

@@ -23,9 +23,9 @@ local specwarnPhantomBlast		= mod:NewSpecialWarningInterrupt(68982, "HasInterrup
 local timerMirroredSoul			= mod:NewTargetTimer(8, 69051, nil, nil, nil, 3)
 local timerUnleashedSouls		= mod:NewBuffActiveTimer(5, 68939, nil, nil, nil, 2)
 local timerBlastCD				= mod:NewCDTimer(5, 68982, nil, nil, nil, 3)--Core 5s first and repeat (was untracked)
-local timerMirroredCD				= mod:NewCDTimer(25, 69051, nil, nil, nil, 3)--Core 9s first, 20-30s repeat
-local timerWellCD					= mod:NewCDTimer(27, 68820, nil, nil, nil, 3)--Core 6-8s first, 25-30s repeat
-local timerUnleashedCD			= mod:NewCDTimer(35, 68939, nil, nil, nil, 2)--Core 18-20s first, 30-40s repeat
+local timerMirroredCD				= mod:NewCDRangeTimer(20, 30, 69051, nil, nil, nil, 3)--Core 9s first, 20-30s repeat
+local timerWellCD					= mod:NewCDRangeTimer(25, 30, 68820, nil, nil, nil, 3)--Core 6-8s first, 25-30s repeat
+local timerUnleashedCD			= mod:NewCDRangeTimer(30, 40, 68939, nil, nil, nil, 2)--Core 18-20s first, 30-40s repeat
 local timerWailingCD				= mod:NewCDTimer(80, 68899, nil, nil, nil, 2)--Core 65s first, 80s repeat
 
 mod:AddSetIconOption("SetIconOnMirroredTarget", 69051, false, false, {8})
@@ -33,8 +33,8 @@ mod:AddSetIconOption("SetIconOnMirroredTarget", 69051, false, false, {8})
 function mod:OnCombatStart(delay)
 	timerBlastCD:Start(5-delay)--Core 5s first
 	timerMirroredCD:Start(9-delay)--Core 9s first
-	timerWellCD:Start(7-delay)--Core 6-8s first
-	timerUnleashedCD:Start(19-delay)--Core 18-20s first
+	timerWellCD:StartRange(6-delay, 8-delay)--Core 6-8s first
+	timerUnleashedCD:StartRange(18-delay, 20-delay)--Core 18-20s first
 	timerWailingCD:Start(65-delay)--Core 65s first
 end
 
@@ -53,10 +53,10 @@ function mod:SPELL_CAST_START(args)
 		timerBlastCD:Start()
 	elseif args.spellId == 68820 then					-- Well of Souls (core 25-30s repeat)
 		warnWellofSouls:Show()
-		timerWellCD:Start()
+		timerWellCD:StartRange(25, 30)
 	elseif args.spellId == 68939 then					-- Unleashed Souls (core 30-40s repeat)
 		warnUnleashedSouls:Show()
-		timerUnleashedCD:Start()
+		timerUnleashedCD:StartRange(30, 40)
 	elseif args.spellId == 68899 then					-- Wailing Souls (core 80s repeat)
 		specwarnWailingSouls:Show()
 		specwarnWailingSouls:Play("aesoon")
@@ -68,7 +68,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 69051 and args:IsDestTypePlayer() then	-- Mirrored Soul (core 20-30s repeat)
 		warnMirroredSoul:Show(args.destName)
 		timerMirroredSoul:Start(args.destName)
-		timerMirroredCD:Start()
+		timerMirroredCD:StartRange(20, 30)
 		specwarnMirroredSoul:Show(args.sourceName)--if sourcename isn't good use L.name
 		specwarnMirroredSoul:Play("stopattack")
 		if self.Options.SetIconOnMirroredTarget then

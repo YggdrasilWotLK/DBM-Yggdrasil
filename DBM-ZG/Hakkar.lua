@@ -35,13 +35,13 @@ local timerAspectOfMarli		= mod:NewTargetTimer(6, 24686, nil, nil, nil, 5)
 local timerAspectOfMarliCD		= mod:NewCDTimer(45, 24686, nil, nil, nil, 2)--Core 45s (was 16)
 local timerAspectOfJeklik		= mod:NewTargetTimer(5, 24687, nil, false, 2, 5)--Could be spammy so off by default. Users can turn it on who want to see this
 local timerAspectOfJeklikCD		= mod:NewCDTimer(23, 24687, nil, nil, nil, 2)--23-24
-local timerAspectOfVenoxisCD	= mod:NewCDTimer(16.2, 24688, nil, nil, nil, 2)--16.2-18.3
+local timerAspectOfVenoxisCD	= mod:NewCDRangeTimer(16, 18, 24688, nil, nil, nil, 2)--16-18
 local timerAspectOfThekal		= mod:NewBuffActiveTimer(8, 24689, nil, "Tank|RemoveEnrage|Healer", 3, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.ENRAGE_ICON)
 local timerAspectOfThekalCD		= mod:NewCDTimer(15.8, 24689, nil, nil, nil, 2)
 local timerAspectOfArlokk		= mod:NewTargetTimer(2, 24690, nil, nil, nil, 2)
-local timerAspectOfArlokkCD		= mod:NewNextTimer(12, 24690, nil, nil, nil, 2)--Core 10-15s (was 30)
+local timerAspectOfArlokkCD		= mod:NewNextRangeTimer(10, 15, 24690, nil, nil, nil, 2)--Core 10-15s (was 30)
 local timerInsanity				= mod:NewTargetTimer(10, 24327, nil, nil, nil, 5)
-local timerInsanityCD			= mod:NewCDTimer(37, 24327, nil, nil, nil, 3)--Core 35-40s (was 20)
+local timerInsanityCD			= mod:NewCDRangeTimer(35, 40, 24327, nil, nil, nil, 3)--Core 35-40s (was 20)
 
 local enrageTimer				= mod:NewBerserkTimer(585)
 
@@ -120,11 +120,11 @@ function mod:SPELL_CAST_SUCCESS(args)
 	elseif args.spellId == 24687 then
 		timerAspectOfJeklikCD:Start()
 	elseif args.spellId == 24688 then
-		timerAspectOfVenoxisCD:Start()
+		timerAspectOfVenoxisCD:StartRange(16, 18)
 	elseif args.spellId == 24689 then
 		timerAspectOfThekalCD:Start()
 	elseif args.spellId == 24690 then
-		timerAspectOfArlokkCD:Start()
+		timerAspectOfArlokkCD:StartRange(10, 15)
 	end
 end
 
@@ -132,7 +132,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 24327 then
 		warnInsanity:Show(args.destName)
 		timerInsanity:Start(args.destName)
-		timerInsanityCD:Start()
+		timerInsanityCD:StartRange(35, 40)
 	elseif args.spellId == 24328 then
 		if args:IsPlayer() then
 			specWarnBlood:Show()

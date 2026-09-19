@@ -23,9 +23,9 @@ local specWarnSpelllock	= mod:NewSpecialWarningCast(42729, "SpellCaster", nil, 2
 local specWarnSmash		= mod:NewSpecialWarningDodge(42723, "Tank", nil, nil, 1, 2)
 
 local timerSmash		= mod:NewCastTimer(3, 42723)
-local timerSmashCD		= mod:NewCDTimer(10, 42723)--Core 5s first, 9-11s repeat
+local timerSmashCD		= mod:NewCDRangeTimer(9, 11, 42723)--Core 5s first, 9-11s repeat
 local timerWoeStrike	= mod:NewTargetTimer(10, 42730, nil, "RemoveCurse", nil, 5, nil, DBM_COMMON_L.CURSE_ICON)
-local timerRoarCD		= mod:NewCDTimer(17, 42708, nil, "SpellCaster", nil, 2)--Core 15s first, 15-20s repeat
+local timerRoarCD		= mod:NewCDRangeTimer(15, 20, 42708, nil, "SpellCaster", nil, 2)--Core 15s first, 15-20s repeat
 
 mod:AddSetIconOption("WoeStrikeIcon", 42730, true, false, {8})
 
@@ -45,11 +45,11 @@ function mod:SPELL_CAST_START(args)
 		specWarnSmash:Show()
 		specWarnSmash:Play("shockwave")
 		timerSmash:Start()
-		timerSmashCD:Start()
+		timerSmashCD:StartRange(9, 11)
 	elseif args:IsSpellID(42708, 42729, 59708, 59734) then -- Roar (core 15-20s repeat)
 		specWarnSpelllock:Show()
 		specWarnSpelllock:Play("stopcast")
-		timerRoarCD:Start()
+		timerRoarCD:StartRange(15, 20)
 	end
 end
 

@@ -22,8 +22,8 @@ local specWarnSorrow	= mod:NewSpecialWarningMoveTo(50760, nil, nil, nil, 2, 2)
 local timerWoe			= mod:NewTargetTimer(10, 50761, nil, "Healer", nil, 5, nil, DBM_COMMON_L.HEALER_ICON..DBM_COMMON_L.MAGIC_ICON)
 local timerSorrow		= mod:NewBuffActiveTimer(6, 50760)
 local timerStormCD		= mod:NewCDTimer(10, 50752, nil, nil, nil, 3)--Core 10s repeat
-local timerSorrowCD		= mod:NewCDTimer(19, 50760, nil, nil, nil, 2)--Core 16-22s repeat
-local timerPillarCD		= mod:NewCDTimer(16, 50761, nil, nil, nil, 3)--Core 12-20s repeat (was untracked)
+local timerSorrowCD		= mod:NewCDRangeTimer(16, 22, 50760, nil, nil, nil, 2)--Core 16-22s repeat
+local timerPillarCD		= mod:NewCDRangeTimer(12, 20, 50761, nil, nil, nil, 3)--Core 12-20s repeat (was untracked)
 local timerAchieve		= mod:NewAchievementTimer(60, 1866)
 
 local stormName = DBM:GetSpellInfo(50752)
@@ -34,8 +34,8 @@ function mod:OnCombatStart(delay)
 		timerAchieve:Start(-delay)
 	end
 	timerStormCD:Start(10-delay)--Core 10s
-	timerSorrowCD:Start(19-delay)--Core 16-22s (mid)
-	timerPillarCD:Start(16-delay)--Core 12-20s (mid)
+	timerSorrowCD:StartRange(16-delay, 22-delay)--Core 16-22s (mid)
+	timerPillarCD:StartRange(12-delay, 20-delay)--Core 12-20s (mid)
 end
 
 function mod:OnCombatEnd()
@@ -48,7 +48,7 @@ function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(50760, 59726) then -- Shock of Sorrow (use own name, was stormName bug)
 		specWarnSorrow:Show(sorrowName)
 		specWarnSorrow:Play("takedamage")
-		timerSorrowCD:Start()
+		timerSorrowCD:StartRange(16, 22)
 	end
 end
 

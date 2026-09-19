@@ -28,7 +28,7 @@ local specWarnWhirlwind		= mod:NewSpecialWarningRun(33238, "Melee", nil, nil, 4,
 local specWarnPoH			= mod:NewSpecialWarningInterrupt(33152, "HasInterrupt", nil, nil, 1, 2)
 local specWarnHeal			= mod:NewSpecialWarningInterrupt(33144, "HasInterrupt", nil, nil, 1, 2)
 
-local timerWhirlwindCD		= mod:NewCDTimer(55, 33238, nil, nil, nil, 2)
+local timerWhirlwindCD		= mod:NewCDRangeTimer(45, 60, 33238, nil, nil, nil, 2)
 local timerWhirlwind		= mod:NewBuffActiveTimer(15, 33238, nil, nil, nil, 2)
 local timerFelhunter		= mod:NewCDTimer(48.5, 33131, nil, nil, nil, 1)--Buff Active or Cd timer?
 local timerPoH				= mod:NewCastTimer(4, 33152, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
@@ -67,7 +67,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			warningWhirlwind:Show()
 		end
 		timerWhirlwind:Start()
-		timerWhirlwindCD:Start()
+		timerWhirlwindCD:StartRange(45, 60)
 	elseif args.spellId == 33054 and not args:IsDestTypePlayer() then
 		warningShield:Show(args.destName)
 	elseif args.spellId == 33147 and not args:IsDestTypePlayer() then

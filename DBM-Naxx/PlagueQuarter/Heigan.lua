@@ -20,7 +20,7 @@ local warnFever				= mod:NewTargetNoFilterAnnounce(29998, 2)
 local timerTeleport				= mod:NewTimer(90, "TimerTeleport", 46573, nil, nil, 6)
 local timerPlagueCloud			= mod:NewBuffActiveTimer(45, 29350, nil, nil, nil, 6)
 local timerDisruptionCD		= mod:NewCDTimer(10, 29310, nil, "SpellCaster", nil, 5)--Core 12-15s first, 10s repeat
-local timerFeverCD			= mod:NewCDTimer(23, 29998, nil, nil, nil, 3)--Core 17s first, 22-25s repeat
+local timerFeverCD			= mod:NewCDRangeTimer(22, 25, 29998, nil, nil, nil, 3)--Core 17s first, 22-25s repeat
 
 function mod:DancePhase()
 	timerPlagueCloud:Start()
@@ -41,7 +41,7 @@ end
 function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	self:BackInRoom(90 - delay)
-	timerDisruptionCD:Start(13 - delay)--Core 12-15s first
+	timerDisruptionCD:StartRange(12 - delay, 15 - delay)--Core 12-15s first
 	timerFeverCD:Start(17 - delay)--Core 17s first
 end
 
@@ -62,7 +62,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnDisruption:Show()
 		timerDisruptionCD:Start()
 	elseif args:IsSpellID(29998, 55011) then -- Decrepit Fever (core 22-25s repeat)
-		timerFeverCD:Start()
+		timerFeverCD:StartRange(22, 25)
 	end
 end
 

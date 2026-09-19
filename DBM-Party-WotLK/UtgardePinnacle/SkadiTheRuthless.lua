@@ -25,7 +25,7 @@ local specWarnWhirlwind		= mod:NewSpecialWarningRun(50228, nil, nil, 2, 4, 2)
 
 local timerPoisonDebuff		= mod:NewTargetTimer(12, 50258, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerPoisonCD			= mod:NewCDTimer(10, 59331, nil, "Healer", nil, 5)
-local timerWhirlwindCD		= mod:NewCDTimer(17, 50228, nil, nil, nil, 2)--Core 15s first, 15-20s repeat
+local timerWhirlwindCD		= mod:NewCDRangeTimer(15, 20, 50228, nil, nil, nil, 2)--Core 15s first, 15-20s repeat
 local timerCrushCD			= mod:NewCDTimer(8, 50234, nil, "Tank", nil, 3)--Core 8s first and repeat
 local timerAchieve			= mod:NewAchievementTimer(180, 1873)
 
@@ -49,7 +49,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		warningPoisonDebuff:Show(args.destName)
 		timerPoisonDebuff:Start(args.destName)
 	elseif args:IsSpellID(50228, 59322) then -- Whirlwind (core casts 50228 both modes; 59322 heroic fallback)
-		timerWhirlwindCD:Start()
+		timerWhirlwindCD:StartRange(15, 20)
 		specWarnWhirlwind:Show()
 		specWarnWhirlwind:Play("runout")
 	end

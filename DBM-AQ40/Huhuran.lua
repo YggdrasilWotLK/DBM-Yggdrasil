@@ -27,10 +27,10 @@ local specWarnAcidTaunt	= mod:NewSpecialWarningTaunt(26050, nil, nil, nil, 1, 2)
 local specWarnFrenzy	= mod:NewSpecialWarningDispel(26051, "RemoveEnrage", nil, nil, 1, 6)
 
 local timerSting		= mod:NewBuffFadesTimer(12, 26180, nil, nil, nil, 5, nil, DBM_COMMON_L.POISON_ICON..DBM_COMMON_L.DEADLY_ICON)
-local timerStingCD		= mod:NewCDTimer(25, 26180, nil, nil, nil, 3, nil, DBM_COMMON_L.POISON_ICON..DBM_COMMON_L.DEADLY_ICON)
-local timerPoisonCD		= mod:NewCDTimer(11, 26053, nil, nil, nil, 3)
+local timerStingCD		= mod:NewCDRangeTimer(25, 43, 26180, nil, nil, nil, 3, nil, DBM_COMMON_L.POISON_ICON..DBM_COMMON_L.DEADLY_ICON)
+local timerPoisonCD		= mod:NewCDRangeTimer(10, 22, 26053, nil, nil, nil, 3)
 local timerPoison		= mod:NewBuffFadesTimer(8, 26053)
-local timerFrenzyCD		= mod:NewCDTimer(11.8, 26051, nil, false, 3, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)--Off by default do to ridiculous variation
+local timerFrenzyCD		= mod:NewCDRangeTimer(12, 21, 26051, nil, false, 3, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)--Core 12-21s
 local timerAcid			= mod:NewTargetTimer(30, 26050, nil, "Tank", 3, 5, nil, DBM_COMMON_L.TANK_ICON)
 
 mod:AddRangeFrameOption("18", nil, "-Melee")
@@ -41,9 +41,9 @@ local StingTargets = {}
 function mod:OnCombatStart(delay)
 	self.vb.prewarn_berserk = false
 	table.wipe(StingTargets)
-	timerFrenzyCD:Start(12-delay)--Core 12-21s first
-	timerPoisonCD:Start(11-delay)
-	timerStingCD:Start(25-delay)--Core 25-43s first
+	timerFrenzyCD:StartRange(12-delay, 21-delay)--Core 12-21s first
+	timerPoisonCD:StartRange(10-delay, 22-delay)
+	timerStingCD:StartRange(25-delay, 43-delay)--Core 25-43s first
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(18)
 	end
@@ -57,14 +57,14 @@ end
 
 local function warnStingTargets()
 	warnSting:Show(table.concat(StingTargets, "<, >"))
-	timerStingCD:Start()
+	timerStingCD:StartRange(25, 43)
 	table.wipe(StingTargets)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 26053 then
 		warnPoison:Show()
-		timerPoisonCD:Start()
+		timerPoisonCD:StartRange(10, 22)
 	end
 end
 
@@ -85,7 +85,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		else
 			warnFrenzy:Show(args.destName)
 		end
-		timerFrenzyCD:Start()
+		timerFrenzyCD:StartRange(12, 21)
 	elseif args.spellId == 26068 and args:IsDestTypeHostile() then
 		warnBerserk:Show()
 		timerStingCD:Stop()

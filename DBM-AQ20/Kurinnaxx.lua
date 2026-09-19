@@ -24,14 +24,14 @@ local specWarnWound		= mod:NewSpecialWarningStack(25646, nil, 5, nil, nil, 1, 6)
 local specWarnWoundTaunt= mod:NewSpecialWarningTaunt(25646, nil, nil, nil, 1, 2)
 
 local timerWound		= mod:NewTargetTimer(15, 25646, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerSandTrapCD	= mod:NewCDTimer(8, 25656, nil, nil, nil, 3)
+local timerSandTrapCD	= mod:NewCDRangeTimer(5, 15, 25656, nil, nil, nil, 3)
 
 --mod:AddSpeedClearOption("AQ20", true)
 
 --mod.vb.firstEngageTime = nil
 
 function mod:OnCombatStart(delay)
-	timerSandTrapCD:Start(8-delay)
+	timerSandTrapCD:StartRange(5-delay, 15-delay)
 --[[	if not self.vb.firstEngageTime then
 		self.vb.firstEngageTime = time()
 		if self.Options.FastestClear and self.Options.SpeedClearTimer then
@@ -43,7 +43,7 @@ end
 
 function mod:SPELL_CREATE(args)
 	if args.spellId == 25648 then
-		timerSandTrapCD:Start()
+		timerSandTrapCD:StartRange(5, 15)
 		if args:IsPlayerSource() then
 			specWarnSandTrap:Show()
 			specWarnSandTrap:Play("targetyou")

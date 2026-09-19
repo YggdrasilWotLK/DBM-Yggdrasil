@@ -24,7 +24,7 @@ local yellRock					= mod:NewYellMe(68789)
 local specWarnSaroniteRockNear	= mod:NewSpecialWarningClose(68789, nil, nil, nil, 1, 2)
 local specWarnPermafrost		= mod:NewSpecialWarningStack(68786, nil, 9, nil, nil, 1, 2)
 
-local timerSaroniteRockCD		= mod:NewCDTimer(16, 68789, nil, nil, nil, 3)--Core 12.5-20s repeat
+local timerSaroniteRockCD		= mod:NewCDRangeTimer(12.5, 20, 68789, nil, nil, nil, 3)--Core 12.5-20s repeat
 local timerDeepFreezeCD			= mod:NewCDTimer(35, 70381, nil, "Healer", 2, 5, nil, DBM_COMMON_L.HEALER_ICON)--Core 35s repeat
 local timerDeepFreeze			= mod:NewTargetTimer(14, 70381, nil, false, 3, 5)
 local timerChillingWaveCD		= mod:NewCDTimer(35, 68778, nil, nil, nil, 3)--Core 35s phase-2 AoE (was untracked)
@@ -36,7 +36,7 @@ mod.vb.warnedfailed = false
 
 function mod:OnCombatStart(delay)
 	self.vb.warnedfailed = false
-	timerSaroniteRockCD:Start(6-delay)--Core 5-7.5s first
+	timerSaroniteRockCD:StartRange(5-delay, 7.5-delay)--Core 5-7.5s first
 end
 
 function mod:OnCombatEnd()
@@ -47,7 +47,7 @@ end
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 68788 then								-- Throw Saronite (core 12.5-20s repeat)
-		timerSaroniteRockCD:Start()
+		timerSaroniteRockCD:StartRange(12.5, 20)
 	elseif args.spellId == 68778 then -- Chilling Wave phase 2 (was untracked)
 		warnChillingWave:Show()
 		timerChillingWaveCD:Start()

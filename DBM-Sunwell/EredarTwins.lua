@@ -40,7 +40,7 @@ local specWarnFlameTouch	= mod:NewSpecialWarningStack(45348, false, 5, nil, nil,
 local timerBladeCD			= mod:NewCDTimer(11.5, 45248, nil, "Melee", 2, 2)
 local timerBlowCD			= mod:NewCDTimer(20, 45256, nil, nil, nil, 3)
 local timerConflagCD		= mod:NewCDTimer(31, 45333, nil, nil, nil, 3, nil, nil, true) -- Added "keep" arg. Considerable variation, and 31s default might an overexageration
-local timerNovaCD			= mod:NewCDTimer(31, 45329, nil, nil, nil, 3)
+local timerNovaCD			= mod:NewCDRangeTimer(30, 35, 45329, nil, nil, nil, 3)
 local timerConflag			= mod:NewCastTimer(3.5, 45333, nil, false, 2)
 local timerNova				= mod:NewCastTimer(3.5, 45329, nil, false, 2)
 
@@ -138,7 +138,7 @@ function mod:SPELL_CAST_START(args)
 		timerBladeCD:Start()
 	elseif args.spellId == 45329 then -- Shadow Nova
 		timerNova:Start()
-		timerNovaCD:Start()
+		timerNovaCD:StartRange(30, 35)
 		self:BossTargetScanner(25165, "ShadowNovaTarget", 0.05, 6)
 	elseif args.spellId == 45342 then -- Conflagration
 		timerConflag:Start()
@@ -154,7 +154,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 	if (msg == L.Nova or msg:find(L.Nova)) and target then
 		target = DBM:GetUnitFullName(target)
 		timerNova:Start()
-		timerNovaCD:Start()
+		timerNovaCD:StartRange(30, 35)
 		if not self:AntiSpam(5, "Nova") then return end
 		if target == UnitName("player") then
 			specWarnNova:Show()

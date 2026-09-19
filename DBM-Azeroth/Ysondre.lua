@@ -24,7 +24,7 @@ local specWarnSleepingFog		= mod:NewSpecialWarningDodge(24814, nil, nil, nil, 2,
 --local timerNoxiousBreathCD		= mod:NewCDTimer(19.4, 24818, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Iffy
 local timerSleepingFogMinCD	= mod:NewCDTimer(120, 24814, nil, nil, nil, 3)--Core 120-150s RNG: earliest recast
 local timerSleepingFogCD		= mod:NewCDTimer(150, 24814, nil, nil, nil, 3)--Core 120-150s RNG; max bar (was 16.0)
-local timerLightningWaveCD		= mod:NewCDTimer(13.4, 24819, nil, nil, nil, 3)
+local timerLightningWaveCD		= mod:NewCDRangeTimer(10, 20, 24819, nil, nil, nil, 3)
 
 --mod:AddReadyCheckOption(48620, false)
 
@@ -49,7 +49,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 	--if args.spellId == 24814 or args.spellId == 24813 then
 	if args.spellId == 24819 then--Lightning Wave (was UNIT_SPELLCAST name-check only)
 		warningLightningWave:Show()
-		timerLightningWaveCD:Start()
+		timerLightningWaveCD:StartRange(10, 20)
 	elseif args.spellId == 24814 then
 		specWarnSleepingFog:Show()
 		specWarnSleepingFog:Play("watchstep")
@@ -75,6 +75,6 @@ mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED
 function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
 	if spellName == GetSpellInfo(24819) and self:AntiSpam(5, 2) then--Lightning Wave
 		warningLightningWave:Show()
-		timerLightningWaveCD:Start()
+		timerLightningWaveCD:StartRange(10, 20)
 	end
 end

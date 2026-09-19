@@ -42,9 +42,9 @@ local specWarnAnger3		= mod:NewSpecialWarningStack(66636, "Tank|Healer", 3, nil,
 local specWarnGTFO			= mod:NewSpecialWarningGTFO(66317, nil, nil, nil, 1, 2)
 local specWarnSilence		= mod:NewSpecialWarningSpell(66330, "SpellCaster", nil, nil, 1, 2)
 
-local timerNextStomp		= mod:NewNextTimer(20, 66330, nil, nil, nil, 2, nil, DBM_COMMON_L.INTERRUPT_ICON, nil, mod:IsSpellCaster() and 3 or nil, 3)
-local timerNextImpale		= mod:NewNextTimer(10, 66331, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerRisingAnger		= mod:NewNextTimer(20.5, 66636, nil, nil, nil, 1)
+local timerNextStomp		= mod:NewNextRangeTimer(20, 25, 66330, nil, nil, nil, 2, nil, DBM_COMMON_L.INTERRUPT_ICON, nil, mod:IsSpellCaster() and 3 or nil, 3)
+local timerNextImpale		= mod:NewNextRangeTimer(9, 10, 66331, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerRisingAnger		= mod:NewNextRangeTimer(16, 24, 66636, nil, nil, nil, 1)
 
 -- Stage Two: Acidmaw & Dreadscale
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(2)..": "..L.Acidmaw.." & "..L.Dreadscale)
@@ -56,11 +56,11 @@ local warnEnrageWorm		= mod:NewSpellAnnounce(68335, 3)
 local specWarnToxin			= mod:NewSpecialWarningMoveTo(66823, nil, nil, nil, 1, 2)
 local specWarnBile			= mod:NewSpecialWarningYou(66869, nil, nil, nil, 1, 2)
 
-local timerSubmerge			= mod:NewCDTimer(45, 66948, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp")
+local timerSubmerge			= mod:NewCDRangeTimer(45, 50, 66948, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendBurrow.blp")
 local timerEmerge			= mod:NewBuffActiveTimer(6, 66947, nil, nil, nil, 6, "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp")--Core 6s emerge
-local timerSweepCD			= mod:NewCDTimer(21, 66794, nil, "Melee", nil, 3)
-local timerAcidicSpewCD		= mod:NewCDTimer(21, 66819, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerMoltenSpewCD		= mod:NewCDTimer(21, 66820, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerSweepCD			= mod:NewCDRangeTimer(15, 30, 66794, nil, "Melee", nil, 3)
+local timerAcidicSpewCD		= mod:NewCDRangeTimer(15, 30, 66819, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerMoltenSpewCD		= mod:NewCDRangeTimer(15, 30, 66820, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerParalyticSprayCD	= mod:NewCDTimer(21, 66901, nil, nil, nil, 3)
 local timerBurningSprayCD	= mod:NewCDTimer(21, 66902, nil, nil, nil, 3)
 local timerParalyticBiteCD	= mod:NewCDTimer(25, 66824, nil, "Melee", nil, 3)
@@ -81,7 +81,7 @@ local specWarnFrothingRage	= mod:NewSpecialWarningDispel(66759, "RemoveEnrage", 
 
 local timerBreath			= mod:NewCastTimer(5, 66689, nil, nil, nil, 3)--3 or 5? is it random target or tank?
 local timerStaggeredDaze	= mod:NewBuffActiveTimer(15, 66758, nil, nil, nil, 5, nil, DBM_COMMON_L.DAMAGE_ICON)
-local timerNextCrash		= mod:NewCDTimer(40, 66683, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)--Core 30s first, 30-50s repeat
+local timerNextCrash		= mod:NewCDRangeTimer(30, 50, 66683, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)--Core 30s first, 30-50s repeat
 
 mod:AddSetIconOption("SetIconOnChargeTarget", 52311, true, 0, {8})
 mod:AddBoolOption("ClearIconsOnIceHowl", true)
@@ -127,9 +127,9 @@ function mod:OnCombatStart(delay)
 	if self:IsHeroic() then
 		timerNextBoss:Start(152-delay)
 		timerNextBoss:Schedule(147)
-		timerRisingAnger:Start(18-delay)
+		timerRisingAnger:StartRange(16-delay, 24-delay)
 	else
-		timerRisingAnger:Start(27-delay)
+		timerRisingAnger:StartRange(16-delay, 24-delay)
 	end
 	timerNextStomp:Start(15-delay)
 	updateHealthFrame(1)
@@ -143,24 +143,24 @@ end
 
 --These remain methods since they can't reverse schedule each other as local functions
 function mod:WormsEmerge()
-	timerSubmerge:Show()
+	timerSubmerge:StartRange(45, 50)
 	if not self.vb.AcidmawDead then
 		if self.vb.DreadscaleActive then
-			timerSweepCD:Start(22)			-- Log review: 22-24s (N/H?)
+			timerSweepCD:StartRange(15, 30)			-- Core 15-30s
 			timerParalyticSprayCD:Start(18)	-- Log review: 18-20s (N/H?)
 		else
 			timerSlimePoolCD:Start(14)
 			timerParalyticBiteCD:Start(5)
-			timerAcidicSpewCD:Start(10)
+			timerAcidicSpewCD:StartRange(15, 30)
 		end
 	end
 	if not self.vb.DreadscaleDead then
 		if self.vb.DreadscaleActive then
 			timerSlimePoolCD:Start(15)
-			timerMoltenSpewCD:Start(26)
+			timerMoltenSpewCD:StartRange(15, 30)
 			timerBurningBiteCD:Start(5)
 		else
-			timerSweepCD:Start(16)
+			timerSweepCD:StartRange(15, 30)
 			timerBurningSprayCD:Start(17)
 		end
 	end
@@ -189,15 +189,15 @@ function mod:SPELL_CAST_START(args)
 	elseif spellId == 66313 then						-- FireBomb (Impaler)
 		warnFireBomb:Show()
 	elseif args:IsSpellID(66330, 67647, 67648, 67649) then		-- Staggering Stomp
-		timerNextStomp:Start()
+		timerNextStomp:StartRange(20, 25)
 		specWarnSilence:Schedule(19)							-- prewarn ~1,5 sec before next
 		specWarnSilence:ScheduleVoice(19, "silencesoon")
 	elseif args:IsSpellID(66794, 67644, 67645, 67646) then		-- Sweep stationary worm
-		timerSweepCD:Start()
+		timerSweepCD:StartRange(15, 30)
 	elseif spellId == 66821 then							-- Molten spew
-		timerMoltenSpewCD:Start()
+		timerMoltenSpewCD:StartRange(15, 30)
 	elseif spellId == 66818 then							-- Acidic Spew
-		timerAcidicSpewCD:Start()
+		timerAcidicSpewCD:StartRange(15, 30)
 	elseif args:IsSpellID(66901, 67615, 67616, 67617) then		-- Paralytic Spray
 		timerParalyticSprayCD:Start()
 	elseif args:IsSpellID(66902, 67627, 67628, 67629) then		-- Burning Spray
@@ -220,7 +220,7 @@ end
 function mod:SPELL_AURA_APPLIED(args)
 	local spellId = args.spellId
 	if args:IsSpellID(67477, 66331, 67478, 67479) then	-- Impale
-		timerNextImpale:Start()
+		timerNextImpale:StartRange(9, 10)
 		warnImpaleOn:Show(args.destName, 1)
 	elseif args:IsSpellID(67657, 66759, 67658, 67659) then	-- Frothing Rage
 		warnRage:Show()
@@ -255,7 +255,7 @@ end
 function mod:SPELL_AURA_APPLIED_DOSE(args)
 	if args:IsSpellID(67477, 66331, 67478, 67479) then	-- Impale
 		local amount = args.amount or 1
-		timerNextImpale:Start()
+		timerNextImpale:StartRange(9, 10)
 		if (amount >= 3) or (amount >= 2 and self:IsHeroic()) then
 			if args:IsPlayer() then
 				specWarnImpale3:Show(amount)
@@ -299,7 +299,7 @@ function mod:CHAT_MSG_RAID_BOSS_EMOTE(msg, _, _, _, target)
 	if (msg:match(L.Charge) or msg:find(L.Charge)) and target then
 		target = DBM:GetUnitFullName(target)
 		warnCharge:Show(target)
-		timerNextCrash:Start(40)--Core 30-50s repeat
+		timerNextCrash:StartRange(30, 50)--Core 30-50s repeat
 		if self.Options.ClearIconsOnIceHowl then
 			self:ClearIcons()
 		end

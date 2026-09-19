@@ -23,8 +23,8 @@ local yellInferno		= mod:NewYell(31299)
 
 local timerSwarm		= mod:NewBuffFadesTimer(20, 31306, nil, nil, nil, 3)
 local timerSleep		= mod:NewBuffFadesTimer(10, 31298, nil, nil, nil, 3)
-local timerSleepCD		= mod:NewCDTimer(41, 31298, nil, nil, nil, 3)--Core 35-48s (was 19)
-local timerInferno		= mod:NewCDTimer(51, 31299, nil, nil, nil, 3)
+local timerSleepCD		= mod:NewCDRangeTimer(35, 48, 31298, nil, nil, nil, 3)--Core 35-48s
+local timerInferno		= mod:NewCDRangeTimer(50, 55, 31299, nil, nil, nil, 3)
 
 function mod:InfernoTarget(targetname)
 	if not targetname then return end
@@ -56,7 +56,7 @@ end
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 31299 then
-		timerInferno:Start()
+		timerInferno:StartRange(50, 55)
 		self:BossTargetScanner(17808, "InfernoTarget", 0.05, 10)
 	end
 end
@@ -65,6 +65,6 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 31306 then
 		warnSwarm:Show()
 	elseif args.spellId == 31298 then
-		timerSleepCD:Start()
+		timerSleepCD:StartRange(35, 48)
 	end
 end

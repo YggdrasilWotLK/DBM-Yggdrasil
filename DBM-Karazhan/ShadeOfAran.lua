@@ -71,16 +71,16 @@ function mod:SPELL_CAST_START(args)
 	if args.spellId == 30004 then
 		warningFlameCast:Show()
 		timerFlameCast:Start()
-		timerSpecial:Start()
+		timerSpecial:StartRange(35, 40)
 	elseif args.spellId == 29973 then
 		timerArcaneExplosion:Start()
 		specWarnArcane:Show()
 		specWarnArcane:Play("runtoedge")
-		timerSpecial:Start()
+		timerSpecial:StartRange(35, 40)
 	elseif args.spellId == 29969 then
 		warningBlizzard:Show()
 		timerBlizzad:Start()
-		timerSpecial:Start()
+		timerSpecial:StartRange(35, 40)
 	end
 end
 

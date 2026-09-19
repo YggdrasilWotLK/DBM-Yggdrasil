@@ -19,13 +19,13 @@ local warnFrostbomb		= mod:NewSpellAnnounce(51103, 3)
 local specWarnExplosion		= mod:NewSpecialWarningMoveTo(51110, nil, nil, nil, 3, 2)
 
 local timerTimeBomb			= mod:NewTargetTimer(6, 51121, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerTimeBombCD		= mod:NewCDTimer(22, 51121, nil, nil, nil, 3)--Core 20-25s repeat
+local timerTimeBombCD		= mod:NewCDRangeTimer(20, 25, 51121, nil, nil, nil, 3)--Core 20-25s repeat
 local timerExplosion		= mod:NewCastTimer(9, 51110, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)--Core 9s normal, 7s heroic
-local timerFrostbombCD	= mod:NewCDTimer(9, 51103, nil, nil, nil, 3)--Core 7-11s repeat (was untracked)
+local timerFrostbombCD	= mod:NewCDRangeTimer(7, 11, 51103, nil, nil, nil, 3)--Core 7-11s repeat (was untracked)
 
 function mod:OnCombatStart(delay)
-	timerTimeBombCD:Start(22-delay)--Core 20-25s first
-	timerFrostbombCD:Start(9-delay)--Core 7-11s first
+	timerTimeBombCD:StartRange(20-delay, 25-delay)--Core 20-25s first
+	timerFrostbombCD:StartRange(7-delay, 11-delay)--Core 7-11s first
 end
 
 function mod:OnCombatEnd()
@@ -45,13 +45,13 @@ function mod:SPELL_CAST_START(args)
 		end
 	elseif args.spellId == 51103 then -- Frostbomb (core 7-11s repeat, was untracked)
 		warnFrostbomb:Show()
-		timerFrostbombCD:Start()
+		timerFrostbombCD:StartRange(7, 11)
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(51121, 59376) then -- Time Bomb (core 20-25s repeat)
-		timerTimeBombCD:Start()
+		timerTimeBombCD:StartRange(20, 25)
 	end
 end
 

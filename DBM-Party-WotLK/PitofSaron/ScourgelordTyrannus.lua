@@ -37,19 +37,19 @@ local specWarnOverlordsBrand	= mod:NewSpecialWarningReflect(69172, nil, nil, nil
 local specWarnUnholyPower		= mod:NewSpecialWarningSpell(69167, "Tank", nil, nil, 1, 2) --Spell for now. may change to run away if damage is too high for defensive
 
 local timerCombatStart			= mod:NewCombatTimer(34)
-local timerOverlordsBrandCD		= mod:NewCDTimer(12, 69172, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 4-6s first, 11-12s repeat
+local timerOverlordsBrandCD		= mod:NewCDRangeTimer(11, 12, 69172, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 4-6s first, 11-12s repeat
 local timerOverlordsBrand		= mod:NewTargetTimer(8, 69172, nil, nil, nil, 5)
 local timerUnholyPower			= mod:NewBuffActiveTimer(10, 69167, nil, "Tank|Healer", 2, 5)
-local timerUnholyPowerCD		= mod:NewCDTimer(44, 69167, nil, "Tank|Healer", 2, 5)--Core ~40-48s chain (was untracked)
+local timerUnholyPowerCD		= mod:NewCDRangeTimer(40, 48, 69167, nil, "Tank|Healer", 2, 5)--Core ~40-48s chain (was untracked)
 local timerHoarfrostCD			= mod:NewCDTimer(25, 69246, nil, nil, nil, 3)--Core 25s first and repeat
-local timerForcefulSmash		= mod:NewCDTimer(44, 69155, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 14-16s first, 40-48s chain
+local timerForcefulSmash		= mod:NewCDRangeTimer(40, 48, 69155, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 14-16s first, 40-48s chain
 
 mod:AddSetIconOption("SetIconOnHoarfrostTarget", 69246, true, false, {8})
 mod:AddRangeFrameOption(8, 69246)
 
 function mod:OnCombatStart(delay)
-	timerForcefulSmash:Start(15-delay)--Core 14-16s first
-	timerOverlordsBrandCD:Start(5-delay)--Core 4-6s first
+	timerForcefulSmash:StartRange(14-delay, 16-delay)--Core 14-16s first
+	timerOverlordsBrandCD:StartRange(4-delay, 6-delay)--Core 4-6s first
 	timerHoarfrostCD:Start(25-delay)--Core 25s first
 end
 
@@ -68,7 +68,7 @@ function mod:SPELL_CAST_START(args)
 		specWarnUnholyPower:Show()
 		specWarnUnholyPower:Play("justrun")
 		timerUnholyPower:Start()
-		timerUnholyPowerCD:Start()
+		timerUnholyPowerCD:StartRange(40, 48)
 	elseif args.spellId == 69246 then -- Mark of Rimefang (cast fallback for emote path)
 		timerHoarfrostCD:Start()
 	end
@@ -77,13 +77,13 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 69155 then					-- Forceful Smash (core single ID)
 		warnForcefulSmash:Show()
-		timerForcefulSmash:Start()
+		timerForcefulSmash:StartRange(40, 48)
 	end
 end
 
 function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 69172 then							-- Overlord's Brand
-		timerOverlordsBrandCD:Start()
+		timerOverlordsBrandCD:StartRange(11, 12)
 		timerOverlordsBrand:Start(args.destName)
 		if args:IsPlayer() then
 			specWarnOverlordsBrand:Show(args.sourceName)

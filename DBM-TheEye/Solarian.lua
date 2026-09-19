@@ -101,7 +101,7 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		warnAgent:Schedule(4)
 		timerPriest:Start()
 		warnPriest:Schedule(20)
-		timerSplit:Start()
+		timerSplit:StartRange(87.5, 91.2)
 	elseif msg == L.YellPhase2 or msg:find(L.YellPhase2) then
 		warnPhase2:Show()
 		timerAgent:Cancel()

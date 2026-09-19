@@ -27,8 +27,8 @@ local specWarnCharred		= mod:NewSpecialWarningGTFO(30129, nil, nil, nil, 1, 6)
 local specWarnSmoke			= mod:NewSpecialWarningTarget(30128, "Healer", nil, nil, 1, 2)
 
 local timerNightbane		= mod:NewCombatTimer(36)
-local timerFearCD			= mod:NewCDTimer(31.5, 36922, nil, nil, nil, 2)
-local timerAirPhase			= mod:NewTimer(35, "timerAirPhase"--Core 35s land schedule (was 57), "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)
+local timerFearCD			= mod:NewCDRangeTimer(32, 40, 36922, nil, nil, nil, 2)
+local timerAirPhase			= mod:NewTimer(35, "timerAirPhase", "Interface\\AddOns\\DBM-Core\\textures\\CryptFiendUnBurrow.blp", nil, nil, 6)--Core 35s land schedule (was 57)
 local timerBone				= mod:NewBuffActiveTimer(11, 37098, nil, nil, nil, 1)
 
 mod:AddSetIconOption("SetIconOnCharred", 30128, true, false, {1})
@@ -48,7 +48,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 36922 then
 		warningFear:Show()
-		timerFearCD:Start()
+		timerFearCD:StartRange(32, 40)
 	end
 end
 

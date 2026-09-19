@@ -20,13 +20,13 @@ local specWarnShroud			= mod:NewSpecialWarningDispel(59745, "MagicDispeller", ni
 
 local timerVoidShift			= mod:NewTargetTimer(5, 59743)
 local timerVoidShifted			= mod:NewTargetTimer(15, 54343)
-local timerVoidShiftCD		= mod:NewCDTimer(20, 54361, nil, nil, nil, 3)--Core 23-25s first, 18-22s repeat
+local timerVoidShiftCD		= mod:NewCDRangeTimer(18, 22, 54361, nil, nil, nil, 3)--Core 23-25s first, 18-22s repeat
 local timerShroudCD			= mod:NewCDTimer(20, 54524, nil, nil, nil, 3)--Core 5-7s first, 20s repeat
 local timerSentryCD			= mod:NewCDTimer(12, 54369, nil, nil, nil, 1)--Core 10s first, 12s repeat (was untracked)
 
 function mod:OnCombatStart(delay)
-	timerVoidShiftCD:Start(24-delay)--Core 23-25s first
-	timerShroudCD:Start(6-delay)--Core 5-7s first
+	timerVoidShiftCD:StartRange(23-delay, 25-delay)--Core 23-25s first
+	timerShroudCD:StartRange(5-delay, 7-delay)--Core 5-7s first
 	timerSentryCD:Start(10-delay)--Core 10s first
 end
 
@@ -38,7 +38,7 @@ end
 
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 54361 then -- Void Shift (core 18-22s repeat)
-		timerVoidShiftCD:Start()
+		timerVoidShiftCD:StartRange(18, 22)
 	elseif args.spellId == 54524 then -- Shroud of Darkness (core 20s repeat)
 		timerShroudCD:Start()
 	elseif args.spellId == 54369 then -- Summon Void Sentry (core 12s repeat, was untracked)

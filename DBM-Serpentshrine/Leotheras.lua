@@ -26,7 +26,7 @@ local warnPhase2		= mod:NewPhaseAnnounce(2, 2)
 local specWarnWhirl		= mod:NewSpecialWarningRun(37640, nil, nil, nil, 4, 2)
 local specWarnDemon		= mod:NewSpecialWarningYou(37676, nil, nil, nil, 1, 2)
 
-local timerWhirlCD		= mod:NewCDTimer(27, 37640, nil, nil, nil, 2)
+local timerWhirlCD		= mod:NewCDRangeTimer(30.25, 34.9, 37640, nil, nil, nil, 2)
 local timerWhirl		= mod:NewBuffActiveTimer(12, 37640, nil, nil, nil, 2)
 local timerPhase		= mod:NewTimer(60, "TimerPhase", 39088, nil, nil, 6)
 local timerDemonCD		= mod:NewCDTimer(23, 37676, nil, nil, nil, 6)
@@ -84,10 +84,10 @@ function mod:SPELL_AURA_APPLIED(args)
 		if self.vb.phase ~= 2 then
 			self.vb.whirlCount = self.vb.whirlCount + 1
 			if self.vb.whirlCount < 3 then
-				timerWhirlCD:Start()
+				timerWhirlCD:StartRange(30.25, 34.9)
 			end
 		else
-			timerWhirlCD:Start()
+			timerWhirlCD:StartRange(30.25, 34.9)
 		end
 	elseif args.spellId == 37676 then
 		warnDemonTargets[#warnDemonTargets + 1] = args.destName

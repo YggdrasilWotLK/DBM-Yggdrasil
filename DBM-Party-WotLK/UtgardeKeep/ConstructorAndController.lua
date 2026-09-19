@@ -20,8 +20,8 @@ local warnCharge		= mod:NewSpellAnnounce(43651, 3, nil, "Tank")
 local warnStoneStrike		= mod:NewSpellAnnounce(48583, 2, nil, "Tank")
 
 local timerEnfeeble		= mod:NewTargetTimer(6, 43650)
-local timerEnfeebleCD		= mod:NewCDTimer(7, 43650, nil, nil, nil, 3)--Core 5s first, 5-10s repeat
-local timerChargeCD		= mod:NewCDTimer(7, 43651, nil, "Tank", nil, 3)--Core 5s first, 5-10s repeat
+local timerEnfeebleCD		= mod:NewCDRangeTimer(5, 10, 43650, nil, nil, nil, 3)--Core 5s first, 5-10s repeat
+local timerChargeCD		= mod:NewCDRangeTimer(5, 10, 43651, nil, "Tank", nil, 3)--Core 5s first, 5-10s repeat
 local timerStoneStrikeCD	= mod:NewCDTimer(10, 48583, nil, "Tank", nil, 3)--Core 10s first
 
 function mod:OnCombatStart(delay)
@@ -40,7 +40,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 43650 then
 		warningEnfeeble:Show(args.destName)
 		timerEnfeeble:Start(args.destName)
-		timerEnfeebleCD:Start()
+		timerEnfeebleCD:StartRange(5, 10)
 	end
 end
 
@@ -59,7 +59,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 43651 then -- Skarvald Charge (core 5-10s repeat)
 		warnCharge:Show()
-		timerChargeCD:Start()
+		timerChargeCD:StartRange(5, 10)
 	end
 end
 

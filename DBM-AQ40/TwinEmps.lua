@@ -22,9 +22,9 @@ local specWarnStrike		= mod:NewSpecialWarningDefensive(26613, nil, nil, nil, 1, 
 --local specWarnExplodeBug	= mod:NewSpecialWarningMove(804, nil, nil, nil, 1, 2)
 local specWarnGTFO			= mod:NewSpecialWarningGTFO(26607, nil, nil, nil, 8, 2)
 
-local timerTeleport			= mod:NewCDTimer(29.2, 800, nil, nil, nil, 6, nil, nil, true, 1, 4)--29.2-40.2
-local timerExplodeBugCD		= mod:NewCDTimer(4.9, 804, nil, false, nil, 1)--4.9-9
-local timerMutateBugCD		= mod:NewCDTimer(11, 802, nil, false, nil, 1)--11-16
+local timerTeleport			= mod:NewCDRangeTimer(30, 40, 800, nil, nil, nil, 6, nil, nil, true, 1, 4)--30-40
+local timerExplodeBugCD		= mod:NewCDRangeTimer(4.5, 10, 804, nil, false, nil, 1)--4.5-10
+local timerMutateBugCD		= mod:NewCDRangeTimer(10, 20, 802, nil, false, nil, 1)--10-20
 --local timerStrikeCD		= mod:NewCDTimer(9.7, 26613, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--9.7-42.6
 
 local berserkTimer			= mod:NewBerserkTimer(900)
@@ -51,7 +51,7 @@ end
 function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(799, 800) and self:AntiSpam(5, 1) then
 		warnTeleport:Show()
-		timerTeleport:Start()
+		timerTeleport:StartRange(30, 40)
 	--elseif args.spellId == 26613 and not self:IsTrivial(80) then
 	elseif args.spellId == 26613 then
 		if args:IsPlayer() then
@@ -87,9 +87,9 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 802 then
 		warnMutateBug:Show()
-		timerMutateBugCD:Start()
+		timerMutateBugCD:StartRange(10, 20)
 	elseif args.spellId == 804 then
-		timerExplodeBugCD:Start()
+		timerExplodeBugCD:StartRange(4.5, 10)
 	--elseif spellId == 26613 then
 		--timerStrikeCD:Start()
 	end

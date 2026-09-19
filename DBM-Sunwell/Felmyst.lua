@@ -10,7 +10,7 @@ mod:RegisterCombat("combat")
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 45866",
 	"SPELL_CAST_START 45855",
-	"SPELL_SUMMON 45392 45391"--45391 is the core summon ID, 45392 kept as fallback,
+	"SPELL_SUMMON 45392 45391",--45391 is the core summon ID, 45392 kept as fallback
 	"CHAT_MSG_RAID_BOSS_EMOTE",
 	"CHAT_MSG_MONSTER_YELL",
 	"UNIT_SPELLCAST_SUCCEEDED"
@@ -29,10 +29,10 @@ local specWarnVapor			= mod:NewSpecialWarningYou(45402, nil, nil, nil, 1, 2)
 local specWarnBreath		= mod:NewSpecialWarningCount(45717, nil, nil, nil, 3, 2)
 
 local timerGasCast			= mod:NewCastTimer(1, 45855)
-local timerGasCD			= mod:NewCDTimer(19, 45855, nil, nil, nil, 3)
+local timerGasCD			= mod:NewCDRangeTimer(18, 43, 45855, nil, nil, nil, 3)
 local timerCorrosion		= mod:NewTargetTimer(10, 45866, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerEncaps			= mod:NewTargetTimer(7, 45665, nil, nil, nil, 3)
-local timerEncapsCD			= mod:NewCDTimer(50, 45665, nil, nil, nil, 3)
+local timerEncapsCD			= mod:NewCDRangeTimer(26, 53, 45665, nil, nil, nil, 3)
 local timerBreath			= mod:NewCDCountTimer(17, 45717, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerPhase			= mod:NewTimer(60, "TimerPhase", 31550, nil, nil, 6)
 
@@ -46,9 +46,9 @@ mod.vb.breathCounter = 0
 function mod:Groundphase()
 	self.vb.breathCounter = 0
 	warnPhase:Show(L.Ground)
-	timerGasCD:Start(17)
+	timerGasCD:StartRange(18, 43)
 	timerPhase:Start(60, L.Air)
-	timerEncapsCD:Start()
+	timerEncapsCD:StartRange(26, 53)
 end
 
 function mod:EncapsulateTarget(targetname)
@@ -72,10 +72,10 @@ end
 
 function mod:OnCombatStart(delay)
 	self.vb.breathCounter = 0
-	timerGasCD:Start(17-delay)
+	timerGasCD:StartRange(18-delay, 43-delay)
 	timerPhase:Start(-delay, L.Air)
 	berserkTimer:Start(-delay)
-	timerEncapsCD:Start()
+	timerEncapsCD:StartRange(26-delay, 53-delay)
 end
 
 
@@ -107,7 +107,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 45855 then
 		timerGasCast:Start()
-		timerGasCD:Start()
+		timerGasCD:StartRange(18, 43)
 		specWarnGas:Show()
 		specWarnGas:Play("helpdispel")
 	end

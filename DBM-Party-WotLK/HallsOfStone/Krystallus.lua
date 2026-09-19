@@ -16,13 +16,13 @@ local warnBoulder		= mod:NewSpellAnnounce(50843, 2)--Core random target, no role
 local warnStomp		= mod:NewSpellAnnounce(50868, 3)
 
 local timerShatterCD	= mod:NewCDTimer(12, 50810, nil, nil, nil, 2)--Core slam 10-13s, shatter +8s
-local timerBoulderCD	= mod:NewCDTimer(6, 50843, nil, nil, nil, 3)--Core 5-7s first (was untracked)
-local timerStompCD	= mod:NewCDTimer(15, 50868, nil, nil, nil, 2)--Core 13-18s first (was untracked)
+local timerBoulderCD	= mod:NewCDRangeTimer(5, 7, 50843, nil, nil, nil, 3)--Core 5-7s first (was untracked)
+local timerStompCD	= mod:NewCDRangeTimer(13, 18, 50868, nil, nil, nil, 2)--Core 13-18s first (was untracked)
 
 function mod:OnCombatStart(delay)
 	timerShatterCD:Start(18-delay)--Core slam 10-13s + 8s shatter
-	timerBoulderCD:Start(6-delay)--Core 5-7s first
-	timerStompCD:Start(15-delay)--Core 13-18s first
+	timerBoulderCD:StartRange(5-delay, 7-delay)--Core 5-7s first
+	timerStompCD:StartRange(13-delay, 18-delay)--Core 13-18s first
 end
 
 function mod:OnCombatEnd()
@@ -37,10 +37,10 @@ function mod:SPELL_CAST_START(args)
 		timerShatterCD:Start()
 	elseif args:IsSpellID(50843, 59742) then -- Boulder Toss (was untracked)
 		warnBoulder:Show()
-		timerBoulderCD:Start()
+		timerBoulderCD:StartRange(5, 7)
 	elseif args:IsSpellID(50868, 59744) then -- Stomp (was untracked)
 		warnStomp:Show()
-		timerStompCD:Start()
+		timerStompCD:StartRange(13, 18)
 	end
 end
 

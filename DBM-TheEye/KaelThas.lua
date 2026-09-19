@@ -47,14 +47,14 @@ local specWarnVapor		= mod:NewSpecialWarningStack(35859, nil, 2, nil, nil, 1, 6)
 local timerPhase		= mod:NewTimer(105, "TimerPhase", 28131, nil, nil, 6, nil, nil, 1, 4)
 local timerPhase1mob	= mod:NewTimer(30, "TimerPhase1mob", 28131, nil, nil, 1, nil, nil, 1, 4)
 local timerNextGaze		= mod:NewTimer(8.5, "TimerNextGaze", 39414, nil, nil, 3)
-local timerFearCD		= mod:NewCDTimer(35, 44863--Core 30-40s fear 44863 (was 31 on 39427 fallback ID), nil, nil, nil, 2)
+local timerFearCD		= mod:NewCDRangeTimer(30, 40, 44863, nil, nil, nil, 2)--Core 30-40s fear 44863 (was 31 on 39427 fallback ID)
 local timerToy			= mod:NewTargetTimer(60, 37027, nil, false, nil, 3)
-local timerPhoenixCD	= mod:NewCDTimer(45, 36723, nil, nil, nil, 1)
+local timerPhoenixCD	= mod:NewCDRangeTimer(35.45, 41.55, 36723, nil, nil, nil, 1)
 local timerRebirth		= mod:NewTimer(15, "TimerRebirth", 36723, nil, nil, 1)
 local timerShieldCD		= mod:NewCDTimer(60, 36815, nil, nil, nil, 4)
 local timerGravityCD	= mod:NewNextTimer(92, 35941, nil, nil, nil, 6)
 local timerGravity		= mod:NewBuffActiveTimer(32, 35941, nil, nil, nil, 6)
-local timerMCCD			= mod:NewCDTimer(60, 36797)
+local timerMCCD			= mod:NewCDRangeTimer(23, 26, 36797)
 
 mod:AddSetIconOption("MCIcon", 36797, true, false, {8, 7, 6})
 mod:AddBoolOption("GazeIcon", false)
@@ -79,7 +79,7 @@ local function showMC(self)
 	warnMC:Show(table.concat(warnMCTargets, "<, >"))
 	table.wipe(warnMCTargets)
 	self.vb.mcIcon = 8
-	timerMCCD:Start()
+	timerMCCD:StartRange(23, 26)
 end
 
 local showShieldHealthBar, hideShieldHealthBar
@@ -194,7 +194,7 @@ function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
 	if spellId == 44863 then
 		warnFear:Show()
-		timerFearCD:Start()
+		timerFearCD:StartRange(30, 40)
 	elseif spellId == 36819 then
 		warnPyro:Show()
 	elseif spellId == 35941 then
@@ -210,7 +210,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		if self.vb.phase == 5 then
 			timerPhoenixCD:Start(90)
 		else
-			timerPhoenixCD:Start()
+			timerPhoenixCD:StartRange(35.45, 41.55)
 		end
 	elseif args.spellId == 36834 then
 		warnDisruption:Show()

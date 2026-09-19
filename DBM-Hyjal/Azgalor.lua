@@ -22,7 +22,7 @@ local yellDoom			= mod:NewShortFadesYell(31347)
 
 local timerDoom			= mod:NewTargetTimer(20, 31347, nil, nil, nil, 3)
 local timerSilence		= mod:NewBuffFadesTimer(5, 31344, nil, nil, nil, 2, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)
-local timerSilenceCD	= mod:NewCDTimer(18, 31344, nil, nil, nil, 2, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)
+local timerSilenceCD	= mod:NewCDRangeTimer(18, 20, 31344, nil, nil, nil, 2, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.HEALER_ICON)
 
 local berserkTimer		= mod:NewBerserkTimer(600)
 
@@ -66,6 +66,6 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 31344 then
 		warnSilence:Show()
 		timerSilence:Start()
-		timerSilenceCD:Start()
+		timerSilenceCD:StartRange(18, 20)
 	end
 end

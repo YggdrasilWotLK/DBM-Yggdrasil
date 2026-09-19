@@ -19,10 +19,10 @@ local warnFetid			= mod:NewSpellAnnounce(48291, 3, nil, "Tank|Healer")
 local warnSlash			= mod:NewSpellAnnounce(48292, 3, nil, "Tank")
 
 local timerBane			= mod:NewBuffActiveTimer(5, 48294, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
-local timerBaneCD			= mod:NewCDTimer(22, 48294, nil, nil, nil, 3)--Core 18s first, 20-25s repeat
+local timerBaneCD			= mod:NewCDRangeTimer(20, 25, 48294, nil, nil, nil, 3)--Core 18s first, 20-25s repeat
 local timerScreams		= mod:NewBuffActiveTimer(8, 51750, nil, nil, nil, 2)
-local timerFetidCD		= mod:NewCDTimer(11, 48291, nil, "Tank|Healer", nil, 3)--Core 8s first, 10-13s repeat
-local timerSlashCD		= mod:NewCDTimer(32, 48292, nil, "Tank", nil, 3)--Core 28s first, 30-35s repeat
+local timerFetidCD		= mod:NewCDRangeTimer(10, 13, 48291, nil, "Tank|Healer", nil, 3)--Core 8s first, 10-13s repeat
+local timerSlashCD		= mod:NewCDRangeTimer(30, 35, 48292, nil, "Tank", nil, 3)--Core 28s first, 30-35s repeat
 
 function mod:OnCombatStart(delay)
 	timerBaneCD:Start(18-delay)--Core 18s first
@@ -44,10 +44,10 @@ function mod:SPELL_CAST_START(args)
 		timerScreams:Start()
 	elseif args.spellId == 48291 then -- Fetid Rot (core 10-13s repeat, was untracked)
 		warnFetid:Show()
-		timerFetidCD:Start()
+		timerFetidCD:StartRange(10, 13)
 	elseif args.spellId == 48292 then -- Dark Slash (core 30-35s repeat, was untracked)
 		warnSlash:Show()
-		timerSlashCD:Start()
+		timerSlashCD:StartRange(30, 35)
 	end
 end
 
@@ -64,7 +64,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(48294, 59301) then
 		warningBane:Show()
 		timerBane:Start()
-		timerBaneCD:Start()
+		timerBaneCD:StartRange(20, 25)
 	end
 end
 

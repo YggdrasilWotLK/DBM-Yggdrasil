@@ -15,14 +15,14 @@ local warnWhirlwind		= mod:NewSpellAnnounce(13736, 3)
 local warnCleave		= mod:NewSpellAnnounce(15284, 3, nil, "Tank")
 local warnStrike		= mod:NewSpellAnnounce(16856, 3, nil, "Tank|Healer")
 
-local timerWhirlwindCD	= mod:NewCDTimer(15, 13736, nil, nil, nil, 3)--Core 13-15s first, 13-18s repeat
-local timerCleaveCD		= mod:NewCDTimer(12, 15284, nil, "Tank", nil, 3)--Core 15-17s first, 10-14s repeat
-local timerStrikeCD		= mod:NewCDTimer(16, 16856, nil, "Tank|Healer", nil, 3)--Core 17-19s first, 14-18s repeat
+local timerWhirlwindCD	= mod:NewCDRangeTimer(13, 18, 13736, nil, nil, nil, 3)--Core 13-15s first, 13-18s repeat
+local timerCleaveCD		= mod:NewCDRangeTimer(10, 14, 15284, nil, "Tank", nil, 3)--Core 15-17s first, 10-14s repeat
+local timerStrikeCD		= mod:NewCDRangeTimer(14, 18, 16856, nil, "Tank|Healer", nil, 3)--Core 17-19s first, 14-18s repeat
 
 function mod:OnCombatStart(delay)
-	timerWhirlwindCD:Start(14-delay)--Core 13-15s first (mid)
-	timerCleaveCD:Start(16-delay)--Core 15-17s first (mid)
-	timerStrikeCD:Start(18-delay)--Core 17-19s first (mid)
+	timerWhirlwindCD:StartRange(13-delay, 15-delay)--Core 13-15s first
+	timerCleaveCD:StartRange(15-delay, 17-delay)--Core 15-17s first
+	timerStrikeCD:StartRange(17-delay, 19-delay)--Core 17-19s first
 end
 
 function mod:OnCombatEnd()
@@ -34,12 +34,12 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 13736 then -- Whirlwind (core 13-18s repeat)
 		warnWhirlwind:Show()
-		timerWhirlwindCD:Start()
+		timerWhirlwindCD:StartRange(13, 18)
 	elseif args.spellId == 15284 then -- Cleave (core 10-14s repeat)
 		warnCleave:Show()
-		timerCleaveCD:Start()
+		timerCleaveCD:StartRange(10, 14)
 	elseif args.spellId == 16856 then -- Mortal Strike (core 14-18s repeat)
 		warnStrike:Show()
-		timerStrikeCD:Start()
+		timerStrikeCD:StartRange(14, 18)
 	end
 end

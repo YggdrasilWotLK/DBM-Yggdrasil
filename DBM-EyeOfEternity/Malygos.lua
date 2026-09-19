@@ -36,12 +36,12 @@ local specWarnStaticField		= mod:NewSpecialWarningYou(57430, nil, nil, nil, 1, 2
 local specWarnStaticFieldNear	= mod:NewSpecialWarningClose(57430, nil, nil, nil, 1, 2)
 local yellStaticField			= mod:NewYellMe(57430)
 
-local timerSpark				= mod:NewNextTimer(25, 56140, nil, nil, nil, 1, 59381, DBM_COMMON_L.DAMAGE_ICON)--Core 10-15s first, 20-30s repeat
+local timerSpark				= mod:NewNextRangeTimer(20, 30, 56140, nil, nil, nil, 1, 59381, DBM_COMMON_L.DAMAGE_ICON)--Core 10-15s first, 20-30s repeat
 local timerVortex				= mod:NewCastTimer(11, 56105, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerVortexCD				= mod:NewNextTimer(60, 56105, nil, nil, nil, 2)--Core 30s after fight start, 60s repeat
 local timerBreath				= mod:NewBuffActiveTimer(8, 56505, nil, nil, nil, 5) --lasts 5 seconds plus 3 sec cast.
 local timerBreathCD				= mod:NewCDTimer(59, 56505, nil, nil, nil, 2)
-local timerArcaneBreathCD		= mod:NewCDTimer(13, 56272, nil, "Tank", nil, 5)--Core P1 9-12s first, 12-15s repeat
+local timerArcaneBreathCD		= mod:NewCDRangeTimer(12, 15, 56272, nil, "Tank", nil, 5)--Core P1 9-12s first, 12-15s repeat
 local timerStaticFieldCD		= mod:NewCDTimer(12, 57430, nil, nil, nil, 3) --Core 1-4s first, 12s repeat
 local timerAchieve				= mod:NewAchievementTimer(360, 1875)
 local timerIntermission		= mod:NewPhaseTimer(22)
@@ -92,8 +92,8 @@ function mod:OnCombatStart(delay)
 	tableBuild = false
 	self:SetStage(1)
 	timerVortexCD:Start(30) -- Core 30s after fight start (post-landing)
-	timerArcaneBreathCD:Start(10-delay)--Core P1 9-12s first
-	timerSpark:Start(12-delay)--Core 10-15s first
+	timerArcaneBreathCD:StartRange(9-delay, 12-delay)--Core P1 9-12s first
+	timerSpark:StartRange(10-delay, 15-delay)--Core 10-15s first
 	enrageTimer:Start(-delay)
 	timerAchieve:Start(-delay)
 	table.wipe(guids)
@@ -143,7 +143,7 @@ function mod:SPELL_CAST_START(args)
 		timerBreath:Start()
 		timerBreathCD:Start()
 	elseif args:IsSpellID(56272, 60072) then--P1 Arcane Breath (core 12-15s repeat)
-		timerArcaneBreathCD:Start()
+		timerArcaneBreathCD:StartRange(12, 15)
 	elseif spellId == 57430 then -- Static Field (START+SUCCESS share AntiSpam key below)
 		if self:AntiSpam(5, "StaticField") then
 			self:ScheduleMethod(0.1, "StaticFieldTarget")
@@ -206,7 +206,7 @@ function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
 --	"<39.8> [UNIT_SPELLCAST_SUCCEEDED] Malygos:Possible Target<Omegal>:target:Summon Power Spark::0:56140", -- [998]
 	if spellName == GetSpellInfo(56140) then
 		warnSpark:Show()
-		timerSpark:Start()
+		timerSpark:StartRange(20, 30)
 	end
 end
 

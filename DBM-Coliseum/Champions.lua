@@ -121,7 +121,7 @@ local specWarnBloodlust	= mod:NewSpecialWarningDispel(65980, "MagicDispeller", n
 local specWarnHeroism		= mod:NewSpecialWarningDispel(65983, "MagicDispeller", nil, nil, 1, 2)
 
 local timerBladestorm		= mod:NewBuffActiveTimer(8, 65947, nil, nil, nil, 2)
-local timerBlindCD			= mod:NewCDTimer(15, 65960)--Core 10-15s
+local timerBlindCD			= mod:NewCDRangeTimer(6, 10, 65960)--Core 10-15s first, 6-10s repeat
 local timerDeathgripCD		= mod:NewCDTimer(35, 66017, nil, nil, nil, 3)
 local timerBladestormCD		= mod:NewCDTimer(90, 65947, nil, nil, nil, 2)
 local timerFrostTrapCD		= mod:NewCDTimer(30, 65880)
@@ -218,7 +218,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		warnShadowstep:Show()
 	elseif spellId == 65960 then								-- Blind
 		warnBlind:Show(args.destName)
-		timerBlindCD:Start()
+		timerBlindCD:StartRange(6, 10)
 	elseif spellId == 65961 then								-- Cloak of Shadows
 		warnCloakOfShadows:Show()
 	-- Hunter

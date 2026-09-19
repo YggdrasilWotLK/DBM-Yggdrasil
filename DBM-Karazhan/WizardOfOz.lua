@@ -25,7 +25,7 @@ local warnFear		= mod:NewSpellAnnounce(31013, 4)
 local warnBrainBash	= mod:NewTargetNoFilterAnnounce(31046, 2)
 local warnChain		= mod:NewSpellAnnounce(32337, 3)
 
-local timerFearCD	= mod:NewCDTimer(30, 31013, nil, nil, nil, 2)--Core Dorothee 30s (was 19)
+local timerFearCD	= mod:NewCDRangeTimer(20, 30, 31013, nil, nil, nil, 2)--Core 20-30s Frightened Scream
 local timerRoar		= mod:NewTimer(17, "DBM_OZ_WARN_ROAR", "132117", nil, false, 1)--Core 16.7s release (was 12)
 local timerStrawman	= mod:NewTimer(26, "DBM_OZ_WARN_STRAWMAN", "133136", nil, false, 1)--Core 26.3s release (was 21)
 local timerTinhead	= mod:NewTimer(34, "DBM_OZ_WARN_TINHEAD", "133070", nil, false, 1)--Core 34.5s release (was 29)
@@ -69,7 +69,7 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 31013 then
 		warnFear:Show()
-		timerFearCD:Start()
+		timerFearCD:StartRange(20, 30)
 	end
 end
 

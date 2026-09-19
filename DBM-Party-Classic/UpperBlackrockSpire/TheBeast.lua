@@ -20,17 +20,17 @@ local warnBlast			= mod:NewSpellAnnounce(16144, 2, nil, "Healer")
 local timerBreakCD		= mod:NewCDTimer(10, 16785, nil, "Tank", nil, 3)--Core 12s first, 10s repeat
 local timerImmolateCD		= mod:NewCDTimer(8, 15570, nil, nil, nil, 3)--Core 3s first, 8s repeat
 local timerRoarCD			= mod:NewCDTimer(20, 14100, nil, nil, nil, 3)--Core 23s first, 20s repeat
-local timerChargeCD		= mod:NewCDTimer(19, 16636, nil, nil, nil, 3)--Core 2s first, 15-23s repeat
-local timerFireballCD		= mod:NewCDTimer(14, 16788, nil, "Healer", nil, 2)--Core 8-21s first and repeat
-local timerBlastCD		= mod:NewCDTimer(6, 16144, nil, "Healer", nil, 2)--Core 5-8s first and repeat
+local timerChargeCD		= mod:NewCDRangeTimer(15, 23, 16636, nil, nil, nil, 3)--Core 2s first, 15-23s repeat
+local timerFireballCD		= mod:NewCDRangeTimer(8, 21, 16788, nil, "Healer", nil, 2)--Core 8-21s first and repeat
+local timerBlastCD		= mod:NewCDRangeTimer(5, 8, 16144, nil, "Healer", nil, 2)--Core 5-8s first and repeat
 
 function mod:OnCombatStart(delay)
 	timerBreakCD:Start(12-delay)--Core 12s first
 	timerImmolateCD:Start(3-delay)--Core 3s first
 	timerRoarCD:Start(23-delay)--Core 23s first
 	timerChargeCD:Start(2-delay)--Core 2s first
-	timerFireballCD:Start(14-delay)--Core 8-21s first (mid)
-	timerBlastCD:Start(6-delay)--Core 5-8s first (mid)
+	timerFireballCD:StartRange(8-delay, 21-delay)--Core 8-21s first
+	timerBlastCD:StartRange(5-delay, 8-delay)--Core 5-8s first
 end
 
 function mod:OnCombatEnd()
@@ -54,12 +54,12 @@ function mod:SPELL_CAST_START(args)
 		timerRoarCD:Start()
 	elseif args.spellId == 16636 then -- Berserker Charge (core 15-23s repeat)
 		warnCharge:Show()
-		timerChargeCD:Start()
+		timerChargeCD:StartRange(15, 23)
 	elseif args.spellId == 16788 then -- Fireball (core 8-21s repeat)
 		warnFireball:Show()
-		timerFireballCD:Start()
+		timerFireballCD:StartRange(8, 21)
 	elseif args.spellId == 16144 then -- Fireblast (core 5-8s repeat)
 		warnBlast:Show()
-		timerBlastCD:Start()
+		timerBlastCD:StartRange(5, 8)
 	end
 end

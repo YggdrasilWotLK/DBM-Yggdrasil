@@ -24,7 +24,7 @@ local timerConflag			= mod:NewBuffActiveTimer(5, 74456, nil, nil, nil, 3)
 local timerConflagCD		= mod:NewNextTimer(62, 74452, nil, nil, nil, 3)--Core flight re-scheduled 50s then delayed 15s (~65s period, beacon ~3s after flight start)
 local timerBreath			= mod:NewCDTimer(25, 74403, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerEnrage			= mod:NewBuffActiveTimer(10, 78722, nil, "RemoveEnrage|Tank|Healer", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON..DBM_COMMON_L.TANK_ICON)
-local timerEnrageCD		= mod:NewCDTimer(17, 78722, nil, "RemoveEnrage|Tank|Healer", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON)--Core 15s first, 15-20s repeat
+local timerEnrageCD		= mod:NewCDRangeTimer(15, 20, 78722, nil, "RemoveEnrage|Tank|Healer", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON)--Core 15s first, 15-20s repeat
 
 mod:AddRangeFrameOption(10, 74456)
 mod:AddSetIconOption("beaconIcon", 74453, true, false, {8, 7, 6, 5, 4, 3})
@@ -74,7 +74,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		specWarnTranq:Show(args.destName)
 		specWarnTranq:Play("trannow")
 		timerEnrage:Start()
-		timerEnrageCD:Start()
+		timerEnrageCD:StartRange(15, 20)
 	elseif spellId == 74453 then
 		beaconTargets[#beaconTargets + 1] = args.destName
 		timerConflagCD:Start()

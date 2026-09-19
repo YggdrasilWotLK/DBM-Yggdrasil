@@ -27,9 +27,9 @@ local timerShieldCD		= mod:NewCDTimer(16, 50831, nil, nil, nil, 3)--Core 14-19s 
 
 function mod:OnCombatStart(delay)
 	timerChargeCD:Start(20-delay)--Core 20s
-	timerRingCD:Start(28-delay)--Core 25-31s (mid)
-	timerChainCD:Start(9-delay)--Core 6-12s (mid)
-	timerShieldCD:Start(16-delay)--Core 14-19s (mid)
+	timerRingCD:StartRange(25-delay, 31-delay)--Core 25-31s (mid)
+	timerChainCD:StartRange(6-delay, 12-delay)--Core 6-12s (mid)
+	timerShieldCD:StartRange(14-delay, 19-delay)--Core 14-19s (mid)
 end
 
 function mod:OnCombatEnd()

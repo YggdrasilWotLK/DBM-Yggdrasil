@@ -31,7 +31,7 @@ local timerSpecialCD			= mod:NewCDSpecialTimer(27)--Core 25-30s rotation (+20s a
 local timerPursuitCast			= mod:NewCastTimer(5, 68987)
 local timerPursuitConfusion		= mod:NewBuffActiveTimer(12, 69029)
 local timerPoisonNova			= mod:NewCastTimer(5, 68989, nil, "Melee", 2, 2)
-local timerKickCD				= mod:NewCDTimer(22, 69021, nil, "Tank", nil, 3)--Core 20-25s (was untracked)
+local timerKickCD				= mod:NewCDRangeTimer(20, 25, 69021, nil, "Tank", nil, 3)--Core 20-25s (was untracked)
 local timerBoltCD				= mod:NewCDTimer(14, 69028, nil, "Healer", nil, 2)--Core 14s via Krick (was untracked)
 
 mod:AddSetIconOption("SetIconOnPursuitTarget", 68987, true, false, {8})
@@ -42,7 +42,7 @@ local pursuitTable = {}
 function mod:OnCombatStart(delay)
 	table.wipe(pursuitTable)
 	timerSpecialCD:Start(25-delay)--Core first special 25s
-	timerKickCD:Start(22-delay)--Core 20-25s first
+	timerKickCD:StartRange(20-delay, 25-delay)--Core 20-25s first
 	timerBoltCD:Start(14-delay)--Core 14s first
 end
 
@@ -70,7 +70,7 @@ function mod:SPELL_CAST_START(args)
 		timerSpecialCD:Start(40) --Barrage + 20s lockout
 	elseif args.spellId == 69021 then -- Mighty Kick (was untracked)
 		warnKick:Show()
-		timerKickCD:Start()
+		timerKickCD:StartRange(20, 25)
 	elseif args.spellId == 69028 then -- Shadow Bolt via Krick (was untracked)
 		warnBolt:Show()
 		timerBoltCD:Start()

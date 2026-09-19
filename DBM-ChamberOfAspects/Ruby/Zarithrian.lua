@@ -31,7 +31,7 @@ local timerAddsTravel			= mod:NewTimer(10, "AddsArrive") -- Timer to indicate wh
 local timerCleaveArmor		= mod:NewTargetTimer(30, 74367, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerCleaveCD			= mod:NewCDTimer(15, 74367, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 9s first, 15s repeat
 local timerFearCD				= mod:NewCDTimer(30, 74384, nil, nil, nil, 2)
-local timerBlastNovaCD		= mod:NewCDTimer(25, 74392, nil, nil, nil, 3)--Core 20-30s repeat
+local timerBlastNovaCD		= mod:NewCDRangeTimer(20, 30, 74392, nil, nil, nil, 3)--Core 20-30s repeat
 
 mod:AddBoolOption("CancelBuff")
 local CleaveArmorTargets = {}
@@ -60,7 +60,7 @@ function mod:SPELL_CAST_START(args)
 		timerFearCD:Start()
 	elseif args.spellId == 74392 then -- Blast Nova (Flamecaller add)
 		warnBlastNova:Show()
-		timerBlastNovaCD:Start()
+		timerBlastNovaCD:StartRange(20, 30)
 	end
 end
 

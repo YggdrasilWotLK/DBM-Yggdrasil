@@ -19,8 +19,8 @@ local warnShout				= mod:NewSpellAnnounce(55106, 2)
 local warnStab				= mod:NewSpellAnnounce(55104, 3, nil, "Tank")
 
 local timerTransform		= mod:NewCDTimer(10, 55098, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
-local timerTremorCD		= mod:NewCDTimer(20, 55142, nil, nil, nil, 3)--Core 13-30s first (was untracked)
-local timerShoutCD		= mod:NewCDTimer(17, 55106, nil, nil, nil, 2)--Core 8-38s first (was untracked)
+local timerTremorCD		= mod:NewCDRangeTimer(13, 27, 55142, nil, nil, nil, 3)--Core 13-30s first, 13-27s repeat (was untracked)
+local timerShoutCD		= mod:NewCDRangeTimer(6, 27, 55106, nil, nil, nil, 2)--Core 8-38s first, 6-27s repeat (was untracked)
 local timerStabCD			= mod:NewCDTimer(20, 55104, nil, "Tank", nil, 3)--Core 20s (was untracked)
 
 mod.vb.lowHealth = false
@@ -30,8 +30,8 @@ function mod:OnCombatStart(delay)
 	self.vb.lowHealth = false
 	self.vb.kickCount = 0
 	timerTransform:Start(10-delay)--Core 10s
-	timerTremorCD:Start(21-delay)--Core 13-30s first (mid)
-	timerShoutCD:Start(23-delay)--Core 8-38s first (mid)
+	timerTremorCD:StartRange(13-delay, 30-delay)--Core 13-30s first
+	timerShoutCD:StartRange(8-delay, 38-delay)--Core 8-38s first
 	timerStabCD:Start(20-delay)--Core 20s
 end
 
@@ -54,10 +54,10 @@ function mod:SPELL_CAST_START(args)
 		end
 	elseif args:IsSpellID(55142, 55101) then -- Ground Tremor/Quake (was untracked)
 		warnTremor:Show()
-		timerTremorCD:Start()
+		timerTremorCD:StartRange(13, 27)
 	elseif args:IsSpellID(55106, 55100) then -- Numbing Shout/Roar (was untracked)
 		warnShout:Show()
-		timerShoutCD:Start()
+		timerShoutCD:StartRange(6, 27)
 	elseif args:IsSpellID(55104, 55102) then -- Determined Stab/Gore (was untracked)
 		warnStab:Show()
 		timerStabCD:Start()

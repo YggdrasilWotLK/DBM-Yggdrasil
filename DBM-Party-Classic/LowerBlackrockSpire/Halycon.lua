@@ -13,10 +13,10 @@ mod:RegisterEventsInCombat(
 local warnRend			= mod:NewSpellAnnounce(13738, 3, nil, "Tank|Healer")
 local warnThrash		= mod:NewSpellAnnounce(3391, 3, nil, "Tank")
 
-local timerRendCD			= mod:NewCDTimer(9, 13738, nil, "Tank|Healer", nil, 3)--Core 17-20s first, 8-10s repeat
+local timerRendCD			= mod:NewCDRangeTimer(8, 10, 13738, nil, "Tank|Healer", nil, 3)--Core 17-20s first, 8-10s repeat
 
 function mod:OnCombatStart(delay)
-	timerRendCD:Start(18-delay)--Core 17-20s first (mid)
+	timerRendCD:StartRange(17-delay, 20-delay)--Core 17-20s first
 end
 
 function mod:OnCombatEnd()
@@ -26,7 +26,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 13738 then -- Rend (core 8-10s repeat)
 		warnRend:Show()
-		timerRendCD:Start()
+		timerRendCD:StartRange(8, 10)
 	elseif args.spellId == 3391 then -- Thrash, one-shot no repeat in core
 		warnThrash:Show()
 	end

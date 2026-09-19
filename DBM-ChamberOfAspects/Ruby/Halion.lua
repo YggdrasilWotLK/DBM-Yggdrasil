@@ -85,9 +85,9 @@ function mod:OnCombatStart(delay)--These may still need retuning too, log i had 
 	playerInShadowRealm = false
 	previousCorporeality = 0
 	berserkTimer:Start(-delay)
-	timerMeteorCD:Start(20-delay)
+	timerMeteorCD:StartRange(20-delay, 25-delay)
 	timerFieryConsumptionCD:Start(15-delay)
-	timerFieryBreathCD:Start(10-delay)
+	timerFieryBreathCD:StartRange(10-delay, 15-delay)
 end
 
 function mod:OnCombatEnd()

@@ -17,13 +17,13 @@ local warnPounding		= mod:NewSpellAnnounce(34162, 3)
 local specWarnOrb		= mod:NewSpecialWarningDodge(34172, nil, nil, nil, 1, 2)
 local yellOrb			= mod:NewYell(34172)
 
-local timerKnockBack	= mod:NewCDTimer(20, 25778, nil, "Tank", 2, 5)
-local timerPounding		= mod:NewCDTimer(13, 34162, nil, nil, nil, 2)
+local timerKnockBack	= mod:NewCDRangeTimer(20.55, 22.55, 25778, nil, "Tank", 2, 5)
+local timerPounding		= mod:NewCDRangeTimer(12.1, 15.8, 34162, nil, nil, nil, 2)
 
 local berserkTimer		= mod:NewBerserkTimer(600)
 
 function mod:OnCombatStart(delay)
-	timerPounding:Start()
+	timerPounding:Start(8.3)--Core 8.3s first
 	berserkTimer:Start(-delay)
 end
 
@@ -38,9 +38,9 @@ function mod:SPELL_CAST_SUCCESS(args)
 		end
 	elseif args.spellId == 34162 then
 		warnPounding:Show()
-		timerPounding:Start()
+		timerPounding:StartRange(12.1, 15.8)
 	elseif args.spellId == 25778 then
 		warnKnockBack:Show()
-		timerKnockBack:Start()
+		timerKnockBack:StartRange(20.55, 22.55)
 	end
 end

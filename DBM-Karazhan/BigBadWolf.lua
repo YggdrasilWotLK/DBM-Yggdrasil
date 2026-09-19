@@ -20,7 +20,7 @@ local specWarnRRH		= mod:NewSpecialWarningRun(30753, nil, nil, nil, 4, 2)
 
 local timerRRH			= mod:NewTargetTimer(20, 30753, nil, nil, nil, 3)
 local timerRRHCD		= mod:NewNextTimer(30, 30753, nil, nil, nil, 3)
-local timerFearCD		= mod:NewNextTimer(24, 30752, nil, nil, nil, 2)
+local timerFearCD		= mod:NewNextRangeTimer(25, 35, 30752, nil, nil, nil, 2)
 
 mod:AddSetIconOption("RRHIcon", 30753, true, false, {8})
 
@@ -42,7 +42,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args.spellId == 30752 and self:AntiSpam() then
 		warningFear:Show()
-		timerFearCD:Start()
+		timerFearCD:StartRange(25, 35)
 	end
 end
 

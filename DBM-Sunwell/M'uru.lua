@@ -27,9 +27,9 @@ local specWarnDarknessSoon	= mod:NewSpecialWarning("specWarnDarknessSoon", "Mele
 
 local timerHuman			= mod:NewTimer(60, "TimerHuman", 27778, nil, nil, 6)
 local timerVoid				= mod:NewTimer(30, "TimerVoid", 46087, nil, nil, 6)
-local timerNextDarkness		= mod:NewNextTimer(45, 45996, nil, nil, nil, 2)
+local timerNextDarkness		= mod:NewNextRangeTimer(8, 29, 45996, nil, nil, nil, 2)
 local timerDarknessDura		= mod:NewBuffActiveTimer(20, 45996)
-local timerBlackHoleCD		= mod:NewCDTimer(15, 46282)
+local timerBlackHoleCD		= mod:NewCDRangeTimer(14, 29, 46282)
 local timerPhase			= mod:NewTimer(10, "TimerPhase", 46087, nil, nil, 6)
 local timerSingularity		= mod:NewNextTimer(3.2, 46238)
 
@@ -72,7 +72,7 @@ function mod:OnCombatStart(delay)
 	timerHuman:Start(15-delay, 1)
 	timerVoid:Start(36.5-delay, 1)
 	specWarnVW:Schedule(31.5)
-	timerNextDarkness:Start(-delay)
+	timerNextDarkness:StartRange(8-delay, 29-delay)
 	specWarnDarknessSoon:Schedule(42)
 	self:Schedule(15, HumanSpawn, self)
 	self:Schedule(36.5, VoidSpawn, self)
@@ -83,7 +83,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(45996, 45998, 46269) and args:GetDestCreatureID() == 25741 then--45998/46269 are the core IDs, 45996 kept as fallback
 		warnDarkness:Show()
 		specWarnVoid:Show()
-		timerNextDarkness:Start()
+		timerNextDarkness:StartRange(8, 29)
 		timerDarknessDura:Start()
 		specWarnDarknessSoon:Schedule(40)
 	end
@@ -107,7 +107,7 @@ function mod:SPELL_SUMMON(args)
 	elseif args.spellId == 46282 then
 		warnBlackHole:Show()
 		specWarnBH:Show()
-		timerBlackHoleCD:Start()
+		timerBlackHoleCD:StartRange(14, 29)
 		timerSingularity:Start()
 	end
 end

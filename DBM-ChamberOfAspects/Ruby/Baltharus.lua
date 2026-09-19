@@ -103,7 +103,7 @@ function mod:SPELL_CAST_START(args)
 		specWarnRepellingWave:Show()
 		specWarnRepellingWave:Play("carefly")
 		timerRepellingWave:Start()
-		timerTempestClone1:Start(21) --Core clone first tempest 18-25s, mean ~21s
+		timerTempestClone1:StartRange(18, 25) --Core clone first tempest 18-25s
 		self.vb.CloneCount = 1
 	elseif args.spellId == 74509 and self:IsDifficulty("normal25", "heroic25") and self.vb.repelcount ==	0 then
 		specWarnRepellingWave:Show()
@@ -111,14 +111,14 @@ function mod:SPELL_CAST_START(args)
 		timerRepellingWave:Start()
 		self.vb.repelcount = 1 --Nick bookmark
 		self.vb.CloneCount = 1
-		timerTempestClone1:Start(21) --Nick bookmark, core 18-25s
+		timerTempestClone1:StartRange(18, 25) --Nick bookmark, core 18-25s
 	elseif args.spellId == 74509 and self:IsDifficulty("normal25", "heroic25") and self.vb.repelcount >= 1 then
 		specWarnRepellingWave:Show()
 		specWarnRepellingWave:Play("carefly")
 		timerRepellingWave:Start()
 		self.vb.repelcount = self.vb.repelcount + 1 --Nick bookmark
 		self.vb.CloneCount = 2
-		timerTempestClone2:Start(21) --Nick bookmark, core 18-25s
+		timerTempestClone2:StartRange(18, 25) --Nick bookmark, core 18-25s
 	end
 end
 

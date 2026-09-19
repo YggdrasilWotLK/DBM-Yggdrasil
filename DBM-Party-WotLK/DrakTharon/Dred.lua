@@ -28,7 +28,7 @@ function mod:OnCombatStart(delay)
 	timerFearCD:Start(33-delay)--Core 33s first
 	timerSlashCD:Start(18.5-delay)--Core 18.5s first
 	timerPiercingCD:Start(17-delay)--Core 17s first
-	timerRoarCD:Start(15-delay)--Core 10-20s first
+	timerRoarCD:StartRange(10-delay, 20-delay)--Core 10-20s first
 end
 
 function mod:OnCombatEnd()

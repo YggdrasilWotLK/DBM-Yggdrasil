@@ -17,7 +17,7 @@ local timerBarrageCD	= mod:NewCDTimer(20, 54202, nil, nil, nil, 3)--Core 16-20s 
 local timerBuffetCD		= mod:NewCDTimer(10, 54226, nil, nil, nil, 3)--Core 5s after summon (was untracked)
 
 function mod:OnCombatStart(delay)
-	timerBarrageCD:Start(18-delay)--Core 16-20s first
+	timerBarrageCD:StartRange(16-delay, 20-delay)--Core 16-20s first
 end
 
 function mod:OnCombatEnd()

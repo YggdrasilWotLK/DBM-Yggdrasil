@@ -18,7 +18,7 @@ local warnQuake				= mod:NewSpellAnnounce(32686, 3)
 
 local timerChargeMinCD			= mod:NewCDTimer(25, 32637, nil, nil, nil, 3)--Core 25-40s RNG: earliest recast
 local timerChargeCD			= mod:NewCDTimer(40, 32637, nil, nil, nil, 3)--Core 25-40s RNG; max bar (was 42)
-local timerQuakeCD			= mod:NewCDTimer(52, 32686, nil, nil, nil, 2)
+local timerQuakeCD			= mod:NewCDRangeTimer(30, 55, 32686, nil, nil, nil, 2)
 local timerQuake			= mod:NewBuffActiveTimer(8, 32686, nil, nil, nil, 2)
 
 mod:AddRangeFrameOption("10")
@@ -26,6 +26,7 @@ mod:AddRangeFrameOption("10")
 function mod:OnCombatStart(delay)
 	timerChargeMinCD:Start(30-delay)--Core first 30-45s (min)
 	timerChargeCD:Start(45-delay)--Core first 30-45s (max)
+	timerQuakeCD:StartRange(25-delay, 35-delay)--Core first 25-35s
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(10)
 	end
@@ -51,6 +52,6 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args.spellId == 32686 and self:AntiSpam(30, 2) then
 		warnQuake:Show()
 		timerQuake:Start()
-		timerQuakeCD:Start()
+		timerQuakeCD:StartRange(30, 55)
 	end
 end

@@ -22,8 +22,8 @@ local warnBall				= mod:NewSpellAnnounce(52780, 3)
 local specWarnOverload		= mod:NewSpecialWarningMoveAway(52658, nil, nil, nil, 1, 2)
 
 local timerOverload			= mod:NewTargetTimer(10, 52658, nil, nil, nil, 3)
-local timerOverloadCD			= mod:NewCDTimer(5, 52658, nil, nil, nil, 3)--Core 5-6s repeat (was untracked)
-local timerBallCD				= mod:NewCDTimer(10, 52780, nil, nil, nil, 3)--Core every 10-11s (was untracked)
+local timerOverloadCD			= mod:NewCDRangeTimer(5, 6, 52658, nil, nil, nil, 3)--Core 5-6s repeat (was untracked)
+local timerBallCD				= mod:NewCDRangeTimer(10, 11, 52780, nil, nil, nil, 3)--Core every 10-11s (was untracked)
 
 mod:AddRangeFrameOption(10, 52658)
 mod:AddSetIconOption("SetIconOnOverloadTarget", 52658, true, false, {8})
@@ -32,8 +32,8 @@ local warnedDisperse = false
 
 function mod:OnCombatStart(delay)
 	warnedDisperse = false
-	timerOverloadCD:Start(5-delay)--Core 5-6s
-	timerBallCD:Start(10-delay)--Core every 10-11s
+	timerOverloadCD:StartRange(5-delay, 6-delay)--Core 5-6s
+	timerBallCD:StartRange(10-delay, 11-delay)--Core every 10-11s
 end
 
 function mod:OnCombatEnd()
@@ -56,7 +56,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			warningOverload:Show(args.destName)
 		end
 		timerOverload:Start(args.destName)
-		timerOverloadCD:Start()
+		timerOverloadCD:StartRange(5, 6)
 		if self.Options.SetIconOnOverloadTarget then
 			self:SetIcon(args.destName, 8, 10)
 		end
@@ -79,7 +79,7 @@ function mod:SPELL_CAST_START(args)
 		warningDisperse:Show()
 	elseif args.spellId == 52780 then -- Ball Lightning (core every 10-11s, was untracked)
 		warnBall:Show()
-		timerBallCD:Start()
+		timerBallCD:StartRange(10, 11)
 	end
 end
 

@@ -25,16 +25,16 @@ local specWarnGTFO			= mod:NewSpecialWarningGTFO(28794, nil, nil, nil, 1, 8)
 
 local timerEmbrace			= mod:NewBuffActiveTimer(30, 28732, nil, nil, nil, 6)
 local timerEnrage			= mod:NewCDTimer(60, 28131, nil, nil, nil, 6)
-local timerPoisonVolley		= mod:NewNextTimer(11, 54098, nil, nil, nil, 5)--Core 7-15s, suppressed while embraced
-local timerRainOfFireCD		= mod:NewCDTimer(13, 28794, nil, nil, nil, 3)--Core 8-18s, suppressed while embraced
+local timerPoisonVolley		= mod:NewNextRangeTimer(7, 15, 54098, nil, nil, nil, 5)--Core 7-15s, suppressed while embraced
+local timerRainOfFireCD		= mod:NewCDRangeTimer(8, 18, 28794, nil, nil, nil, 3)--Core 8-18s, suppressed while embraced
 
 mod.vb.enraged = false
 
 function mod:OnCombatStart(delay)
 	timerEnrage:Start(60-delay)
 	warnEnrageSoon:Schedule(55 - delay)
-	timerPoisonVolley:Start(11-delay)
-	timerRainOfFireCD:Start(13-delay)
+	timerPoisonVolley:StartRange(7-delay, 15-delay)
+	timerRainOfFireCD:StartRange(8-delay, 18-delay)
 	self.vb.enraged = false
 end
 
@@ -71,17 +71,17 @@ end
 
 function mod:SPELL_AURA_REMOVED(args)
 	if args:IsSpellID(28732, 54097) and args:GetDestCreatureID() == 15953 then -- Embrace faded, abilities resume
-		timerPoisonVolley:Start(11)
-		timerRainOfFireCD:Start(13)
+		timerPoisonVolley:StartRange(7, 15)
+		timerRainOfFireCD:StartRange(8, 18)
 	end
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(28796, 54098) then -- Poison Bolt Volley
-		timerPoisonVolley:Start(11)
+		timerPoisonVolley:StartRange(7, 15)
 	elseif args.spellId == 28794 then -- Rain of Fire (core casts 28794 both modes)
 		warnRainOfFire:Show()
-		timerRainOfFireCD:Start()
+		timerRainOfFireCD:StartRange(8, 18)
 	end
 end
 

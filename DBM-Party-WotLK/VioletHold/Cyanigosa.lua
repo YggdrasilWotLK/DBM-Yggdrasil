@@ -28,15 +28,15 @@ local timerVacuumCD		= mod:NewCDTimer(30, 58694, nil, nil, nil, 2)--Core 30s fir
 local timerBlizzardCD		= mod:NewCDTimer(15, 58693, nil, nil, nil, 3)--Core 5-10s first, 15s repeat
 local timerMana			= mod:NewTargetTimer(8, 59374, nil, "Healer", nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
 local timerManaCD			= mod:NewCDTimer(20, 59374, nil, "Healer", nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)--Core 20s first and repeat (heroic)
-local timerTailCD			= mod:NewCDTimer(17, 58690, nil, "Melee", nil, 2)--Core 15-20s repeat
-local timerEnergyCD		= mod:NewCDTimer(22, 58688, nil, nil, nil, 3)--Core 5-8s first, 20-25s repeat
+local timerTailCD			= mod:NewCDRangeTimer(15, 20, 58690, nil, "Melee", nil, 2)--Core 15-20s repeat
+local timerEnergyCD		= mod:NewCDRangeTimer(20, 25, 58688, nil, nil, nil, 3)--Core 5-8s first, 20-25s repeat
 local timerCombat		= mod:NewCombatTimer(14)
 
 function mod:OnCombatStart(delay)
 	timerVacuumCD:Start(30 - delay)--Core 30s first
 	timerBlizzardCD:Start(7 - delay)--Core 5-10s first
 	timerTailCD:Start(17 - delay)--Core 15-20s first
-	timerEnergyCD:Start(6 - delay)--Core 5-8s first
+	timerEnergyCD:StartRange(5 - delay, 8 - delay)--Core 5-8s first
 	if self:IsDifficulty("heroic5") then
 		timerManaCD:Start(20 - delay)--Core 20s first (heroic)
 	end
@@ -55,10 +55,10 @@ function mod:SPELL_CAST_START(args)
 		warningBlizzard:Show()
 		timerBlizzardCD:Start()
 	elseif args.spellId == 58690 then -- Tail Sweep (core 15-20s repeat, was untracked)
-		timerTailCD:Start()
+		timerTailCD:StartRange(15, 20)
 	elseif args.spellId == 58688 then -- Uncontrollable Energy (core 20-25s repeat, was untracked)
 		warnEnergy:Show()
-		timerEnergyCD:Start()
+		timerEnergyCD:StartRange(20, 25)
 	end
 end
 

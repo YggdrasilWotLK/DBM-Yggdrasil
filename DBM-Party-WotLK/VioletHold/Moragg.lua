@@ -15,12 +15,12 @@ local warningLink	= mod:NewTargetNoFilterAnnounce(54396, 2)
 local warnSaliva	= mod:NewSpellAnnounce(54527, 3, nil, "Tank")
 
 local timerLink		= mod:NewTargetTimer(12, 54396, nil, nil, nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerLinkCD	= mod:NewCDTimer(20, 54396, nil, nil, nil, 3)--Core 10-11s first, 18-21s repeat
-local timerSalivaCD	= mod:NewCDTimer(9, 54527, nil, "Tank", nil, 3)--Core 4-6s first, 8-10s repeat
+local timerLinkCD	= mod:NewCDRangeTimer(18, 21, 54396, nil, nil, nil, 3)--Core 10-11s first, 18-21s repeat
+local timerSalivaCD	= mod:NewCDRangeTimer(8, 10, 54527, nil, "Tank", nil, 3)--Core 4-6s first, 8-10s repeat
 
 function mod:OnCombatStart(delay)
-	timerLinkCD:Start(10-delay)--Core 10-11s first
-	timerSalivaCD:Start(5-delay)--Core 4-6s first
+	timerLinkCD:StartRange(10-delay, 11-delay)--Core 10-11s first
+	timerSalivaCD:StartRange(4-delay, 6-delay)--Core 4-6s first
 end
 
 function mod:OnCombatEnd()
@@ -31,7 +31,7 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 54527 then -- Corrosive Saliva (core 8-10s repeat, was untracked)
 		warnSaliva:Show()
-		timerSalivaCD:Start()
+		timerSalivaCD:StartRange(8, 10)
 	end
 end
 
@@ -40,6 +40,6 @@ function mod:SPELL_AURA_APPLIED(args)
 		warningLink:Show(args.destName)
 		timerLink:Start(args.destName)
 		timerLinkCD:Cancel()
-		timerLinkCD:Start()
+		timerLinkCD:StartRange(18, 21)
 	end
 end

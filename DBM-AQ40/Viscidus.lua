@@ -26,14 +26,14 @@ mod.vb.volleyCount = 0
 
 function mod:OnCombatStart()
 	self.vb.volleyCount = 0
-	timerPoisonBoltVolleyCD:Start(12.9, 1)
+	timerPoisonBoltVolleyCD:StartRange(10-delay, 15-delay, 1)
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 25991 then
 		self.vb.volleyCount = self.vb.volleyCount + 1
 		warnPoisonBoltVolley:Show(self.vb.volleyCount)
-		timerPoisonBoltVolleyCD:Start(11, self.vb.volleyCount+1)
+		timerPoisonBoltVolleyCD:StartRange(10, 15, self.vb.volleyCount+1)
 	end
 end
 

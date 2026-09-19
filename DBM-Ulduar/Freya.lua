@@ -43,7 +43,7 @@ local timerAlliesOfNature	= mod:NewNextTimer(60, 62678, nil, nil, nil, 1, 62947,
 local timerSimulKill		= mod:NewTimer(10, "TimerSimulKill", nil, nil, nil, 5, DBM_COMMON_L.DAMAGE_ICON, nil, nil, nil, nil, nil, nil, 62678)--Core trio respawn 10s
 local timerNatureFury		= mod:NewTargetTimer(10, 63571)
 local timerLifebinderCD		= mod:NewCDTimer(45, 62584, nil, nil, nil, 1)--Core 30s first, 45s repeat
-local timerSunbeamCD		= mod:NewCDTimer(17, 62623, nil, nil, nil, 3)--Core 17s first, 15-20s repeat
+local timerSunbeamCD		= mod:NewCDRangeTimer(15, 20, 62623, nil, nil, nil, 3)--Core 17s first, 15-20s repeat
 
 mod:AddRangeFrameOption(8, 63571)
 mod:AddSetIconOption("SetIconOnFury", 63571, false, false, {7, 8})
@@ -65,9 +65,9 @@ local yellIronRoots			= mod:NewYell(62438)
 local specWarnGroundTremor	= mod:NewSpecialWarningCast(62859, "SpellCaster", nil, 2, 1, 2)	-- Hard mode Elder Stonebark Alive
 local specWarnUnstableBeam	= mod:NewSpecialWarningMove(62865, nil, nil, nil, 1, 2)	-- Hard mode Elder Brightleaf Alive
 
-local timerGroundTremorCD	= mod:NewCDTimer(26, 62859, 62859, nil, nil, nil, 2)--22.9-47.8
-local timerIronRootsCD		= mod:NewCDTimer(50, 62438, nil, nil, nil, 3)--Core 20s first, 45-55s repeat
-local timerUnstableBeamCD	= mod:NewCDTimer(43, 62865) -- Core 60s first, 38-48s repeat
+local timerGroundTremorCD	= mod:NewCDRangeTimer(25, 35, 62859, 62859, nil, nil, nil, 2)--Core 35s first, 25-35s repeat
+local timerIronRootsCD		= mod:NewCDRangeTimer(45, 55, 62438, nil, nil, nil, 3)--Core 20s first, 45-55s repeat
+local timerUnstableBeamCD	= mod:NewCDRangeTimer(38, 48, 62865) -- Core 60s first, 38-48s repeat
 
 mod:AddSetIconOption("SetIconOnRoots", 62438, false, false, {6, 5, 4})
 
@@ -117,9 +117,9 @@ function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(62437, 62859) then
 		specWarnGroundTremor:Show()
 		specWarnGroundTremor:Play("stopcast")
-		timerGroundTremorCD:Start()
+		timerGroundTremorCD:StartRange(25, 35)
 	elseif args:IsSpellID(62623, 62872) then -- Freya Sunbeam (core 15-20s repeat)
-		timerSunbeamCD:Start(17)
+		timerSunbeamCD:StartRange(15, 20)
 	end
 end
 
@@ -158,7 +158,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		end
 	elseif spellId == 63601 then
 		--if self.vb.phase == 2 then
-			timerIronRootsCD:Start(50)--Core 45-55s repeat
+			timerIronRootsCD:StartRange(45, 55)--Core 45-55s repeat
 		--end
 	end
 end
@@ -173,10 +173,10 @@ function mod:SPELL_AURA_APPLIED(args)
 		if self.Options.SetIconOnRoots then
 			self:SetIcon(args.destName, self.vb.iconId, 15)
 		end
-		timerIronRootsCD:Start()
+		timerIronRootsCD:StartRange(45, 55)
 	elseif args:IsSpellID(62451, 62865) then -- Unstable Sun Beam (core 38-48s repeat)
 		if self:AntiSpam(10, 2) then
-			timerUnstableBeamCD:Start(43)
+			timerUnstableBeamCD:StartRange(38, 48)
 			warnUnstableBeamSoon:Schedule(38)
 		end
 		if args:IsPlayer() then

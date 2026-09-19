@@ -17,15 +17,15 @@ local warnIronform			= mod:NewSpellAnnounce(52022, 3)
 local specWarnWhirlwind		= mod:NewSpecialWarningRun(52027, "Melee", nil, nil, 4, 2)
 
 local timerWhirlwindCD		= mod:NewCDTimer(25, 52027, nil, nil, nil, 2)--Core 25s repeat
-local timerKnockCD			= mod:NewCDTimer(20, 52029, nil, "Tank", nil, 3)--Core 20-21s repeat (was untracked)
-local timerIronformCD			= mod:NewCDTimer(20, 52022, nil, nil, nil, 3)--Core 18-23s repeat (was untracked)
-local timerSlamCD				= mod:NewCDTimer(11, 52026, nil, "Tank", nil, 3)--Core 10-12s repeat (was untracked)
+local timerKnockCD			= mod:NewCDRangeTimer(20, 21, 52029, nil, "Tank", nil, 3)--Core 20-21s repeat (was untracked)
+local timerIronformCD			= mod:NewCDRangeTimer(18, 23, 52022, nil, nil, nil, 3)--Core 18-23s repeat (was untracked)
+local timerSlamCD				= mod:NewCDRangeTimer(10, 12, 52026, nil, "Tank", nil, 3)--Core 10-12s repeat (was untracked)
 
 function mod:OnCombatStart(delay)
 	timerWhirlwindCD:Start(25-delay)--Core 25s
-	timerKnockCD:Start(20-delay)--Core 20-21s first
-	timerIronformCD:Start(20-delay)--Core 18-23s first
-	timerSlamCD:Start(11-delay)--Core 10-12s first
+	timerKnockCD:StartRange(20-delay, 21-delay)--Core 20-21s first
+	timerIronformCD:StartRange(18-delay, 23-delay)--Core 18-23s first
+	timerSlamCD:StartRange(10-delay, 12-delay)--Core 10-12s first
 end
 
 function mod:OnCombatEnd()
@@ -46,11 +46,11 @@ function mod:SPELL_CAST_START(args)
 		timerWhirlwindCD:Start()
 	elseif args.spellId == 52029 then -- Knock Away (was untracked)
 		warnKnock:Show()
-		timerKnockCD:Start()
+		timerKnockCD:StartRange(20, 21)
 	elseif args.spellId == 52022 then -- Ironform (was untracked)
 		warnIronform:Show()
-		timerIronformCD:Start()
+		timerIronformCD:StartRange(18, 23)
 	elseif args.spellId == 52026 then -- Slam (was untracked)
-		timerSlamCD:Start()
+		timerSlamCD:StartRange(10, 12)
 	end
 end
