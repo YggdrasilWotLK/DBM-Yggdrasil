@@ -51,7 +51,7 @@ local warnDominateMind				= mod:NewTargetNoFilterAnnounce(71289, 3)
 local specWarnDeathDecay			= mod:NewSpecialWarningGTFO(71001, nil, nil, nil, 1, 8)
 
 local timerDominateMind				= mod:NewBuffActiveTimer(12, 71289, nil, nil, nil, 5)
-local timerDominateMindCD			= mod:NewCDTimer(40, 71289, nil, nil, nil, 3)
+local timerDominateMindCD			= mod:NewCDRangeTimer(40, 45, 71289, nil, nil, nil, 3)
 
 mod:AddInfoFrameOption(70842, false)
 mod:AddSetIconOption("SetIconOnDeformedFanatic", 70900, true, 5, {8})
@@ -73,7 +73,7 @@ local specWarnVengefulShade			= mod:NewSpecialWarning("SpecWarnVengefulShade", t
 local timerSummonSpiritCD			= mod:NewCDTimer(12, 71363, nil, true, nil, 3)
 local timerFrostboltCast			= mod:NewCastTimer(2, 72007, nil, "HasInterrupt")
 local timerTouchInsignificance		= mod:NewTargetTimer(30, 71204, nil, "Tank|Healer", nil, 5)
-local timerDeathDecayCD			= mod:NewCDTimer(25, 71001, nil, nil, nil, 3)
+local timerDeathDecayCD			= mod:NewCDRangeTimer(22, 30, 71001, nil, nil, nil, 3)
 
 local soundWarnSpirit				= mod:NewSound(71363)
 
@@ -149,7 +149,7 @@ end
 local function showDominateMindWarning(self)
 	warnDominateMind:Show(table.concat(dominateMindTargets, "<, >"))
 	timerDominateMind:Start()
-	timerDominateMindCD:Start()
+	timerDominateMindCD:StartRange(40, 45)
 	if (not tContains(dominateMindTargets, UnitName("player")) and self.Options.EqUneqWeapons and self:IsDps()) then
 		DBM:Debug("Equipping scheduled")
 		self:Schedule(0.1, EqW, self)
@@ -272,7 +272,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnDeathDecay:Show()
 			specWarnDeathDecay:Play("watchfeet")
 		end
-		timerDeathDecayCD:Start()
+		timerDeathDecayCD:StartRange(22, 30)
 	elseif spellId == 71237 and args:IsPlayer() then
 		specWarnCurseTorpor:Show()
 		specWarnCurseTorpor:Play("targetyou")
@@ -348,7 +348,7 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 71289 then
-		timerDominateMindCD:Start()
+		timerDominateMindCD:StartRange(40, 45)
 		DBM:Debug("MC on "..args.destName, 2)
 		if self.Options.EqUneqWeapons and args.destName == UnitName("player") and self:IsDps() then
 			UnW(self)

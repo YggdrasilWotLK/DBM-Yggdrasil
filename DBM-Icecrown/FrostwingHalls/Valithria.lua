@@ -8,6 +8,9 @@ mod.onlyHighest = true--Instructs DBM health tracking to literally only store hi
 
 mod:RegisterCombat("combat")
 
+-- Her death is the fail condition, not a kill: only Dreamwalker's Rage (71189) counts as success.
+mod.combatInfo.noBossDeathKill = true
+
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 70754 71748 72023 72024 71189",
 	"SPELL_CAST_SUCCESS 71179 70588",
@@ -49,73 +52,33 @@ local berserkTimer			= mod:NewBerserkTimer(420)
 
 mod:AddSetIconOption("SetIconOnBlazingSkeleton", 70933, true, 5, {8})
 
-mod.vb.BlazingSkeletonTimer = 60
 mod.vb.AbomSpawn = 0
-mod.vb.AbomTimer = 60
 mod.vb.SuppressersWave = 0
 mod.vb.portalCount = 0
 
 local function Suppressers(self)
 	self.vb.SuppressersWave = self.vb.SuppressersWave + 1
-	if self.vb.SuppressersWave == 2 then
-		timerSuppressers:Stop()
-		timerSuppressers:Start(58, self.vb.SuppressersWave)
-		specWarnSuppressers:Cancel()
-		specWarnSuppressers:Schedule(58)
-		soundSpecWarnSuppressers:Schedule(58, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
-		self:Unschedule(Suppressers)
-		self:Schedule(58, Suppressers, self)
-	elseif self.vb.SuppressersWave == 3 then
-		timerSuppressers:Stop()
-		timerSuppressers:Start(62, self.vb.SuppressersWave)
-		specWarnSuppressers:Cancel()
-		specWarnSuppressers:Schedule(62)
-		soundSpecWarnSuppressers:Schedule(62, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
-		self:Unschedule(Suppressers)
-		self:Schedule(62, Suppressers, self)
-	elseif self.vb.SuppressersWave == 4 then
-		timerSuppressers:Stop()
-		timerSuppressers:Start(50, self.vb.SuppressersWave)
-		specWarnSuppressers:Cancel()
-		specWarnSuppressers:Schedule(50)
-		soundSpecWarnSuppressers:Schedule(50, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
-		self:Unschedule(Suppressers)
-		self:Schedule(50, Suppressers, self)
-	elseif self.vb.SuppressersWave > 4 then -- using dummy values since I have no Warmane VODs past 4 waves.
-		timerSuppressers:Stop()
-		timerSuppressers:Start(50, self.vb.SuppressersWave)
-		specWarnSuppressers:Cancel()
-		specWarnSuppressers:Schedule(50)
-		soundSpecWarnSuppressers:Schedule(50, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
-		self:Unschedule(Suppressers)
-		self:Schedule(50, Suppressers, self)
-	end
+	-- Core: suppresser waves every 59s, always (60s aura period minus 1s decay per tick).
+	timerSuppressers:Stop()
+	timerSuppressers:Start(59, self.vb.SuppressersWave)
+	specWarnSuppressers:Cancel()
+	specWarnSuppressers:Schedule(59)
+	soundSpecWarnSuppressers:Schedule(59, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
+	self:Unschedule(Suppressers)
+	self:Schedule(59, Suppressers, self)
 end
 
 local function StartBlazingSkeletonTimer(self)
-	timerBlazingSkeleton:Start(self.vb.BlazingSkeletonTimer)
-	self:Schedule(self.vb.BlazingSkeletonTimer, StartBlazingSkeletonTimer, self)
-	if self.vb.BlazingSkeletonTimer >= 10 then--Keep it from dropping below 5
-		self.vb.BlazingSkeletonTimer = self.vb.BlazingSkeletonTimer - 5
-	end
+	-- Core: blazing waves every 55s, always (60s aura period minus 5s decay per tick).
+	timerBlazingSkeleton:Start(55)
+	self:Schedule(55, StartBlazingSkeletonTimer, self)
 end
 
 local function StartAbomTimer(self)
 	self.vb.AbomSpawn = self.vb.AbomSpawn + 1
-	if self.vb.AbomSpawn == 1 then
-		timerAbom:Start(self.vb.AbomTimer, self.vb.AbomSpawn + 1)--Timer is 60 seconds after first early abom, it's set to 60 on combat start.
-		self:Schedule(self.vb.AbomTimer, StartAbomTimer, self)
-		self.vb.AbomTimer = self.vb.AbomTimer - 5--Right after first abom timer starts, change it from 60 to 55.
-	elseif self.vb.AbomSpawn == 2 or self.vb.AbomSpawn == 3 then
-		timerAbom:Start(self.vb.AbomTimer, self.vb.AbomSpawn + 1)--Start first and second 55 second timer
-		self:Schedule(self.vb.AbomTimer, StartAbomTimer, self)
-	elseif self.vb.AbomSpawn >= 4 then--after 4th abom, the timer starts subtracting again.
-		timerAbom:Start(self.vb.AbomTimer, self.vb.AbomSpawn + 1)--Start third 55 second timer before subtracking from it again.
-		self:Schedule(self.vb.AbomTimer, StartAbomTimer, self)
-		if self.vb.AbomTimer >= 10 then--Keep it from dropping below 5
-			self.vb.AbomTimer = self.vb.AbomTimer - 5--Rest of timers after 3rd 55 second timer will be 5 less than previous until they come every 5 seconds.
-		end
-	end
+	-- Core: abom waves every 59s, always (60s aura period minus 1s decay per tick).
+	timerAbom:Start(59, self.vb.AbomSpawn + 1)
+	self:Schedule(59, StartAbomTimer, self)
 end
 
 local function Portals(self)
@@ -128,9 +91,9 @@ local function Portals(self)
 	timerPortalsOpen:Start()
 	timerPortalsClose:Schedule(15)
 	warnPortalSoon:Schedule(41)
-	timerNextPortal:Start(nil, self.vb.portalCount)
+	timerNextPortal:StartRange(45, 48, self.vb.portalCount)--Core 45-48s
 	self:Unschedule(Portals)
-	self:Schedule(46.5, Portals, self)--This will never be perfect, since it's never same. 45-48sec variations
+	self:Schedule(46.5, Portals, self)--Mid-window driver; yell resyncs. Core 45-48s
 end
 
 function mod:OnCombatStart(delay)
@@ -138,21 +101,19 @@ function mod:OnCombatStart(delay)
 		berserkTimer:Start(-delay)
 	end
 	self.vb.portalCount = 0
-	timerNextPortal:Start(nil, self.vb.portalCount + 1)
+	timerNextPortal:StartRange(45, 48, self.vb.portalCount + 1)--Core 45-48s
 	warnPortalSoon:Schedule(41)
-	self:Schedule(46.5, Portals, self)--This will never be perfect, since it's never same. 45-48sec variations
-	self.vb.BlazingSkeletonTimer = 60
-	self.vb.AbomTimer = 60
+	self:Schedule(46.5, Portals, self)--Mid-window driver; yell resyncs. Core 45-48s
 	self.vb.AbomSpawn = 0
 	self:Schedule(30-delay, StartBlazingSkeletonTimer, self)
 	self:Schedule(5-delay, StartAbomTimer, self)
 	timerBlazingSkeleton:Start(30-delay)
 	timerAbom:Start(5-delay, self.vb.AbomSpawn + 1)
 	self.vb.SuppressersWave = 1
-	timerSuppressers:Start(10-delay, self.vb.SuppressersWave)
-	specWarnSuppressers:Schedule(10)
-	soundSpecWarnSuppressers:Schedule(10, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
-	self:Schedule(10, Suppressers, self)
+	timerSuppressers:Start(70-delay, self.vb.SuppressersWave)--First real wave: aura cast at 10s + 60s period (the cast itself summons nothing)
+	specWarnSuppressers:Schedule(70-delay)
+	soundSpecWarnSuppressers:Schedule(70-delay, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\suppressersSpawned.mp3")
+	self:Schedule(70-delay, Suppressers, self)
 end
 
 function mod:OnCombatEnd()

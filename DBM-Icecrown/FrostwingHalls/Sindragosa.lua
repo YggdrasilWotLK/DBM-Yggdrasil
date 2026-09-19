@@ -49,15 +49,15 @@ local specWarnIcyGrip			= mod:NewSpecialWarningRun(70117, nil, nil, nil, 4, 2) -
 
 local timerNextAirphase			= mod:NewTimer(110, "TimerNextAirphase", 43810, nil, nil, 6)
 local timerNextGroundphase		= mod:NewTimer(45, "TimerNextGroundphase", 43810, nil, nil, 6)
-local timerNextFrostBreath		= mod:NewNextTimer(22, 69649, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerNextFrostBreath		= mod:NewNextRangeTimer(20, 25, 69649, nil, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerNextBlisteringCold	= mod:NewCDTimer(35, 70123, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON, true, 2) -- Core: +1s after Icy Grip, no independent timer
-local timerNextIcyGrip			= mod:NewCDTimer(37, 70117, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON, true, 2) --Nick bookmark; core 33.5s P1, 35-40s P3
-local timerNextBeacon			= mod:NewNextCountTimer(20, 70126, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON) -- Core 18-22s
+local timerNextIcyGrip			= mod:NewCDRangeTimer(35, 40, 70117, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON, true, 2) --Nick bookmark; core 33.5s P1 first, 35-40s P3
+local timerNextBeacon			= mod:NewNextCountTimer(20, 70126, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON) -- Core 7-10s first, 18-22s repeat
 -- local timerBlisteringCold		= mod:NewCastTimer(6, 70123, nil, nil, nil, 2) -- Nick bookmark, not called later, disabled in v. 1.0.3 beta
-local timerUnchainedMagic		= mod:NewCDTimer(30, 69762, nil, nil, nil, 3)
+local timerUnchainedMagic		= mod:NewCDRangeTimer(30, 35, 69762, nil, nil, nil, 3)
 local timerInstability			= mod:NewBuffFadesTimer(5, 69766, nil, nil, nil, 5)
 local timerChilledtotheBone		= mod:NewBuffFadesTimer(8, 70106, nil, nil, nil, 5)
-local timerTailSmash			= mod:NewCDTimer(24, 71077, nil, nil, nil, 2) -- Core 22-27s
+local timerTailSmash			= mod:NewCDRangeTimer(22, 27, 71077, nil, nil, nil, 2) -- Core 22-27s P1, 19-23s P3
 
 local soundUnchainedMagic		= mod:NewSoundYou(69762, nil, "SpellCaster")
 
@@ -154,7 +154,11 @@ local function warnUnchainedTargets(self)
 		end
 	end
 	warnUnchainedMagic:Show(table.concat(unchainedTargets, "<, >"))
-	timerUnchainedMagic:Start()
+	if self.vb.phase == 1 then--Core 30-35s P1, 12-17s P3
+		timerUnchainedMagic:StartRange(30, 35)
+	else
+		timerUnchainedMagic:StartRange(12, 17)
+	end
 	table.wipe(unchainedTargets)
 	self.vb.unchainedIcons = 1
 	playerUnchained = false
@@ -197,8 +201,8 @@ function mod:OnCombatStart(delay)
 	timerNextAirphase:Start(50-delay)
 	timerNextBlisteringCold:Start(34.5-delay) -- Icy Grip 33.5s + 1s
 	timerNextIcyGrip:Start(33.5-delay) --Nick bookmark; core 33.5s
-	timerNextFrostBreath:Start(10-delay) -- Core 8-12s
-	timerUnchainedMagic:Start(12-delay) -- Core 9-14s
+	timerNextFrostBreath:StartRange(8-delay, 12-delay) -- Core 8-12s first
+	timerUnchainedMagic:StartRange(9-delay, 14-delay) -- Core 9-14s first
 	timerTailSmash:Start(20-delay)
 	self.vb.warned_P2 = false
 	self.vb.warnedfailed = false
@@ -222,9 +226,17 @@ end
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(69649, 71056, 71057, 71058) or args:IsSpellID(73061, 73062, 73063, 73064) then--Frost Breath
 		warnFrostBreath:Show()
-		timerNextFrostBreath:Start()
-	elseif args.spellId == 71077 then
-		timerTailSmash:Start()
+		if self.vb.phase == 1 then--Core 20-25s P1, 7-10s P3
+			timerNextFrostBreath:StartRange(20, 25)
+		else
+			timerNextFrostBreath:StartRange(7, 10)
+		end
+	elseif args.spellId == 71077 then--Tail Smash, core 22-27s P1, 19-23s P3
+		if self.vb.phase == 1 then
+			timerTailSmash:StartRange(22, 27)
+		else
+			timerTailSmash:StartRange(19, 23)
+		end
 	elseif args.spellId == 70123 then
 		if tongued == 1 or slowed == 1 then
 			timerNextBlisteringCold:Cancel()
@@ -285,13 +297,13 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 		if self.vb.phase == 2 then--Phase 2 there is only one icon/beacon, don't use sorting method if we don't have to.
 			if self.vb.beaconP2Count == 4 or self.vb.beaconP2Count == 8 or self.vb.beaconP2Count == 12 or self.vb.beaconP2Count == 16 then
-				timerNextIcyGrip:Start(37)--Core P3 Icy 35-40s
-				timerNextBeacon:Start(20, self.vb.beaconP2Count)
+				timerNextIcyGrip:StartRange(35, 40)--Core P3 Icy 35-40s
+				timerNextBeacon:StartRange(18, 22, self.vb.beaconP2Count)
 			elseif self.vb.beaconP2Count == 1 or self.vb.beaconP2Count == 2 or self.vb.beaconP2Count == 3 or self.vb.beaconP2Count == 5 or self.vb.beaconP2Count == 6 or self.vb.beaconP2Count == 7 or self.vb.beaconP2Count == 9 or self.vb.beaconP2Count == 10 or self.vb.beaconP2Count == 11 or self.vb.beaconP2Count == 13 or self.vb.beaconP2Count == 14 or self.vb.beaconP2Count == 15 or self.vb.beaconP2Count == 17 or self.vb.beaconP2Count == 18 or self.vb.beaconP2Count == 19 then
-			timerNextBeacon:Start(20, self.vb.beaconP2Count)
+			timerNextBeacon:StartRange(18, 22, self.vb.beaconP2Count)
 			elseif self.vb.beaconP2Count == 20 then
-				timerNextIcyGrip:Start(37)--Core P3 Icy 35-40s
-				timerNextBeacon:Start(20, self.vb.beaconP2Count)
+				timerNextIcyGrip:StartRange(35, 40)--Core P3 Icy 35-40s
+				timerNextBeacon:StartRange(18, 22, self.vb.beaconP2Count)
 				self.vb.beaconP2Count = 0 -- Nick bookmark, loops beacon count back to 0 to repeat timers without longer code
 			end
 			self.vb.beaconP2Count = self.vb.beaconP2Count + 1
@@ -436,11 +448,11 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		self:SetStage(2)
 		warnPhase2:Show()
 		warnPhase2:Play("ptwo")
-		timerNextBeacon:Start(7, 1) -- no need to use self.vb.beaconP2Count here since it will always be one on this timer
+		timerNextBeacon:StartRange(7, 10, 1) -- no need to use self.vb.beaconP2Count here since it will always be one on this timer
 		timerNextAirphase:Cancel()
 		timerNextGroundphase:Cancel()
 		warnGroundphaseSoon:Cancel()
 		timerNextBlisteringCold:Start(36)--Core P3 Icy 35-40s + 1s
-		timerNextIcyGrip:Start(37)--Nick bookmark; core 35-40s
+		timerNextIcyGrip:StartRange(35, 40)--Nick bookmark; core 35-40s
 	end
 end

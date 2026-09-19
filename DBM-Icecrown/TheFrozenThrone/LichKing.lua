@@ -96,8 +96,8 @@ local specWarnEnrageLow		= mod:NewSpecialWarningSpell(28747, false)
 
 local timerInfestCD			= mod:NewNextTimer(22.5, 70541, nil, "Healer|RaidCooldown", nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
 local timerNecroticPlagueCleanse = mod:NewTimer(5, "TimerNecroticPlagueCleanse", 70337, "Healer", nil, 5, DBM_COMMON_L.HEALER_ICON, nil, nil, nil, nil, nil, nil, 70337)
-local timerNecroticPlagueCD	= mod:NewNextTimer(30, 70337, nil, nil, nil, 3)
-local timerEnrageCD			= mod:NewCDTimer(22, 72143, nil, "Tank|RemoveEnrage", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON) -- Core 20-25s repeat, 11-14s first
+local timerNecroticPlagueCD	= mod:NewNextRangeTimer(30, 31, 70337, nil, nil, nil, 3)
+local timerEnrageCD			= mod:NewCDRangeTimer(20, 25, 72143, nil, "Tank|RemoveEnrage", nil, 5, nil, DBM_COMMON_L.ENRAGE_ICON) -- Core 20-25s repeat, 11-14s first
 local timerShamblingHorror	= mod:NewNextTimer(60, 70372, nil, nil, nil, 1)
 local timerDrudgeGhouls	= mod:NewNextTimer(30, 70358, nil, nil, nil, 1)
 local timerTrapCD			= mod:NewNextTimer(15.5, 73539, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, nil, 1, 4)
@@ -173,7 +173,7 @@ local specWarnGTFO			= mod:NewSpecialWarningGTFO(68983, nil, nil, nil, 1, 8)
 
 local timerPhaseTransition	= mod:NewTimer(62.5, "PhaseTransition", 72262, nil, nil, 6)
 local timerRagingSpiritCD	= mod:NewNextCountTimer(20, 69200, nil, nil, nil, 1)
-local timerSoulShriekCD		= mod:NewCDTimer(12, 69242, nil, nil, nil, 1)
+local timerSoulShriekCD		= mod:NewCDRangeTimer(12, 15, 69242, nil, nil, nil, 1)
 
 mod:AddRangeFrameOption(8, 72133)
 mod:AddSetIconOption("RagingSpiritIcon", 69200, false, 0, {6})
@@ -219,9 +219,9 @@ local function NextPhase(self, newPhase)
 		timerDrudgeGhouls:Start(10)
 		if self:IsHeroic() then
 			timerTrapCD:Start()
-			timerNecroticPlagueCD:Start(30)
+			timerNecroticPlagueCD:StartRange(30, 31)
 		else
-			timerNecroticPlagueCD:Start(30)
+			timerNecroticPlagueCD:StartRange(30, 31)
 		end
 	elseif self.vb.phase == 2 then
 		warnPhase2:Show()
@@ -428,7 +428,7 @@ function mod:SPELL_CAST_START(args)
 		self:ClearIcons()
 		timerRoleplay:Start()
 	elseif args:IsSpellID(69242, 73800, 73801, 73802) then -- Soul Shriek Raging spirits
-		timerSoulShriekCD:Start(args.sourceGUID)
+		timerSoulShriekCD:StartRange(12, 15, args.sourceGUID)
 	end
 end
 
@@ -437,7 +437,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 	if args:IsSpellID(70337, 73912, 73913, 73914) then -- Necrotic Plague (SPELL_AURA_APPLIED is not fired for this spell)
 		lastPlague = args.destName
 		warnNecroticPlague:Show(lastPlague)
-		timerNecroticPlagueCD:Start()
+		timerNecroticPlagueCD:StartRange(30, 31)
 		timerNecroticPlagueCleanse:Start()
 		if args:IsPlayer() then
 			specWarnNecroticPlague:Show()
@@ -462,7 +462,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		end
 	elseif spellId == 69200 then -- Raging Spirit
 		self.vb.ragingSpiritCount = self.vb.ragingSpiritCount + 1
-		timerSoulShriekCD:Start(13, args.destName)
+		timerSoulShriekCD:StartRange(12, 15, args.destName)
 		if args:IsPlayer() then
 			specWarnRagingSpirit:Show()
 			specWarnRagingSpirit:Play("targetyou")
@@ -492,7 +492,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 	elseif args:IsSpellID(73654, 74295, 74296, 74297) then -- Harvest Souls (Heroic)
 		specWarnHarvestSouls:Show()
 		--specWarnHarvestSouls:Play("phasechange")
-		timerHarvestSoulCD:Start(107) -- Custom edit to make Harvest Souls timers work again
+		timerHarvestSoulCD:StartRange(100, 110) -- Custom edit to make Harvest Souls timers work again
 		timerVileSpirit:Cancel()
 		timerSoulreaperCD:Cancel()
 		soundSoulReaperSoon:Cancel()
@@ -518,7 +518,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	if args:IsSpellID(72143, 72146, 72147, 72148) then -- Shambling Horror enrage effect.
 		timerEnrageCD:Cancel(args.sourceGUID)
 		warnShamblingEnrage:Show(args.destName)
-		timerEnrageCD:Start(args.sourceGUID)
+		timerEnrageCD:StartRange(20, 25, args.sourceGUID)
 	elseif spellId == 28747 then -- Shambling Horror enrage effect on low hp
 		specWarnEnrageLow:Show()
 	elseif args:IsSpellID(72754, 73708, 73709, 73710) and args:IsPlayer() and self:AntiSpam(2, 1) then		-- Defile Damage

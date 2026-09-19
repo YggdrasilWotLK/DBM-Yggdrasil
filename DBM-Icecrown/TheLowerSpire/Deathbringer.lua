@@ -52,8 +52,8 @@ local timerRuneofBlood2	= mod:NewTimer(20, "Next Rune of Blood", 72410, "Tank", 
 
 
 --local timerRuneofBlood		= mod:NewNextTimer(20, 72410, true, "Tank|Healer", nil, 5, nil, DBM_COMMON_L.TANK_ICON)
-local timerBoilingBlood		= mod:NewNextTimer(15.5, 72385, nil, "Healer", nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
-local timerBloodNova		= mod:NewNextTimer(20, 72378, nil, nil, nil, 2)
+local timerBoilingBlood		= mod:NewNextRangeTimer(15, 20, 72385, nil, "Healer", nil, 5, nil, DBM_COMMON_L.HEALER_ICON)
+local timerBloodNova		= mod:NewNextRangeTimer(20, 25, 72378, nil, nil, nil, 2)
 
 local soundSpecWarnMark		= mod:NewSound(72293, nil, canShadowmeld or canVanish)
 
@@ -108,7 +108,7 @@ local function warnBoilingBloodTargets(self)
 	warnBoilingBlood:Show(table.concat(boilingBloodTargets, "<, >"))
 	table.wipe(boilingBloodTargets)
 	self.vb.boilingBloodIcon = 1
-	timerBoilingBlood:Start()
+	timerBoilingBlood:StartRange(15, 20)
 end
 
 function mod:FallenMarkTarget(targetname)
@@ -169,10 +169,9 @@ end
 function mod:SPELL_CAST_START(args)
 	if args.spellId == 72378 then	-- Blood Nova (core casts 72378 only, 20-25s loop)
 		warnBloodNova:Show()
-		-- Core EVENT_BLOOD_NOVA repeats 20-25s; use mean 22s.
-		timerBloodNova:Start(22)
-		timerRuneofBlood:Start(22)
-		timerRuneofBlood2:Start(22)
+		timerBloodNova:StartRange(20, 25)
+		timerRuneofBlood:StartRange(20, 25)
+		timerRuneofBlood2:StartRange(20, 25)
 	elseif args.spellId == 72293 then
 		self:BossTargetScanner(37813, "FallenMarkTarget", 0.01, 10)
 	end

@@ -50,7 +50,7 @@ mod:AddBoolOption("ShadowPrisonMetronome", false, "misc", nil, nil, nil, 72999)
 -- Kinetic Bomb
 local warnKineticBomb			= mod:NewSpellAnnounce(72053, 3, nil, "Ranged")
 
-local timerKineticBombCD		= mod:NewCDTimer(18, 72053, nil, "Ranged", nil, 1) -- Might need tweaking :23
+local timerKineticBombCD		= mod:NewCDRangeTimer(18, 24, 72053, nil, "Ranged", nil, 1) -- Core 18-24s first, 20.5/30.5s repeat
 
 local soundKineticBomb			= mod:NewSound(72053, nil, "Ranged")
 
@@ -65,7 +65,7 @@ local yellVortex				= mod:NewYellMe(72037)
 local specWarnVortexNear		= mod:NewSpecialWarningClose(72037, nil, nil, nil, 1, 2)
 local specWarnEmpoweredShockV	= mod:NewSpecialWarningMoveAway(72039, nil, nil, nil, 1, 2)
 
-local timerShockVortex			= mod:NewCDTimer(20, 72037, nil, nil, nil, 3, nil, nil, true) -- Seen a range from 16,8 - 21,6 (Warmane: from 2 logs: 19-22s). Added "keep" arg
+local timerShockVortex			= mod:NewCDRangeTimer(18, 23, 72037, nil, nil, nil, 3, nil, nil, true) -- Core 15-20s first, 18-23s repeat. Added "keep" arg
 local timerEmpoweredShockVortex	= mod:NewCDTimer(30, 72039, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON, true)  -- Added "keep" arg
 
 local soundSpecWarnVortexNear	= mod:NewSoundClose(72037)
@@ -84,8 +84,8 @@ local warnGliteringSparks		= mod:NewTargetAnnounce(71807, 2, nil, false)
 local specWarnEmpoweredFlames	= mod:NewSpecialWarningRun(72040, nil, nil, nil, 4, 2)
 local yellEmpoweredFlames		= mod:NewYellMe(72040)
 
-local timerConjureFlamesCD		= mod:NewCDTimer(20, 71718, nil, nil, nil, 3) -- every 20-30 seconds but never more often than every 20sec
-local timerGlitteringSparksCD	= mod:NewCDTimer(20, 71807, nil, nil, nil, 2) -- This is pretty nasty on heroic
+local timerConjureFlamesCD		= mod:NewCDRangeTimer(20, 25, 71718, nil, nil, nil, 3) -- Core 20-25s normal, 15s empowered
+local timerGlitteringSparksCD	= mod:NewCDRangeTimer(15, 25, 71807, nil, nil, nil, 2) -- Core 12-15s first, 15-25s repeat
 
 local soundEmpoweredFlames		= mod:NewSound(72040)
 
@@ -95,7 +95,7 @@ mod:AddSetIconOption("EmpoweredFlameIcon", 72040, true, 0, {1})
 mod:AddTimerLine(L.Keleseth)
 local warnDarkNucleus			= mod:NewSpellAnnounce(71943, 1, nil, false)	-- instant cast
 
-local timerDarkNucleusCD		= mod:NewCDTimer(10, 71943, nil, false, nil, 5)	-- usually every 10 seconds but sometimes more
+local timerDarkNucleusCD		= mod:NewCDRangeTimer(10, 15, 71943, nil, false, nil, 5)	-- Core 10-15s
 
 mod.vb.kineticIcon = 7
 local glitteringSparksTargets	= {}
@@ -103,7 +103,7 @@ local glitteringSparksTargets	= {}
 local function warnGlitteringSparksTargets()
 	warnGliteringSparks:Show(table.concat(glitteringSparksTargets, "<, >"))
 	table.wipe(glitteringSparksTargets)
-	timerGlitteringSparksCD:Start()
+	timerGlitteringSparksCD:StartRange(15, 25)
 end
 
 function mod:OnCombatStart(delay)
@@ -113,7 +113,7 @@ function mod:OnCombatStart(delay)
 	warnTargetSwitchSoon:ScheduleVoice(40, "swapsoon")
 	timerTargetSwitch:Start(45-delay)
 	timerEmpoweredShockVortex:Start(15-delay) -- Warmane: random 15-20
-	timerKineticBombCD:Start(20-delay)
+	timerKineticBombCD:StartRange(18-delay, 24-delay)
 	table.wipe(glitteringSparksTargets)
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(12)
@@ -164,7 +164,7 @@ end
 function mod:SPELL_CAST_START(args)
 	local spellId = args.spellId
 	if spellId == 72037 then		-- Shock Vortex
-		timerShockVortex:Start()
+		timerShockVortex:StartRange(18, 23)
 		self:BossTargetScanner(37970, "ShockVortexTarget", 0.05, 6)
 	elseif args:IsSpellID(72039, 73037, 73038, 73039) then	-- Empowered Shock Vortex(73037, 73038, 73039 drycoded from wowhead)
 		specWarnEmpoweredShockV:Show()
@@ -175,7 +175,7 @@ function mod:SPELL_CAST_START(args)
 		soundEmpoweredShockV:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\EmpoweredVortex.mp3")
 	elseif spellId == 71718 then	-- Conjure Flames
 		warnConjureFlames:Show()
-		timerConjureFlamesCD:Start()
+		timerConjureFlamesCD:StartRange(20, 25)
 	elseif spellId == 72040 then	-- Conjure Empowered Flames (core 15s empowered)
 		warnEmpoweredFlamesCast:Show()
 		timerConjureFlamesCD:Start(15)
@@ -271,7 +271,7 @@ mod.SPELL_AURA_APPLIED_DOSE = mod.SPELL_AURA_APPLIED
 function mod:SPELL_SUMMON(args)
 	if args.spellId == 71943 then
 		warnDarkNucleus:Show()
-		timerDarkNucleusCD:Start()
+		timerDarkNucleusCD:StartRange(10, 15)
 	end
 end
 

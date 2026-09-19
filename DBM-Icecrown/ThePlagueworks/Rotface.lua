@@ -35,7 +35,7 @@ local timerWallSlime			= mod:NewNextTimer(25, 69789) -- Edited.
 local timerSlimeSpray			= mod:NewNextTimer(20, 69508, nil, nil, nil, 3)
 local timerMutatedInfection		= mod:NewTargetTimer(12, 69674, nil, nil, nil, 5)
 local timerOozeExplosion		= mod:NewCastTimer(4, 69839, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON, nil, 3)
-local timerVileGasCD			= mod:NewNextTimer(17, 72272, nil, nil, nil, 3) -- Core 15-20s
+local timerVileGasCD			= mod:NewNextRangeTimer(15, 20, 72272, nil, nil, nil, 3) -- Core 15-20s
 
 mod:AddRangeFrameOption(10, 72272, "Ranged")
 mod:AddSetIconOption("InfectionIcon", 69674, true, 0, {1, 2})
@@ -48,7 +48,7 @@ mod.vb.InfectionIcon = 1
 local function warnRFVileGasTargets()
 	warnVileGas:Show(table.concat(RFVileGasTargets, "<, >"))
 	table.wipe(RFVileGasTargets)
-	timerVileGasCD:Start()
+	timerVileGasCD:StartRange(15, 20)
 end
 
 local function WallSlime(self)
@@ -62,7 +62,7 @@ end
 function mod:OnCombatStart(delay)
 	timerWallSlime:Start(8-delay)
 	timerSlimeSpray:Start(20-delay) -- Custom add for the first Slime Spray
-	timerVileGasCD:Start(17-delay)
+	timerVileGasCD:StartRange(15-delay, 20-delay)
 	self:Schedule(25-delay, WallSlime, self)
 	self.vb.InfectionIcon = 1
 	spamOoze = 0

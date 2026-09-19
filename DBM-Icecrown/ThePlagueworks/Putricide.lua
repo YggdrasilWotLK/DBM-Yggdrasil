@@ -46,7 +46,7 @@ local yellUnboundPlague				= mod:NewYellMe(70911, false)	-- Heroic Ability, disa
 local timerGaseousBloat				= mod:NewTargetTimer(20, 70672, nil, nil, nil, 3)			-- Duration of debuff
 local timerGaseousBloatCast			= mod:NewCastTimer(3, 70672, nil, nil, nil, 3)				-- Cast duration
 local timerSlimePuddleCD			= mod:NewCDTimer(35, 70341, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)				-- Approx
-local timerUnstableExperimentCD		= mod:NewNextTimer(38, 70351, nil, nil, nil, 1, nil, DBM_COMMON_L.DEADLY_ICON)			-- Used every 38 seconds exactly except after phase changes
+local timerUnstableExperimentCD		= mod:NewNextRangeTimer(35, 40, 70351, nil, nil, nil, 1, nil, DBM_COMMON_L.DEADLY_ICON)			-- Core 35-40s repeat, 30-35s first
 local timerUnboundPlagueCD			= mod:NewNextTimer(90, 70911, nil, nil, nil, 3, nil, DBM_COMMON_L.HEROIC_ICON)
 local timerUnboundPlague			= mod:NewBuffActiveTimer(12, 70911, nil, nil, nil, 3)		-- Heroic Ability: we can't keep the debuff 60 seconds, so we have to switch at 12-15 seconds. Otherwise the debuff does to much damage!
 
@@ -68,8 +68,8 @@ local warnChokingGasBomb			= mod:NewSpellAnnounce(71255, 3, nil, "Melee")		-- Ph
 local specWarnChokingGasBomb		= mod:NewSpecialWarningMove(71255, "Melee", nil, nil, 1, 2)
 local specWarnMalleableGooCast		= mod:NewSpecialWarningSpell(72295, "Ranged", nil, nil, 2, 2)
 
-local timerChokingGasBombCD			= mod:NewNextTimer(35.5, 71255, nil, nil, nil, 3)
-local timerMalleableGooCD			= mod:NewCDTimer(27, 72295, nil, nil, nil, 3) -- Core 25-30s, spell 70852
+local timerChokingGasBombCD			= mod:NewNextRangeTimer(35, 40, 71255, nil, nil, nil, 3)
+local timerMalleableGooCD			= mod:NewCDRangeTimer(25, 30, 72295, nil, nil, nil, 3) -- Core 25-30s, spell 70852
 
 local soundSpecWarnMalleableGoo		= mod:NewSound(72295, nil, "Ranged")
 local soundMalleableGooSoon		= mod:NewSoundSoon(72295, nil, "Ranged")
@@ -161,7 +161,7 @@ function mod:OnCombatStart(delay)
 	self:SetStage(1)
 	berserkTimer:Start(-delay)
 	timerSlimePuddleCD:Start(10-delay)
-	timerUnstableExperimentCD:Start(30-delay)
+	timerUnstableExperimentCD:StartRange(30-delay, 35-delay)
 	warnUnstableExperimentSoon:Schedule(25-delay)
 	table.wipe(redOozeGUIDsCasts)
 	PuddleTime = 0
@@ -191,7 +191,7 @@ function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(70351, 71966, 71967, 71968) then
 		warnUnstableExperimentSoon:Cancel()
 		warnUnstableExperiment:Show()
-		timerUnstableExperimentCD:Start()
+		timerUnstableExperimentCD:StartRange(35, 40)
 		warnUnstableExperimentSoon:Schedule(33)
 	elseif spellId == 71617 then				--Tear Gas (stun all on Normal phase)
 		warnTearGas:Show()
@@ -282,7 +282,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		soundSpecWarnChokingGasBomb:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking.mp3")
 		soundChokingGasSoon:Cancel()
 		soundChokingGasSoon:Schedule(35.5-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\choking_soon.mp3")
-		timerChokingGasBombCD:Start()
+		timerChokingGasBombCD:StartRange(35, 40)
 		warnChokingGasBombSoon:Schedule(30.5)
 		ChokingTime = GetTime()
 	elseif args:IsSpellID(72855, 72856, 70911) then
@@ -292,7 +292,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 		--self:BossTargetScanner(36678, "MalleableGooTarget", 0.05, 6)
 		specWarnMalleableGooCast:Show()
 		--specWarnMalleableGooCast:Play("watchstep")
-		timerMalleableGooCD:Start()
+		timerMalleableGooCD:StartRange(25, 30)
 		soundSpecWarnMalleableGoo:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable.mp3")
 		soundMalleableGooSoon:Cancel()
 		soundMalleableGooSoon:Schedule(27-3, "Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\malleable_soon.mp3")
@@ -344,7 +344,7 @@ function mod:SPELL_AURA_APPLIED(args)
 			specWarnGasVariable:Show()
 		end
 	elseif args:IsSpellID(72295, 72615, 74280, 74281) then	 -- Malleable Goo aura (core casts 70852)
-		timerMalleableGooCD:Start()
+		timerMalleableGooCD:StartRange(25, 30)
 		GooTime = GetTime()
 	elseif args:IsSpellID(72855, 72856, 70911) then	 -- Unbound Plague
 		if self.Options.UnboundPlagueIcon then

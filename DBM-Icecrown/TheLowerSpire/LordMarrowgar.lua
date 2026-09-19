@@ -25,8 +25,8 @@ local warnImpale			= mod:NewTargetNoFilterAnnounce(72669, 3)
 local specWarnColdflame		= mod:NewSpecialWarningGTFO(69146, nil, nil, nil, 1, 8)
 local specWarnWhirlwind		= mod:NewSpecialWarningRun(69076, nil, nil, nil, 4, 2)
 
-local timerBoneSpike		= mod:NewCDTimer(18, 69057, nil, nil, nil, 1, nil, DBM_COMMON_L.DAMAGE_ICON)
-local timerWhirlwindCD		= mod:NewCDTimer(30, 69076, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)
+local timerBoneSpike		= mod:NewCDRangeTimer(15.5, 20.5, 69057, nil, nil, nil, 1, nil, DBM_COMMON_L.DAMAGE_ICON)
+local timerWhirlwindCD		= mod:NewCDRangeTimer(92, 97, 69076, nil, nil, nil, 2, nil, DBM_COMMON_L.MYTHIC_ICON)
 local timerWhirlwind		= mod:NewBuffActiveTimer(20, 69076, nil, nil, nil, 6)
 local timerBoned			= mod:NewAchievementTimer(8, 4610)
 local timerBoneSpikeUp		= mod:NewCastTimer(69057)
@@ -41,10 +41,28 @@ mod:AddSetIconOption("SetIconOnImpale", 72669, true, 0, {8, 7, 6, 5, 4, 3, 2, 1}
 
 mod.vb.impaleIcon = 8
 
+-- Starts the Bone Spike Graveyard timer unless it would overlap Bone Storm.
+-- On normal, Marrowgar doesn't cast Bone Spike during Bone Storm, so a spike
+-- timer that would expire before Bone Storm is wrong and must not be shown.
+-- Pass (min, max) for a range bar, or a single fixed delay for a plain bar.
+local function startBoneSpikeTimer(min, max)
+	max = max or min
+	if mod:IsNormal() and timerWhirlwindCD:IsStarted() then
+		local remaining = timerWhirlwindCD:GetRemaining()
+		if remaining > 0 and remaining < max then
+			return
+		end
+	end
+	if max > min then
+		timerBoneSpike:StartRange(min, max)
+	else
+		timerBoneSpike:Start(min)
+	end
+end
+
 function mod:OnCombatStart(delay)
-	preWarnWhirlwind:Schedule(43-delay) -- Edited
-	timerWhirlwindCD:Start(48-delay) -- Edited
-	timerBoneSpike:Start(15-delay)
+	timerWhirlwindCD:StartRange(48-delay, 53-delay) -- Core 45-50s warn window
+	startBoneSpikeTimer(11-delay, 16-delay) -- Core 10-15s window
 	berserkTimer:Start(-delay)
 end
 
@@ -78,7 +96,7 @@ function mod:SPELL_AURA_REMOVED(args)
 		-- Core EVENT_WARN_BONE_STORM repeats 90-95s WARN->WARN. CD was already
 		-- (re)started on CAST_START, do not restart a short 30s CD here.
 		if self:IsNormal() then
-			timerBoneSpike:Start(15)					-- He will do Bone Spike Graveyard 15 seconds after whirlwind ends on normal
+			startBoneSpikeTimer(17, 22)					-- Core 15-20s window after whirlwind ends on normal
 		end
 	end
 end
@@ -86,14 +104,15 @@ end
 function mod:SPELL_CAST_START(args)
 	if args:IsSpellID(69057, 70826, 72088, 72089) then	-- Bone Spike Graveyard
 		warnBoneSpike:Show()
-		timerBoneSpike:Start()
+		timerBoneSpike:Cancel()
+		startBoneSpikeTimer(15.5, 20.5)						-- Core 15-20s loop from cast start
 		timerBoneSpikeUp:Start()
 		soundBoneSpike:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\Bone_Spike_cast.mp3")
 	elseif args.spellId == 69076 then
 		timerWhirlwindCD:Cancel()
 		-- Core WARN->WARN cycle is 90-95s; start next CD on cast, not on aura removal.
-		timerWhirlwindCD:Start(90)
-		preWarnWhirlwind:Schedule(85)
+		timerWhirlwindCD:StartRange(92, 97)
+		preWarnWhirlwind:Schedule(92)
 		timerWhirlwindStart:Start()
 		soundBoneStorm:Play("Interface\\AddOns\\DBM-Core\\sounds\\RaidAbilities\\Bone_Storm_cast.mp3")
 	end
