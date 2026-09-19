@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("ApothecaryTrio", "DBM-WorldEvents")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision(("$Revision: 4181 $"):sub(12, -3))
+mod:SetRevision("20260919183012")
 mod:SetCreatureID(36272, 36296, 36565)
 
 mod:RegisterCombat("combat")

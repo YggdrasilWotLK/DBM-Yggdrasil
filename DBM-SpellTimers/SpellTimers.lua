@@ -26,7 +26,7 @@
 --    * Share Alike. If you alter, transform, or build upon this work, you may distribute the resulting work only under the same or similar license to this one.
 --
 
-local Revision = ("$Revision: 55 $"):sub(12, -3)
+local Revision = "20260913202529"
 
 local default_bartext = "%spell: %player"
 local default_settings = {

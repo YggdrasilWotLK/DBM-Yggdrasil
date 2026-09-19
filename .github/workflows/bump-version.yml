@@ -1,60 +1,109 @@
-name: Bump version
+name: Stamp versions
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**/*.toc'
 
 concurrency:
-  group: version-bump
+  group: stamp-versions
   cancel-in-progress: false
 
 jobs:
-  bump:
-    if: "!contains(github.event.head_commit.message, '[skip version]')"
+  stamp:
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip version]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
-      - name: Update SetRevision in changed lua files
+      - name: Update SetRevision in pushed lua files
         run: |
+          set -euo pipefail
+          SHA="${{ github.sha }}"
           BEFORE="${{ github.event.before }}"
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD~1"; fi
-          STAMP=$(git show -s --format=%cd --date=format-local:%Y%m%d%H%M%S "${{ github.sha }}")
-          echo "stamp $STAMP"
-          git diff --name-only "$BEFORE" "${{ github.sha }}" -- '*.lua' | python3 -c '
+          # Work on a local main pinned at the pushed commit, not at the
+          # moving tip, so queued runs stamp their own push range.
+          git checkout -B main "$SHA"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            if git cat-file -e "$SHA^" 2>/dev/null; then
+              BEFORE="$SHA^"
+              RANGE_ARGS=(diff --name-only -z "$BEFORE" "$SHA")
+            else
+              # Root commit (no parent): stamp everything in it.
+              RANGE_ARGS=(show --name-only --format= -z "$SHA")
+            fi
+          else
+            RANGE_ARGS=(diff --name-only -z "$BEFORE" "$SHA")
+          fi
+          STAMP=$(date -u -d "@$(git show -s --format=%ct "$SHA")" +%Y%m%d%H%M%S)
+          echo "stamp $STAMP for $BEFORE..$SHA"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          git "${RANGE_ARGS[@]}" -- '*.lua' | python3 -c '
           import os, re, sys
           stamp = sys.argv[1].encode()
-          for f in sys.stdin.read().split():
-              if os.path.isfile(f):
-                  src = open(f, "rb").read()
-                  nsrc, n = re.subn(rb"SetRevision\(\"[0-9]+\"\)", b"SetRevision(\"" + stamp + b"\")", src)
-                  if n and nsrc != src:
-                      open(f, "wb").write(nsrc)
-                      print("revision", f)
+          lua_changed = False
+          addon_tocs = set()
+          for raw in sys.stdin.buffer.read().split(b"\0"):
+              f = raw.decode("utf-8", "surrogateescape").strip()
+              if not f:
+                  continue
+              if not os.path.isfile(f):
+                  continue
+              lua_changed = True
+              # The addon is the top-level dir; its toc is <dir>/<dir>.toc.
+              top = f.split("/", 1)[0]
+              toc = os.path.join(top, top + ".toc")
+              if os.path.isfile(toc):
+                  addon_tocs.add(toc)
+              src = open(f, "rb").read()
+              nsrc, n = re.subn(rb"SetRevision\(\"[0-9]+\"\)", b"SetRevision(\"" + stamp + b"\")", src)
+              if n and nsrc != src:
+                  open(f, "wb").write(nsrc)
+                  print("revision", f)
+          # LUA_CHANGED = any *.lua in the push range (even without a
+          # stampable marker, e.g. localization files) still justifies a
+          # version bump. No lua at all -> skip the follow-up.
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write("LUA_CHANGED=%s\n" % ("true" if lua_changed else "false"))
+              if addon_tocs:
+                  env.write("ADDON_TOCS<<EOF\n" + "\n".join(sorted(addon_tocs)) + "\nEOF\n")
           ' "$STAMP"
 
-      - name: Bump version stamps
+      - name: Bump addon version stamps
         run: |
-          NOW=$(date -u +%Y%m%d%H%M%S)
+          set -euo pipefail
+          if [ "${LUA_CHANGED:-false}" != "true" ]; then
+            echo "no lua files in push range, skipping version bump"
+            exit 0
+          fi
           python3 -c '
-          import glob, re, sys
-          now = sys.argv[1]
+          import os, re, sys
+          now = os.environ["STAMP"]
           def bumped_ver(ver):
               core, *suffix = ver.split("-", 1)
               nums = core.split(".")
-              nums[-1] = str(int(nums[-1]) + 1)
+              try:
+                  nums[-1] = str(int(nums[-1]) + 1)
+              except ValueError:
+                  return ver
               return ".".join(nums) + ("-" + suffix[0] if suffix else "")
           def bump(m):
               return m.group(0)[:m.start(1) - m.start(0)] + bumped_ver(m.group(1))
-          targets = sorted(glob.glob("**/*.toc", recursive=True))
-          targets.append("DBM-Core/DBM-Core.lua")
+          # Bump only tocs of touched addons, plus GUI and Core.
+          # Voice packs are versioned separately; never touch them here.
+          targets = set()
+          for t in os.environ.get("ADDON_TOCS", "").split():
+              if t.startswith("DBM-VPVEM/"):
+                  continue
+              if os.path.isfile(t):
+                  targets.add(t)
+          for t in ("DBM-GUI/DBM-GUI.toc", "DBM-Core/DBM-Core.toc", "DBM-Core/DBM-Core.lua"):
+              if os.path.isfile(t):
+                  targets.add(t)
+          targets = sorted(targets)
           for f in targets:
               src = open(f).read()
               nsrc, n = re.subn(r"(?:## Version: |DisplayVersion = \")([^\"\s]+)", bump, src)
@@ -62,20 +111,27 @@ jobs:
               if n + n2:
                   open(f, "w").write(nsrc)
                   print("bumped", f)
-          ' "$NOW"
+          '
 
       - name: Commit and push
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if [ -z "$(git status --porcelain -- '*.toc' '*.lua')" ]; then
-            echo "no version change"
+            echo "nothing to stamp"
             exit 0
           fi
           git add -- '*.toc' '*.lua'
-          git commit -m "Bump addon version [skip version]"
+          git commit -m "Stamp versions [skip version]"
           for i in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && break
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              break
+            fi
+            git rebase --abort 2>/dev/null || true
             echo "push failed, retry $i"
+            if [ "$i" = 3 ]; then
+              exit 1
+            fi
             sleep 5
           done
