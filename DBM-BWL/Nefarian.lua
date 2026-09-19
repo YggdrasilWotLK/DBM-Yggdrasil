@@ -32,7 +32,7 @@ local specwarnClassCall		= mod:NewSpecialWarning("specwarnClassCall", nil, nil, 
 
 local timerPhase			= mod:NewPhaseTimer(15)
 local timerClassCall		= mod:NewTimer(30, "TimerClassCall", "136116", nil, nil, 5)
-local timerFearNext			= mod:NewCDTimer(26.7, 22686, nil, nil, 3, 2)--26-42.5
+local timerFearNext			= mod:NewCDRangeTimer(25, 35, 22686, nil, nil, 3, 2)--25-35
 
 mod.vb.addLeft = 42
 local addsGuidCheck = {}
@@ -73,7 +73,7 @@ function mod:SPELL_CAST_START(args)
 		warnShadowFlame:Show()
 	elseif args:IsSpellID(22686, 22678) then--22678 P1 fallback
 		warnFear:Show()
-		timerFearNext:Start()
+		timerFearNext:StartRange(25, 35)
 	end
 end
 
@@ -166,7 +166,7 @@ do
 			else
 				warnClassCall:Show(className)
 			end
-			timerClassCall:Start(30, className)
+			timerClassCall:StartRange(30, 35, className)
 		end
 	end
 end

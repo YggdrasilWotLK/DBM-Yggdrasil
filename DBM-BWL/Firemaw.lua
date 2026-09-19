@@ -18,7 +18,7 @@ local warnShadowFlame		= mod:NewCastAnnounce(22539, 2)
 local warnFlameBuffet		= mod:NewCountAnnounce(23341, 3, nil, nil, DBM_CORE_L.AUTO_ANNOUNCE_OPTIONS.stack:format(23341))
 
 local timerWingBuffet		= mod:NewCDTimer(31, 23339, nil, nil, nil, 2)--Verified on classic 31-36
-local timerShadowFlameCD	= mod:NewCDTimer(14, 22539, nil, false)--14-21
+local timerShadowFlameCD	= mod:NewCDRangeTimer(15, 25, 22539, nil, false)--15-25
 
 function mod:OnCombatStart(delay)
 	timerShadowFlameCD:Start(18-delay)
@@ -31,7 +31,7 @@ function mod:SPELL_CAST_START(args)--did not see ebon use any of these abilities
 		timerWingBuffet:Start()
 	elseif args.spellId == 22539 then
 		warnShadowFlame:Show()
-		timerShadowFlameCD:Start()
+		timerShadowFlameCD:StartRange(15, 25)
 	end
 end
 

@@ -22,11 +22,11 @@ local warnFist		= mod:NewTargetAnnounce(20277, 2, nil, false, 2)
 local specWarnGTFO	= mod:NewSpecialWarningGTFO(19717, nil, nil, nil, 1, 8)
 
 local timerRoF		= mod:NewCDTimer(6, 19717, nil, false, nil, 3)
-local timerCurse	= mod:NewCDTimer(26.7, 19716, nil, nil, nil, 3, nil, DBM_COMMON_L.HEALER_ICON..DBM_COMMON_L.CURSE_ICON)--26.7-30
+local timerCurse	= mod:NewCDRangeTimer(25, 30, 19716, nil, nil, nil, 3, nil, DBM_COMMON_L.HEALER_ICON..DBM_COMMON_L.CURSE_ICON)--25-30
 --local timerFist		= mod:NewBuffActiveTimer(4, 20277, nil, false, 2, 3)
 
 function mod:OnCombatStart(delay)
-	timerCurse:Start(6-delay)
+	timerCurse:StartRange(6-delay, 9-delay)
 	if not self:IsTrivial() then
 		self:RegisterShortTermEvents(
 			"SPELL_PERIODIC_DAMAGE 19717",
@@ -42,7 +42,7 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 19716 and args:IsSrcTypeHostile() then
 		warnCurse:Show()
-		timerCurse:Start()
+		timerCurse:StartRange(25, 30)
 	elseif args.spellId == 19717 and args:IsSrcTypeHostile() then
 		warnRainFire:Show()
 		timerRoF:Start()

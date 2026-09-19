@@ -33,7 +33,7 @@ local yellFireball			= mod:NewYell(18392)
 local specWarnBlastNova		= mod:NewSpecialWarningRun(68958, "Melee", nil, nil, 4, 2)
 local specWarnAdds			= mod:NewSpecialWarningAdds(68968, "-Healer", nil, nil, 1, 2)
 
-local timerNextFlameBreath	= mod:NewCDTimer(15, 18435, nil, "Tank", 2, 5)--Core 10-20s ground phases
+local timerNextFlameBreath	= mod:NewCDRangeTimer(10, 20, 18435, nil, "Tank", 2, 5)--Core 10-20s ground phases
 local timerNextDeepBreath	= mod:NewCDTimer(35, 18584, nil, nil, nil, 3)--Movement-gated, no fixed core CD
 local timerBreath			= mod:NewCastTimer(8, 18584, nil, nil, nil, 3)
 local timerWhelps			= mod:NewTimer(90, "TimerWhelps", 10697, nil, nil, 1)--Core 90s repeat
@@ -55,7 +55,7 @@ function mod:OnCombatStart(delay)
 	self.vb.warned_preP2 = false
 	self.vb.warned_preP3 = false
 	timerAchieve:Start(-delay)
-	timerNextFlameBreath:Start(15-delay)--Core 10-20s first
+	timerNextFlameBreath:StartRange(10-delay, 20-delay)--Core 10-20s first
 	if self.Options.SoundWTF3 then
 		DBM:PlaySoundFile("Interface\\AddOns\\DBM-Onyxia\\sounds\\dps-very-very-slowly.ogg")
 		self:Schedule(20, DBM.PlaySoundFile, DBM, "Interface\\AddOns\\DBM-Onyxia\\sounds\\hit-it-like-you-mean-it.ogg")
@@ -116,7 +116,7 @@ function mod:SPELL_CAST_START(args)
 		timerNextDeepBreath:Start()
 --		preWarnDeepBreath:Schedule(35)			  -- Pre-Warn Deep Breath
 	elseif args:IsSpellID(18435, 68970) then		-- Flame Breath (Ground phases, core 10-20s)
-		timerNextFlameBreath:Start()
+		timerNextFlameBreath:StartRange(10, 20)
 	elseif spellId == 18431 then -- Bellowing Roar (core 22s repeat in P3)
 		specWarnBellowingRoar:Show()
 		specWarnBellowingRoar:Play("fearsoon")
@@ -199,7 +199,7 @@ function mod:OnSync(msg)
 		timerNextDeepBreath:Stop()
 		timerGuardSummonCD:Stop()
 		warnWhelpsSoon:Cancel()
-		timerNextFlameBreath:Start(15)--Core re-arms ground timers on landing
+		timerNextFlameBreath:StartRange(10, 20)--Core re-arms ground timers on landing
 		timerBellowingRoarCD:Start(15)--Core 15s first in P3
 --		preWarnDeepBreath:Cancel()
 		if self.Options.SoundWTF3 then

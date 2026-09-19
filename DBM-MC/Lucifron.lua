@@ -36,8 +36,8 @@ mod.vb.lastIcon = 1
 
 function mod:OnCombatStart(delay)
 	self.vb.lastIcon = 1
-	timerDoomCD:Start(7-delay)--7-8
-	timerCurseCD:Start(12-delay)--12-15
+	timerDoomCD:StartRange(6-delay, 11-delay)--6-11
+	timerCurseCD:StartRange(11-delay, 14-delay)--11-14
 end
 
 function mod:MCTarget(targetname)

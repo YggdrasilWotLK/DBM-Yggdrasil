@@ -24,14 +24,14 @@ local warnCntrSpell			= mod:NewSpellAnnounce(19715, 3, nil, "SpellCaster", 2)
 local specWarnDeadenMagic	= mod:NewSpecialWarningDispel(19714, false, nil, 2, 1, 2)
 local specWarnGate			= mod:NewSpecialWarningTaunt(23138, "Tank", nil, nil, 1, 2)--aggro wipe, needs fresh taunt
 
-local timerCurseCD			= mod:NewCDTimer(22, 19713, nil, nil, nil, 3, nil, DBM_COMMON_L.CURSE_ICON)--22-25.5 (20-25?)
+local timerCurseCD			= mod:NewCDRangeTimer(23, 26, 19713, nil, nil, nil, 3, nil, DBM_COMMON_L.CURSE_ICON)--23-26
 local timerDeadenMagic		= mod:NewBuffActiveTimer(30, 19714, nil, false, 3, 5, nil, DBM_COMMON_L.MAGIC_ICON)
 local timerGateCD			= mod:NewCDTimer(41.3, 23138, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)--41-50
-local timerCounterSpellCD	= mod:NewCDTimer(15, 19715, nil, "SpellCaster", nil, 3)--15-19
+local timerCounterSpellCD	= mod:NewCDRangeTimer(15, 18, 19715, nil, "SpellCaster", nil, 3)--15-18
 
 function mod:OnCombatStart(delay)
-	timerCurseCD:Start(6-delay)--6-10
-	timerCounterSpellCD:Start(9.6-delay)
+	timerCurseCD:StartRange(7-delay, 11-delay)--7-11
+	timerCounterSpellCD:StartRange(9-delay, 10-delay)
 	timerGateCD:Start(30-delay)--30-31
 end
 
@@ -56,10 +56,10 @@ end
 function mod:SPELL_CAST_SUCCESS(args)
 	if args.spellId == 19713 then
 		warnCurse:Show()
-		timerCurseCD:Start()
+		timerCurseCD:StartRange(23, 26)
 	elseif args.spellId == 19715 then
 		warnCntrSpell:Show()
-		timerCounterSpellCD:Start()
+		timerCounterSpellCD:StartRange(15, 18)
 	elseif args.spellId == 23138 then
 		specWarnGate:Show(args.sourceName)
 		specWarnGate:Play("tauntboss")

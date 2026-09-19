@@ -22,7 +22,7 @@ local warnFrenzy			= mod:NewSpellAnnounce(23342, 3, nil, "Tank|RemoveEnrage|Heal
 local specWarnFrenzy		= mod:NewSpecialWarningDispel(23342, "RemoveEnrage", nil, nil, 1, 6)
 
 local timerWingBuffet		= mod:NewCDTimer(31, 23339, nil, nil, nil, 2)
-local timerShadowFlameCD	= mod:NewCDTimer(14, 22539, nil, false)--14-21
+local timerShadowFlameCD	= mod:NewCDRangeTimer(15, 25, 22539, nil, false)--15-25
 local timerFrenzy			= mod:NewBuffActiveTimer(10, 23342, nil, "Tank|RemoveEnrage|Healer", 5, 5, nil, DBM_COMMON_L.ENRAGE_ICON)
 
 function mod:OnCombatStart(delay)
@@ -36,7 +36,7 @@ function mod:SPELL_CAST_START(args)--did not see ebon use any of these abilities
 		timerWingBuffet:Start()
 	elseif args.spellId == 22539 then
 		warnShadowFlame:Show()
-		timerShadowFlameCD:Start()
+		timerShadowFlameCD:StartRange(15, 25)
 	end
 end
 
