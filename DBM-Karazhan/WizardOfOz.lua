@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Oz", "DBM-Karazhan")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914171922")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(18168)
 --
 mod:SetModelID(17550)

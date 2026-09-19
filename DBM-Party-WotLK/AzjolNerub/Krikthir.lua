@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Krikthir", "DBM-Party-WotLK", 2)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914104916")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(28684)
 
 mod:RegisterCombat("combat")

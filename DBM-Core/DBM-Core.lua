@@ -79,8 +79,8 @@ local function currentFullDate()
 end
 
 DBM = {
-	Revision = parseCurseDate("20260919191218"), -- hardcoded: bump manually when cutting a release
-	DisplayVersion = "1.0.6-ygg", -- hardcoded base version
+	Revision = parseCurseDate("20260919205410"), -- hardcoded: bump manually when cutting a release
+	DisplayVersion = "1.0.7-ygg", -- hardcoded base version
 }
 
 -- ReleaseRevision is derived from Revision: every Yggdrasil commit is the
@@ -97,7 +97,7 @@ if not DBM.Revision then
 	DBM.Revision = DBM.ReleaseRevision
 end
 if not DBM.DisplayVersion then
-	DBM.DisplayVersion = "1.0.6-ygg"
+	DBM.DisplayVersion = "1.0.7-ygg"
 end
 
 function DBM:ShowRealDate(curseDate)

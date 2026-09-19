@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("MageLordUrom", "DBM-Party-WotLK", 9)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914104916")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(27655)
 mod:SetMinSyncRevision(2824)
 

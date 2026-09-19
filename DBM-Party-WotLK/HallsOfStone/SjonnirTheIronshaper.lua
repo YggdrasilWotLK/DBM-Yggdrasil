@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("SjonnirTheIronshaper", "DBM-Party-WotLK", 7)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914104916")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(27978)
 
 mod:RegisterCombat("combat")

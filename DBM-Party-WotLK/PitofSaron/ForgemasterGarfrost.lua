@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("ForgemasterGarfrost", "DBM-Party-WotLK", 15)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914104916")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(36494)
 mod:SetUsedIcons(8)
 

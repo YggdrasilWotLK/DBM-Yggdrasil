@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Anetheron", "DBM-Hyjal")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914171922")
+mod:SetRevision("20260919205410")
 mod:SetCreatureID(17808)
 
 mod:RegisterCombat("combat")
