@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("LowerSpireTrash", "DBM-Icecrown", 1)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260919183012")
+mod:SetRevision("20260919184855")
 mod:SetUsedIcons(1, 2, 3, 4, 5, 6, 7, 8)
 
 

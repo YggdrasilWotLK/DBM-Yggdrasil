@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("FrostwingHallTrash", "DBM-Icecrown", 4)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260919183012")
+mod:SetRevision("20260919184855")
 
 mod:RegisterEvents(
 	"SPELL_AURA_APPLIED",

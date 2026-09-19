@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("HeadlessHorseman", "DBM-WorldEvents")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260919183012")
+mod:SetRevision("20260919184855")
 mod:SetCreatureID(23682, 23775)
 
 mod:RegisterCombat("combat")
