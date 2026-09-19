@@ -8,6 +8,10 @@ mod.onlyHighest = true--Instructs DBM health tracking to literally only store hi
 
 mod:RegisterCombat("combat")
 
+mod:RegisterEvents(
+	"CHAT_MSG_MONSTER_YELL"
+)
+
 -- Her death is the fail condition, not a kill: only Dreamwalker's Rage (71189) counts as success.
 mod.combatInfo.noBossDeathKill = true
 
@@ -18,8 +22,7 @@ mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED_DOSE 70751 71738 72022 72023 70873 71941",
 	"SPELL_AURA_REMOVED 70633 71283 72025 72026 69325 71730 70873 71941",
 	"SPELL_DAMAGE 71086 71743 71086 72030",
-	"SPELL_MISSED 71086 71743 71086 72030",
-	"CHAT_MSG_MONSTER_YELL"
+	"SPELL_MISSED 71086 71743 71086 72030"
 )
 
 local warnCorrosion			= mod:NewStackAnnounce(70751, 2, nil, false)
@@ -194,7 +197,9 @@ end
 mod.SPELL_MISSED = mod.SPELL_DAMAGE
 
 function mod:CHAT_MSG_MONSTER_YELL(msg)
-	if (msg == L.YellPortals or msg:find(L.YellPortals)) and self:LatencyCheck() then
+	if (msg == L.YellPull or msg:find(L.YellPull)) and not self:IsInCombat() then
+		DBM:StartCombat(self, 0)
+	elseif (msg == L.YellPortals or msg:find(L.YellPortals)) and self:LatencyCheck() then
 		self:SendSync("NightmarePortal")
 	end
 end
