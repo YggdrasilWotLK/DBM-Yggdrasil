@@ -9866,7 +9866,20 @@ do
 					tremove(self.startedTimers, i)
 				end
 			end
-			timer = timer and ((timer > 0 and timer) or self.timer + timer) or self.timer
+			local rangeMinArg, rangeMinOnce = timer, self._rangeMin
+		self._rangeMin = nil
+		timer = timer and ((timer > 0 and timer) or self.timer + timer) or self.timer
+		local rangeMin, isRange
+		if self.isRangeTimer or rangeMinOnce ~= nil then
+			isRange = true
+			if rangeMinOnce ~= nil then
+				rangeMin = rangeMinOnce--Range override from StartRange
+			elseif rangeMinArg == nil then
+				rangeMin = self.minRange--No args: use constructor window
+			else
+				rangeMin = timer--Single number: fixed bar, no range
+			end
+		end
 			local id = self.id..pformat((("\t%s"):rep(select("#", ...))), ...)
 			--AI timer api:
 			--Starting ai timer with (1) indicates it's a first timer after pull
@@ -9965,6 +9978,13 @@ do
 				end
 			end
 			msg = msg:gsub(">.-<", stripServerName)
+			if isRange then
+				if rangeMin and timer > rangeMin then
+					bar:SetRange(rangeMin, timer)
+				else
+					bar:ClearRange()
+				end
+			end
 			bar:SetText(msg, self.inlineIcon)
 			--ID: Internal DBM timer ID
 			--msg: Timer Text (Do not use msg has an event trigger, it varies language to language or based on user timer options. Use this to DISPLAY only (such as timer replacement UI). use spellId field 99% of time
@@ -10001,6 +10021,18 @@ do
 		end
 	end
 	timerPrototype.Show = timerPrototype.Start
+
+	-- Starts a one-off [min, max] window on any timer: two-tone fill-up bar
+	-- plus a live "min-max" countdown. Extra args behave exactly like Start.
+	-- (On NewCDRangeTimer/NewNextRangeTimer objects, plain Start() with no
+	-- args uses the constructor window and Start(fixed) shows a plain bar.)
+	function timerPrototype:StartRange(min, max, ...)
+		if min == nil then min = self.minRange end
+		if max == nil then max = self.maxRange end
+		if min == nil or max == nil then return false, "no range" end
+		self._rangeMin = min
+		return self:Start(max, ...)
+	end
 
 	--A way to set the fade to yes or no, overriding hardcoded value in NewTimer object with temporary one
 	--If this method is used, it WILL persist until reload or changing it back
@@ -10508,6 +10540,20 @@ do
 		return newTimer(self, "cd", ...)
 	end
 
+	-- Cooldown timer for abilities with a random [minTimer, maxTimer] window (core Repeat(min, max)).
+	-- The bar spans maxTimer; text shows "Name (min-max)" with a thin extension strip.
+	-- Start() with no args uses the constructor window, Start(fixed) shows a plain
+	-- bar, StartRange(min, max, ...) overrides the window for one start.
+	function bossModPrototype:NewCDRangeTimer(minTimer, maxTimer, spellId, ...)
+		local obj = newTimer(self, "cd", maxTimer, spellId, ...)
+		if obj then
+			obj.isRangeTimer = true
+			obj.minRange = minTimer
+			obj.maxRange = maxTimer
+		end
+		return obj
+	end
+
 	function bossModPrototype:NewCDCountTimer(...)
 		return newTimer(self, "cdcount", ...)
 	end
@@ -10518,6 +10564,18 @@ do
 
 	function bossModPrototype:NewNextTimer(...)
 		return newTimer(self, "next", ...)
+	end
+
+	-- Next timer for abilities with a random [minTimer, maxTimer] window. Same
+	-- semantics as NewCDRangeTimer but keeps the "next" timer type/option ID.
+	function bossModPrototype:NewNextRangeTimer(minTimer, maxTimer, spellId, ...)
+		local obj = newTimer(self, "next", maxTimer, spellId, ...)
+		if obj then
+			obj.isRangeTimer = true
+			obj.minRange = minTimer
+			obj.maxRange = maxTimer
+		end
+		return obj
 	end
 
 	function bossModPrototype:NewNextCountTimer(...)

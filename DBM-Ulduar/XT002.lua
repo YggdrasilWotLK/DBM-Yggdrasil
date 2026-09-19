@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("XT002", "DBM-Ulduar")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220701220005")
+mod:SetRevision("20260914090752")
 mod:SetCreatureID(33293)
 mod:SetUsedIcons(1, 2)
 

@@ -1,0 +1,82 @@
+name: Bump version
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.toc'
+
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: "!contains(github.event.head_commit.message, '[skip version]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update SetRevision in changed lua files
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then BEFORE="HEAD~1"; fi
+          STAMP=$(git show -s --format=%cd --date=format-local:%Y%m%d%H%M%S "${{ github.sha }}")
+          echo "stamp $STAMP"
+          for f in $(git diff --name-only "$BEFORE" "${{ github.sha }}" -- '*.lua'); do
+            if [ -f "$f" ] && grep -q 'SetRevision("[0-9]*")' "$f"; then
+              python3 - "$f" "$STAMP" <<'PYEOF'
+              import re, sys
+              f, stamp = sys.argv[1], sys.argv[2]
+              src = open(f).read()
+              nsrc, n = re.subn(r'SetRevision\("[0-9]+"\)', 'SetRevision("%s")' % stamp, src)
+              if n:
+                  open(f, 'w').write(nsrc)
+                  print('revision', f)
+              PYEOF
+            fi
+          done
+
+      - name: Bump version stamps
+        run: |
+          NOW=$(date -u +%Y%m%d%H%M%S)
+          python3 - <<EOF
+          import glob, re
+          now = "$NOW"
+          def bumped_ver(ver):
+              core, *suffix = ver.split('-', 1)
+              nums = core.split('.')
+              nums[-1] = str(int(nums[-1]) + 1)
+              return '.'.join(nums) + ('-' + suffix[0] if suffix else '')
+          def bump(m):
+              return m.group(0)[:m.start(1) - m.start(0)] + bumped_ver(m.group(1))
+          targets = sorted(glob.glob('**/*.toc', recursive=True))
+          targets.append('DBM-Core/DBM-Core.lua')
+          for f in targets:
+              src = open(f).read()
+              nsrc, n = re.subn(r'(?:## Version: |DisplayVersion = ")([^"\s]+)', bump, src)
+              nsrc, n2 = re.subn(r'parseCurseDate\("\d+"\)', 'parseCurseDate("%s")' % now, nsrc)
+              if n + n2:
+                  open(f, 'w').write(nsrc)
+                  print('bumped', f)
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain -- '*.toc' '*.lua')" ]; then
+            echo "no version change"
+            exit 0
+          fi
+          git add -- '*.toc' '*.lua'
+          git commit -m "Bump addon version [skip version]"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && break
+            echo "push failed, retry $i"
+            sleep 5
+          done

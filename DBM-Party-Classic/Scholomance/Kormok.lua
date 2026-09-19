@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Kormok", "DBM-Party-Classic", 13)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220518110528")
+mod:SetRevision("20260914135658")
 mod:SetCreatureID(10447)--Kormok the Ravager
 
 mod:RegisterCombat("combat")

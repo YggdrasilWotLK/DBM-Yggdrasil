@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("ValkTwins", "DBM-Coliseum")
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220701215737")
+mod:SetRevision("20260914090706")
 mod:SetCreatureID(34497, 34496)
 mod:SetMinCombatTime(30)
 mod:SetUsedIcons(1, 2, 3, 4)

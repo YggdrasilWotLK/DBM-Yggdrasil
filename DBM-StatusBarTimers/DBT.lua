@@ -313,12 +313,14 @@ do
 			newBar:ApplyStyle()
 			newBar:SetText(id)
 			newBar:SetIcon(icon)
+			newBar:ClearRange() -- Range is re-applied by the timer after CreateBar if needed
 		else -- Create a new bar
 			newBar = next(unusedBarObjects)
 			if newBar then
 				newBar.lastUpdate = GetTime()
 				unusedBarObjects[newBar] = nil
 				newBar.dead = nil -- Resurrected it :)
+				newBar:ClearRange() -- Drop any range strip from its previous life
 				newBar.id = id
 				newBar.timer = timer
 				newBar.totalTime = timer
@@ -693,8 +695,54 @@ function DBT:ShowTestBars()
 	self:CreateBar(21.5, "Test 5", "Interface\\Icons\\Spell_Nature_WispSplode")
 end
 
+---------------------------
+--  Range Timer Support  --
+---------------------------
+-- Range bars cover a [min, max] window in ONE bar: the main (thick) bar runs
+-- the full max window, and a thinner strip underneath marks the range
+-- extension zone on the right side. Both live, move and die together since
+-- the strip is a child of the bar frame.
+local function layoutRange(self)
+	local ext = self.frame.DBRangeExt
+	if not ext then return end
+	if not (self.rangeMin and self.rangeMax and self.rangeMax > self.rangeMin) then
+		ext:Hide()
+		return
+	end
+	-- Left-anchored overlay; per-tick width tracks resizes on its own
+	local mainBar = _G[self.frame:GetName().."Bar"]
+	ext:ClearAllPoints()
+	ext:SetPoint("TOPLEFT", mainBar, "TOPLEFT", 0, 0)
+	ext:SetPoint("BOTTOMLEFT", mainBar, "BOTTOMLEFT", 0, 0)
+	ext:SetWidth(0)
+	ext:Show()
+end
+
+function barPrototype:SetRange(minTime, maxTime)
+	self.rangeMin = minTime
+	self.rangeMax = maxTime
+	local frame = self.frame
+	local ext = frame.DBRangeExt
+	if not ext then
+		-- Plain texture on ARTWORK above the fill but below spark/text (OVERLAY)
+		local mainBar = _G[frame:GetName().."Bar"]
+		ext = mainBar:CreateTexture(nil, "ARTWORK")
+		ext:SetTexture("Interface\\Buttons\\WHITE8X8")
+		ext:SetDrawLayer("ARTWORK", 7)
+		frame.DBRangeExt = ext
+	end
+	layoutRange(self)
+end
+
+function barPrototype:ClearRange()
+	self.rangeMin, self.rangeMax = nil, nil
+	local ext = self.frame.DBRangeExt
+	if ext then ext:Hide() end
+end
+
 function barPrototype:SetTimer(timer)
 	self.totalTime = timer
+	layoutRange(self)
 	self:Update(0)
 end
 
@@ -846,6 +894,31 @@ function barPrototype:Update(elapsed)
 	end
 	if timerValue <= 0 and not (barOptions.KeepBars and self.keep) then
 		return self:Cancel()
+	elseif self.rangeMin and self.rangeMax and self.rangeMax > self.rangeMin and self.rangeMin > 0 then
+		-- Range bar: two colors filling left to right. Bright hits the right
+		-- side first (at min), dark last (at max). Countdown shows whole
+		-- seconds of the remaining window, no milliseconds.
+		local rangeMinLeft = timerValue - (self.rangeMax - self.rangeMin)
+		if rangeMinLeft < 0 then rangeMinLeft = 0 end
+		timer:SetText(math.floor(rangeMinLeft).."-"..math.floor(timerValue))
+		local elapsed = totaltimeValue - timerValue
+		local brightVal = self.rangeMin > 0 and (elapsed / self.rangeMin) or 1
+		if brightVal > 1 then brightVal = 1 elseif brightVal < 0 then brightVal = 0 end
+		local darkVal = elapsed / self.rangeMax
+		if darkVal > 1 then darkVal = 1 elseif darkVal < 0 then darkVal = 0 end
+		if fillUpBars then
+			bar:SetValue(1 - brightVal)
+		else
+			bar:SetValue(brightVal)
+		end
+		local ext = self.frame.DBRangeExt
+		if ext then
+			ext:SetWidth((fillUpBars and (1 - darkVal) or darkVal) * bar:GetWidth())
+			local r, g, b = bar:GetStatusBarColor()
+			ext:SetVertexColor(r * 0.55 + 0.08, g * 0.55 + 0.08, b * 0.55 + 0.08)
+		end
+		spark:ClearAllPoints()
+		spark:SetPoint("CENTER", bar, "LEFT", (fillUpBars and (1 - brightVal) or brightVal) * bar:GetWidth(), -1)
 	else
 		if fillUpBars then
 			if currentStyle == "NoAnim" and timerValue <= enlargeTime and not enlargeHack then
@@ -1049,6 +1122,15 @@ function barPrototype:ApplyStyle()
 	local r, g, b = bar:GetStatusBarColor()
 	bar:SetStatusBarColor(r, g, b, 1)
 	bar:SetStatusBarTexture(barOptions.Texture)
+	-- Refresh the range overlay geometry; color follows the bar every tick
+	local rangeExt = self.frame.DBRangeExt
+	if rangeExt then
+		if self.rangeMin and self.rangeMax and self.rangeMax > self.rangeMin then
+			layoutRange(self)
+		else
+			rangeExt:Hide()
+		end
+	end
 	local barFont = barOptions.Font == "standardFont" and standardFont or barOptions.Font
 	local barFontSize, barFontFlag = barOptions.FontSize, barOptions.FontFlag
 	name:SetFont(barFont, barFontSize, barFontFlag)

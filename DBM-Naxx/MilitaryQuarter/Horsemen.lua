@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Horsemen", "DBM-Naxx", 4)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20220629223621")
+mod:SetRevision("20260913231415")
 mod:SetCreatureID(16063, 16064, 16065, 30549)
 
 mod:RegisterCombat("combat", 16063, 16064, 16065, 30549)
