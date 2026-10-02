@@ -1,7 +1,7 @@
 local mod	= DBM:NewMod("Nefarian-Classic", "DBM-BWL", 1)
 local L		= mod:GetLocalizedStrings()
 
-mod:SetRevision("20260919191218")
+mod:SetRevision("20261002115121")
 mod:SetCreatureID(11583)
 
 mod:SetModelID(11380)

@@ -1,7 +1,7 @@
 local mod = DBM:NewMod("Thekal", "DBM-ZG", 1)
 local L = mod:GetLocalizedStrings()
 
-mod:SetRevision("20260914171922")
+mod:SetRevision("20261002115121")
 mod:SetCreatureID(14509, 11348, 11347)
 
 mod:SetBossHPInfoToHighest()
