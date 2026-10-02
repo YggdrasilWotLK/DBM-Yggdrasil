@@ -22,7 +22,7 @@ local warnBubble		= mod:NewSpellAnnounce(37854, 4)
 
 local specWarnMurlocs	= mod:NewSpecialWarning("SpecWarnMurlocs")
 
-local timerGraveCD		= mod:NewCDTimer(25, 38049--Core 25s (was 28.5), nil, nil, nil, 3)
+local timerGraveCD		= mod:NewCDTimer(25, 38049, nil, nil, nil, 3)--Core 25s (was 28.5)
 local timerMurlocs		= mod:NewTimer(51, "TimerMurlocs", 39088, nil, nil, 1)
 local timerBubble		= mod:NewBuffActiveTimer(35, 37854, nil, nil, nil, 1)
 

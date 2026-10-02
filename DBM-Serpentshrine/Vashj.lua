@@ -10,7 +10,7 @@ mod:SetUsedIcons(1)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_AURA_APPLIED 38280 38575 38574"--38574 is the core toxic ID, 38575 kept as fallback,
+	"SPELL_AURA_APPLIED 38280 38575 38574",--38574 is the core toxic ID, 38575 kept as fallback
 	"SPELL_AURA_REMOVED 38280 38132",
 	"SPELL_CAST_START 38253 38017",
 	"SPELL_CAST_SUCCESS 38316",

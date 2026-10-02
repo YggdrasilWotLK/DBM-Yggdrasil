@@ -13,7 +13,7 @@ mod:RegisterEvents(
 )
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_START 22539 22686 22678"--22678 P1 Fear, 22686 P3 Bellowing Roar,
+	"SPELL_CAST_START 22539 22686 22678",--22678 P1 Fear, 22686 P3 Bellowing Roar
 	"SPELL_AURA_APPLIED 22687 22667",
 	"UNIT_DIED",
 	"UNIT_HEALTH mouseover target"

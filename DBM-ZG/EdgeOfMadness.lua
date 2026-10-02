@@ -7,7 +7,7 @@ mod:SetCreatureID(15083)
 mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 24684 24699 24683 24664 8269"--24664 Sleep + 8269 Frenzy are the core IDs; old IDs kept as fallback where DBC-real,
+	"SPELL_CAST_SUCCESS 24684 24699 24683 24664 8269",--24664 Sleep + 8269 Frenzy are the core IDs; old IDs kept as fallback where DBC-real
 	"SPELL_AURA_APPLIED 24664 8269",
 	"SPELL_SUMMON 24728 24683"
 )
