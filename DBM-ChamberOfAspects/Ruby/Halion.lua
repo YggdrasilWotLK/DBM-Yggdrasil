@@ -11,7 +11,7 @@ mod:RegisterCombat("combat")
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 74806 75954 75955 75956 74525 74526 74527 74528 74768",
-	"SPELL_CAST_SUCCESS 74792 74562 74638",
+	"SPELL_CAST_SUCCESS 74792 74562",
 	"SPELL_AURA_APPLIED 74792 74562",
 	"SPELL_AURA_REMOVED 74792 74562",
 	"SPELL_DAMAGE",
@@ -144,16 +144,6 @@ function mod:SPELL_CAST_SUCCESS(args)--We use spell cast success for debuff time
 		timerFieryConsumptionCD:Start()--Core 25s always
 		if self:LatencyCheck() then
 			self:SendSync("FieryCD")
-		end
-	elseif spellId == 74638 and self:AntiSpam(5, "MeteorCast") then -- Meteor targeting (CLEU fallback for yell)
-		warningMeteor:Play("meteorrun")
-		if not self.Options.AnnounceAlternatePhase then
-			warningMeteor:Show()
-			timerMeteorCast:Start()
-			timerMeteorCD:Start()
-		end
-		if self:LatencyCheck() then
-			self:SendSync("Meteor")
 		end
 	end
 end
