@@ -9,7 +9,7 @@ mod:RegisterCombat("combat", 39751, 39899)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 74509",
-	"SPELL_AURA_APPLIED 75125 74502 74503 74504 74505",
+	"SPELL_AURA_APPLIED 75125 74502 74505",
 	"SPELL_DAMAGE 40504",
 	"SPELL_MISSED 40504",
 	"UNIT_HEALTH boss1"
@@ -196,7 +196,7 @@ function mod:SPELL_AURA_APPLIED(args)
 				warnWhirlwind2:Show()
 				timerWhirlwind2:Show()
 			end
-		elseif args:IsSpellID(74502, 74503, 74504, 74505) and self:IsInCombat() then--Only do this when boss is actually engaged, otherwise it doesn't really matter and just spams.
+		elseif args:IsSpellID(74502, 74505) and self:IsInCombat() then--Only do this when boss is actually engaged, otherwise it doesn't really matter and just spams.
 		brandTargets[#brandTargets + 1] = args.destName
 		timerBrandCD:Start()
 			if args:IsPlayer() then
