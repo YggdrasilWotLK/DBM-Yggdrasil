@@ -12,8 +12,8 @@ mod:RegisterCombat("combat")
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 74806 75954 75955 75956 74525 74526 74527 74528 74768",
 	"SPELL_CAST_SUCCESS 74792 74562",
-	"SPELL_AURA_APPLIED 74792 74562 74807",
-	"SPELL_AURA_REMOVED 74792 74562 74807",
+	"SPELL_AURA_APPLIED 74792 74562",
+	"SPELL_AURA_REMOVED 74792 74562",
 	"SPELL_DAMAGE",
 	"SPELL_MISSED",
 	"CHAT_MSG_MONSTER_YELL",
@@ -25,13 +25,7 @@ mod:RegisterEventsInCombat(
 -- General
 local berserkTimer					= mod:NewBerserkTimer(480)
 
--- Realm gating: core marks every player inside the twilight realm with aura 74807
--- (see boss_halion.cpp: fiery targets require -74807, soul targets require +74807).
--- Physical timers (meteor/fiery/flame breath) show only WITHOUT the aura,
--- twilight timers (cutter/soul/dark breath) only WITH it. Personal run-out
--- warnings on yourself always fire.
--- AnnounceAlternatePhase (default OFF) opts back into seeing both realms.
-mod:AddBoolOption("AnnounceAlternatePhase", false, "announce")
+mod:AddBoolOption("AnnounceAlternatePhase", true, "announce")
 
 -- Stage One - Physical Realm (100%)
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(1)..": "..L.PhysicalRealm)
@@ -113,13 +107,13 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_START(args)
-	if args:IsSpellID(74806, 75954, 75955, 75956) and (playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Dark breath: twilight realm only
+	if args:IsSpellID(74806, 75954, 75955, 75956) then
 		warningShadowBreath:Show()
 		timerShadowBreathCD:Start()
-	elseif args:IsSpellID(74525, 74526, 74527, 74528) and (not playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Flame breath: physical realm only
+	elseif args:IsSpellID(74525, 74526, 74527, 74528) then
 		warningFieryBreath:Show()
 		timerFieryBreathCD:Start()
-	elseif args.spellId == 74768 and (playerInShadowRealm or self.Options.AnnounceAlternatePhase) and self:AntiSpam(7, "CutterCast") then -- Twilight Cutter orb cast (CLEU fallback for yell, twilight realm only)
+	elseif args.spellId == 74768 and self:AntiSpam(7, "CutterCast") then -- Twilight Cutter orb cast (CLEU fallback for yell)
 		self:TwilightCutterWarn()
 	end
 end
@@ -127,7 +121,7 @@ end
 function mod:TwilightCutterWarn()
 	specWarnTwilightCutter:Schedule(5)
 	specWarnTwilightCutter:ScheduleVoice(5, "farfromline")
-	if playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Twilight realm only, never outside (unless opted into both)
+	if not self.Options.AnnounceAlternatePhase then
 		timerTwilightCutterCD:Cancel()
 		warningTwilightCutter:Show()
 		timerTwilightCutterCast:Start()
@@ -141,12 +135,12 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)--We use spell cast success for debuff timers in case it gets resisted by a player we still get CD timer for next one
 	local spellId = args.spellId
-	if spellId == 74792 and (playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Twilight realm only
+	if spellId == 74792 then
 		timerShadowConsumptionCD:Start()--Core 20s always
 		if self:LatencyCheck() then
 			self:SendSync("ShadowCD")
 		end
-	elseif spellId == 74562 and (not playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Physical realm only
+	elseif spellId == 74562 then
 		timerFieryConsumptionCD:Start()--Core 25s always
 		if self:LatencyCheck() then
 			self:SendSync("FieryCD")
@@ -156,10 +150,7 @@ end
 
 function mod:SPELL_AURA_APPLIED(args)--We don't use spell cast success for actual debuff on >player< warnings since it has a chance to be resisted.
 	local spellId = args.spellId
-	if spellId == 74807 and args:IsPlayer() then--Twilight realm phasing on self (core applies 74807 on portal entry, removes on exit)
-		playerInShadowRealm = true
-		return
-	elseif spellId == 74792 and (playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Twilight realm only
+	if spellId == 74792 then
 		if self:LatencyCheck() then
 			self:SendSync("ShadowTarget", args.destName)
 		end
@@ -168,13 +159,13 @@ function mod:SPELL_AURA_APPLIED(args)--We don't use spell cast success for actua
 			specWarnShadowConsumption:Play("runout")
 			yellShadowconsumption:Yell()
 		end
-		if playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Twilight realm only
+		if not self.Options.AnnounceAlternatePhase then
 			warningShadowConsumption:Show(args.destName)
 		end
 		if self.Options.SetIconOnShadowConsumption then
 			self:SetIcon(args.destName, 3)
 		end
-	elseif spellId == 74562 and (not playerInShadowRealm or self.Options.AnnounceAlternatePhase) then--Physical realm only
+	elseif spellId == 74562 then
 		if self:LatencyCheck() then
 			self:SendSync("FieryTarget", args.destName)
 		end
@@ -183,7 +174,7 @@ function mod:SPELL_AURA_APPLIED(args)--We don't use spell cast success for actua
 			specWarnFieryCombustion:Play("runout")
 			yellFieryCombustion:Yell()
 		end
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Physical realm only
+		if not self.Options.AnnounceAlternatePhase then
 			warningFieryCombustion:Show(args.destName)
 		end
 		if self.Options.SetIconOnFireConsumption then
@@ -194,10 +185,7 @@ end
 
 function mod:SPELL_AURA_REMOVED(args)
 	local spellId = args.spellId
-	if spellId == 74807 and args:IsPlayer() then--Left twilight realm (portal exit / wipe)
-		playerInShadowRealm = false
-		return
-	elseif spellId == 74792 then
+	if spellId == 74792 then
 		if self.Options.SetIconOnShadowConsumption then
 			self:SetIcon(args.destName, 0)
 		end
@@ -209,14 +197,18 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:SPELL_DAMAGE(_, _, _, destGUID, _, _, spellId)
-	if (spellId == 74713 or spellId == 74718) and destGUID == UnitGUID("player") and self:AntiSpam() then -- Meteor fire (core IDs, physical realm only by design)
+	if (spellId == 74713 or spellId == 74718) and destGUID == UnitGUID("player") and self:AntiSpam() then -- Meteor fire (core IDs)
 		specWarnMeteorStrike:Show()
 		specWarnMeteorStrike:Play("runaway")
-	-- NOTE: realm tracking is aura-based (74807 on player), see SPELL_AURA_APPLIED/REMOVED.
+	-- Physical/Shadow Realm detection:
+	-- OnCombatStarts already defines playerInShadowRealm as false.
+	-- Code below is meant to handle P2 and P3
 	elseif self:GetCIDFromGUID(destGUID) == 39863 and self.Options.HealthFrame and playerInShadowRealm then -- check if Physical Realm boss exists and playerInShadowRealm is still cached as true
+		playerInShadowRealm = false
 		DBM.BossHealth:Clear()
 		DBM.BossHealth:AddBoss(39863, L.NormalHalion)
 	elseif self:GetCIDFromGUID(destGUID) == 40142 and self.Options.HealthFrame and not playerInShadowRealm then -- check if Shadow Realm boss exists
+		playerInShadowRealm = true
 		DBM.BossHealth:Clear()
 		DBM.BossHealth:AddBoss(40142, L.TwilightHalion)
 	end
@@ -274,7 +266,7 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		self:SendSync("Phase3")
 	elseif msg == L.MeteorCast or msg:find(L.MeteorCast) then--There is no CLEU cast trigger for meteor, only yell
 		warningMeteor:Play("meteorrun")
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Physical realm only (boss P1/P3), never for shadow players
+		if not self.Options.AnnounceAlternatePhase then
 			warningMeteor:Show()
 			timerMeteorCast:Start()--7 seconds from boss yell the meteor impacts.
 			timerMeteorCD:Start()
@@ -291,7 +283,7 @@ end
 
 function mod:OnSync(msg, target)
 	if msg == "TwilightCutter" then
-		if (playerInShadowRealm or self.Options.AnnounceAlternatePhase) and self:AntiSpam(7, msg) then
+		if self.Options.AnnounceAlternatePhase and self:AntiSpam(7, msg) then
 			timerTwilightCutterCD:Cancel()
 			warningTwilightCutter:Show()
 			timerTwilightCutterCast:Start()
@@ -299,25 +291,25 @@ function mod:OnSync(msg, target)
 			timerTwilightCutterCD:Schedule(29)
 		end
 	elseif msg == "Meteor" then
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then
+		if self.Options.AnnounceAlternatePhase then
 			warningMeteor:Show()
 			timerMeteorCast:Start()
 			timerMeteorCD:Start()
 		end
 	elseif msg == "ShadowTarget" then
-		if playerInShadowRealm or self.Options.AnnounceAlternatePhase then
+		if self.Options.AnnounceAlternatePhase then
 			warningShadowConsumption:Show(target)
 		end
 	elseif msg == "FieryTarget" then
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then
+		if self.Options.AnnounceAlternatePhase then
 			warningFieryCombustion:Show(target)
 		end
 	elseif msg == "ShadowCD" then
-		if playerInShadowRealm or self.Options.AnnounceAlternatePhase then
+		if self.Options.AnnounceAlternatePhase then
 			timerShadowConsumptionCD:Start()--Core 20s always
 		end
 	elseif msg == "FieryCD" then
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then
+		if self.Options.AnnounceAlternatePhase then
 			timerFieryConsumptionCD:Start()--Core 25s always
 		end
 	elseif msg == "Phase2" and self.vb.phase < 2 then
@@ -327,19 +319,15 @@ function mod:OnSync(msg, target)
 		timerFieryConsumptionCD:Cancel()
 		warnPhase2:Show()
 		warnPhase2:Play("ptwo")
-		if playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Seed shadow timers only for players inside (rest pick them up on first casts after portal entry)
-			timerShadowBreathCD:Start(13) -- Core 10-15s
-			timerShadowConsumptionCD:Start(20)--Core 20s
-			timerTwilightCutterCD:Start(16)--Core 16s first
-		end
+		timerShadowBreathCD:Start(13) -- Core 10-15s
+		timerShadowConsumptionCD:Start(20)--Core 20s
+		timerTwilightCutterCD:Start(16)--Core 16s first
 	elseif msg == "Phase3" and self.vb.phase < 3 then
 		self:SetStage(3)
 		warnPhase3:Show()
 		warnPhase3:Play("pthree")
-		if not playerInShadowRealm or self.Options.AnnounceAlternatePhase then--Boss under 51% (P3) and player outside: physical fight resumes, show meteor/fire. Shadow players never see these.
-			timerMeteorCD:Start(30) --Estimate, core never re-seeds meteor in P3.
-			timerFieryConsumptionCD:Start(25)--Core 25s repeat (estimate from P3 start)
-		end
+		timerMeteorCD:Start(30) --Estimate, core never re-seeds meteor in P3.
+		timerFieryConsumptionCD:Start(25)--Core 25s repeat (estimate from P3 start)
 	elseif msg == "Phase3soon" and not self.vb.warned_preP3 then
 		self.vb.warned_preP3 = true
 		warnPhase3Soon:Show()
