@@ -21,7 +21,7 @@
 ## LoadOnDemand: 1
 ## DefaultState: enabled
 ## Author: MysticalOS, QartemisT
-## Version: 1.0.10-ygg
+## Version: 1.0.11-ygg
 
 localization.en.lua
 localization.de.lua
