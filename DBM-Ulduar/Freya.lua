@@ -10,7 +10,7 @@ mod:SetUsedIcons(4, 5, 6, 7, 8)
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 62437 62859 62623 62872",
-	"SPELL_CAST_SUCCESS 62678 62673 62619 63571 62589 64650 63601",
+	"SPELL_CAST_SUCCESS 62678 62673 62619 63571 62589 64650 64587",
 	"SPELL_AURA_APPLIED 62283 62438 62439 62861 62862 62930 62451 62865",
 	"SPELL_AURA_REMOVED 62519 62861 62438 63571 62589",
 	"UNIT_DIED",
@@ -150,16 +150,12 @@ function mod:SPELL_CAST_SUCCESS(args)
 			warnNatureFury:Show(args.destName)
 		end
 		timerNatureFury:Start(args.destName)
-	elseif spellId == 64650 then -- Nature Bomb
+	elseif args:IsSpellID(64650, 64587) then -- Nature Bomb (core 11s fuse both modes)
 		if self:AntiSpam(1, 64650) and self:IsInCombat() then
-			timerNextNatureBomb:Start(9.95)
+			timerNextNatureBomb:Start(11)
 			specWarnNatureBomb:Cancel()
-			specWarnNatureBomb:Schedule(9.95)
+			specWarnNatureBomb:Schedule(10)
 		end
-	elseif spellId == 63601 then
-		--if self.vb.phase == 2 then
-			timerIronRootsCD:StartRange(45, 55)--Core 45-55s repeat
-		--end
 	end
 end
 
@@ -173,7 +169,9 @@ function mod:SPELL_AURA_APPLIED(args)
 		if self.Options.SetIconOnRoots then
 			self:SetIcon(args.destName, self.vb.iconId, 15)
 		end
-		timerIronRootsCD:StartRange(45, 55)
+		if args:IsSpellID(62438, 62439, 62861, 62862) then -- Freya HM roots only (core 45-55s repeat; 62283/62930 are Ironbranch-add roots on a 20s cycle)
+			timerIronRootsCD:StartRange(45, 55)
+		end
 	elseif args:IsSpellID(62451, 62865) then -- Unstable Sun Beam (core 38-48s repeat)
 		if self:AntiSpam(10, 2) then
 			timerUnstableBeamCD:StartRange(38, 48)

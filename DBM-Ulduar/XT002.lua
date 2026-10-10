@@ -11,8 +11,8 @@ mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 62776",
 	"SPELL_AURA_APPLIED 62775 63018 65121 63024 64234 63849",
 	"SPELL_AURA_REMOVED 63018 65121 63024 64234 63849",
-	"SPELL_DAMAGE 64208 64206",
-	"SPELL_MISSED 64208 64206"
+	"SPELL_DAMAGE 64208 64206 46262",
+	"SPELL_MISSED 64208 64206 46262"
 )
 
 -- General
@@ -104,7 +104,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	elseif spellId == 63849 then
 		self:SetStage(2)
 		timerHeart:Start()
-		timerTympanicTantrumCD:Start(60) -- Core reschedules 1min after heart phase
+		timerTympanicTantrumCD:Start(94) -- Core: cancelled on expose, rearmed 30s restore + 4s emote + 60s (no rearm in hard mode)
 	end
 end
 
@@ -124,7 +124,7 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:SPELL_DAMAGE(_, _, _, destGUID, _, _, spellId)
-	if (spellId == 64208 or spellId == 64206) and destGUID == UnitGUID("player") and self:AntiSpam() then
+	if (spellId == 64208 or spellId == 64206 or spellId == 46262) and destGUID == UnitGUID("player") and self:AntiSpam() then--46262 is core's HM void zone damage
 		specWarnConsumption:Show()
 		specWarnConsumption:Play("watchfeet")
 	end

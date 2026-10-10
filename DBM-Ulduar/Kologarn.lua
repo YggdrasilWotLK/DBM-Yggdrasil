@@ -8,11 +8,11 @@ mod:SetUsedIcons(5, 6, 7, 8)
 mod:RegisterCombat("combat", 32930, 32933, 32934)
 
 mod:RegisterEventsInCombat(
-	"SPELL_CAST_SUCCESS 63356 64003 62166 63981",
+	"SPELL_CAST_SUCCESS 63356 64003 63573 64006 62166 63981",
 	"SPELL_AURA_APPLIED 64290 64292",
 	"SPELL_AURA_REMOVED 64290 64292",
-	"SPELL_DAMAGE 63783 63982 63346 63976",
-	"SPELL_MISSED 63783 63982 63346 63976",
+	"SPELL_DAMAGE 63783 63982 63346 63976 63347 63977",
+	"SPELL_MISSED 63783 63982 63346 63976 63347 63977",
 	"CHAT_MSG_RAID_BOSS_WHISPER",
 	"UNIT_DIED",
 	"UNIT_SPELLCAST_SUCCEEDED boss1"
@@ -90,9 +90,9 @@ function mod:OnCombatEnd()
 end
 
 function mod:SPELL_CAST_SUCCESS(args)
-	if args:IsSpellID(63356, 64003) then -- Overhead Smash (both 10/25 IDs)
+	if args:IsSpellID(63356, 64003, 63573, 64006) then -- Overhead Smash (two-armed 63356/64003, one-armed 63573/64006)
 		timerNextSmash:Start()
-	elseif args.IsSpellID(62166, 63981) then -- Stone Grip
+	elseif args:IsSpellID(62166, 63981) then -- Stone Grip
 		timerNextGrip:Start()
 	end
 end
@@ -148,7 +148,7 @@ function mod:UNIT_DIED(args)
 end
 
 function mod:SPELL_DAMAGE(_, _, _, destGUID, destName, _, spellId)
-	if (spellId == 63346 or spellId == 63976) and self:AntiSpam(2, 2) then
+	if (spellId == 63346 or spellId == 63976 or spellId == 63347 or spellId == 63977) and self:AntiSpam(2, 2) then
 		if destGUID == UnitGUID("player") then
 			specWarnEyebeam:Show()
 		else

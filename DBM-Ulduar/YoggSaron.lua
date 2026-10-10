@@ -83,7 +83,7 @@ local warnBrainPortalSoon			= mod:NewAnnounce("WarnBrainPortalSoon", 2, 57687, n
 
 local specWarnBrainPortalSoon		= mod:NewSpecialWarning("SpecWarnBrainPortalSoon", false, nil, nil, nil, nil, nil, 57687, 64027)
 
-local timerBrainPortal				= mod:NewTimer(20, "NextPortal", 57687, nil, nil, 5, nil, nil, nil, nil, nil, nil, nil, 64027)
+local timerBrainPortal				= mod:NewTimer(25, "NextPortal", 57687, nil, nil, 5, nil, nil, nil, nil, nil, nil, nil, 64027)--Core 25s portal lifetime, 60s first / 80s repeat
 
 -- Influence Tentacle
 -- mod:AddTimerLine(L.InfluenceTentacle)
@@ -290,7 +290,7 @@ function mod:SPELL_AURA_APPLIED(args)
 	elseif spellId == 63894 and self.vb.phase < 2 then	-- Shadowy Barrier of Yogg-Saron (this is happens when p2 starts)
 		self:SetStage(2)
 		timerMaladyCD:Start(7)--Core 7s first
-		timerBrainLinkCD:Start(5)--Core 0ms first; 5s grace for transition
+		timerBrainLinkCD:Start(2)--Core 0ms after spawn handler (~1-2s after barrier)
 		timerBrainPortal:Start(60)--Core 60s first
 		warnBrainPortalSoon:Schedule(55)
 		specWarnBrainPortalSoon:Schedule(55)
@@ -362,11 +362,14 @@ function mod:OnSync(msg)
 		warnBrainPortalSoon:Cancel()
 		timerMaladyCD:Cancel()
 		timerBrainLinkCD:Cancel()
-		timerEmpower:Start()
+		timerEmpower:Start(20)--Core 20s first (40s repeat set on beacon)
 		warnP3:Show()
 		warnP3:Play("pthree")
-		warnEmpowerSoon:Schedule(35)
-		timerNextDeafeningRoar:Start(50)--Core 50s (hard mode only)
-		warnDeafeningRoarSoon:Schedule(45)
+		warnEmpowerSoon:Schedule(15)
+		timerNextLunaticGaze:Start(7)--Core 7s first (12s repeat set on aura)
+		if not self:IsDifficulty("normal10", "heroic10") then--Core only schedules roar on 25-man with keepers up
+			timerNextDeafeningRoar:Start(50)--Core 50s (hard mode only)
+			warnDeafeningRoarSoon:Schedule(45)
+		end
 	end
 end

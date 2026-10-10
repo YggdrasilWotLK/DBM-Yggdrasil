@@ -27,7 +27,7 @@ local timerFlameJetsCooldown	= mod:NewCDTimer(25, 63472, nil, nil, nil, 2, nil, 
 local timerScorchCooldown		= mod:NewCDTimer(20, 62546, nil, nil, nil, 5)--Core 10s first, 20s repeat
 local timerScorchCast			= mod:NewCastTimer(3, 62546)
 local timerSlagPot				= mod:NewTargetTimer(10, 63477, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
-local timerGrabCD				= mod:NewCDTimer(24, 62707, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 25s first, ~24s repeat
+local timerGrabCD				= mod:NewCDTimer(30, 62707, nil, "Tank", nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 25s first, 24s + 6s delay = 30s repeat
 local timerAchieve				= mod:NewAchievementTimer(240, 2930)
 
 mod.vb.ConstructCount = 0
@@ -81,7 +81,7 @@ function mod:SPELL_CAST_SUCCESS(args)
 end
 
 function mod:SPELL_AURA_APPLIED(args)
-	if args:IsSpellID(62717, 63477) then		-- Slag Pot (core grab 25s/~24s + 6s delay)
+	if args:IsSpellID(62717, 63477) then		-- Slag Pot (core grab repeats 30s from cast)
 		warnSlagPot:Show(args.destName)
 		timerSlagPot:Start(args.destName)
 		timerGrabCD:Start()

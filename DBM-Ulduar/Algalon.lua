@@ -36,7 +36,7 @@ local timerNextBigBang			= mod:NewNextTimer(90.5, 64584, nil, nil, nil, 2)
 local timerBigBangCast			= mod:NewCastTimer(8, 64584, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerNextCollapsingStar	= mod:NewTimer(60, "NextCollapsingStar", "Interface\\Icons\\INV_Enchant_EssenceCosmicGreater", nil, nil, 2, DBM_COMMON_L.HEALER_ICON)--Core 16.5s first, 60s repeat
 local timerCDCosmicSmash		= mod:NewCDTimer(25.5, 64596, nil, nil, nil, 3)--Core 25s first, 25.5s repeat
-local timerCastCosmicSmash		= mod:NewCastTimer(4.5, 64596)
+local timerCastCosmicSmash		= mod:NewCastTimer(4, 64596)--Core 4s impact delay
 local timerPhasePunch			= mod:NewTargetTimer(45, 64412, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local timerNextPhasePunch		= mod:NewNextTimer(15.5, 64412, nil, "Tank", 2, 5, nil, DBM_COMMON_L.TANK_ICON)
 local enrageTimer				= mod:NewBerserkTimer(360)
@@ -147,9 +147,20 @@ end
 function mod:UNIT_HEALTH(uId)
 	local cid = self:GetUnitCreatureId(uId)
 	local guid = UnitGUID(uId)
-	if cid == 32871 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.23 and not self.vb.warned_preP2 then
-		self.vb.warned_preP2 = true
-		warnPhase2Soon:Show()
+	if cid == 32871 and self.vb.phase < 2 then--Core P2 at 20% (65256 self-stun is never cast on this core, use health)
+		local hp = UnitHealth(uId) / UnitHealthMax(uId)
+		if hp <= 0.20 then
+			self:SetStage(2)
+			self.vb.warned_preP2 = true
+			timerNextCollapsingStar:Stop()
+			warnPhase2:Show()
+			warnPhase2:Play("ptwo")
+			DBM.BossHealth:Clear()
+			DBM.BossHealth:AddBoss(32871)
+		elseif hp <= 0.23 and not self.vb.warned_preP2 then
+			self.vb.warned_preP2 = true
+			warnPhase2Soon:Show()
+		end
 	elseif cid == 32955 and UnitHealth(uId) / UnitHealthMax(uId) <= 0.25 and not warned_star[guid] then
 		warned_star[guid] = true
 		specwarnStarLow:Show()
@@ -158,12 +169,12 @@ end
 
 function mod:UNIT_SPELLCAST_SUCCEEDED(_, spellName)
 	if spellName == GetSpellInfo(65311) then--Supermassive Fail (fires when he becomes actually active)
-		timerNextCollapsingStar:Start(16)
-		timerCDCosmicSmash:Start(26)
+		timerNextCollapsingStar:Start(16.5)--Core 16.5s first
+		timerCDCosmicSmash:Start(25)--Core 25s first
 		announcePreBigBang:Schedule(80)
 		timerNextBigBang:Start(90)
 		enrageTimer:Start(360)
-	elseif spellName == GetSpellInfo(65256) then--Self Stun (phase 2)
+	elseif spellName == GetSpellInfo(65256) and self.vb.phase < 2 then--Self Stun (phase 2 fallback)
 		self:SetStage(2)
 		self.vb.warned_preP2 = true
 		timerNextCollapsingStar:Stop()

@@ -31,10 +31,10 @@ local specWarnDevouringFlameYou		= mod:NewSpecialWarningYou(64733, false, nil, n
 local specWarnDevouringFlameNear	= mod:NewSpecialWarningClose(64733, false, nil, nil, 1, 2)
 local yellDevouringFlame			= mod:NewYell(64733)
 
-local timerTurret1					= mod:NewTimer(53, "timerTurret1", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- 25 man log review (2022/07/10)
-local timerTurret2					= mod:NewTimer(73, "timerTurret2", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- 25 man log review (2022/07/10)
-local timerTurret3					= mod:NewTimer(93, "timerTurret3", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- 25 man log review (2022/07/10)
-local timerTurret4					= mod:NewTimer(113, "timerTurret4", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- 25 man log review (2022/07/10)
+local timerTurret1					= mod:NewTimer(45, "timerTurret1", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- Core: 10s repair start delay + ~6s engineer travel + ~27s repair (25 pts, 3s tick x 3 engineers)
+local timerTurret2					= mod:NewTimer(75, "timerTurret2", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- Core: +~30s per turret (27s repair + inter-turret travel)
+local timerTurret3					= mod:NewTimer(105, "timerTurret3", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- Core: +~30s per turret
+local timerTurret4					= mod:NewTimer(135, "timerTurret4", 48642, nil, nil, 5, DBM_COMMON_L.IMPORTANT_ICON) -- Core: +~30s per turret
 
 -- Stage Two
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(2))
@@ -73,17 +73,17 @@ function mod:OnCombatStart(delay)
 	enrageTimer:Start(-delay)
 	combattime = GetTime()
 	if self:IsDifficulty("normal10") then -- REVIEW. No log yet to validate this.
-		warnTurretsReadySoon:Schedule(53-delay)
-		warnTurretsReady:Schedule(73-delay)
+		warnTurretsReadySoon:Schedule(55-delay)
+		warnTurretsReady:Schedule(75-delay)
 		timerTurret1:Start(-delay)
 		timerTurret2:Start(-delay)
 	else
-		warnTurretsReadySoon:Schedule(93-delay)
-		warnTurretsReady:Schedule(113-delay)
-		timerTurret1:Start(-delay) -- 53sec
-		timerTurret2:Start(-delay) -- +20
-		timerTurret3:Start(-delay) -- +20
-		timerTurret4:Start(-delay) -- +20
+		warnTurretsReadySoon:Schedule(115-delay)
+		warnTurretsReady:Schedule(135-delay)
+		timerTurret1:Start(-delay) -- 45sec (core: 10s start delay + travel + 27s repair)
+		timerTurret2:Start(-delay) -- +30
+		timerTurret3:Start(-delay) -- +30
+		timerTurret4:Start(-delay) -- +30
 	end
 end
 
@@ -160,17 +160,17 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 	if isGrounded and (msg == L.YellAir or msg == L.YellAir2) and GetTime() - combattime > 30 then
 		isGrounded = false -- warmane resets the timers idk why
 		if self:IsDifficulty("normal10") then -- not sure?
-			warnTurretsReadySoon:Schedule(23)
-			warnTurretsReady:Schedule(43)
-			timerTurret1:Start(23)
-			timerTurret2:Start(43)
+			warnTurretsReadySoon:Schedule(45)
+			warnTurretsReady:Schedule(65)
+			timerTurret1:Start(35) -- Core: "Fires out" yell == repair restart, no start delay (~6s travel + 27s repair)
+			timerTurret2:Start(65) -- +30
 		else
-			warnTurretsReadySoon:Schedule(123)
-			warnTurretsReady:Schedule(133)
-			timerTurret1:Start(68)
-			timerTurret2:Start(88)
-			timerTurret3:Start(108)
-			timerTurret4:Start(128)
+			warnTurretsReadySoon:Schedule(105)
+			warnTurretsReady:Schedule(125)
+			timerTurret1:Start(35) -- Core: repair restarts on yell (~6s travel + 27s repair)
+			timerTurret2:Start(65) -- +30
+			timerTurret3:Start(95) -- +30
+			timerTurret4:Start(125) -- +30
 		end
 	elseif msg == L.YellGround then
 		timerGrounded:Start()

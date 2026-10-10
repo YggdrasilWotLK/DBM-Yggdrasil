@@ -117,7 +117,11 @@ function mod:SPELL_CAST_START(args)
 		specWarnSearingFlames:Show(args.sourceName, kickCount)
 		specWarnSearingFlames:Play("kick"..kickCount.."r")
 		timerSearingFlamesCast:Start()
-		timerSearingFlamesCD:Start()
+		if self:IsDifficulty("normal10", "heroic10") then--Core 15s repeat (10m) / 8s repeat (25m)
+			timerSearingFlamesCD:Start(15)
+		else
+			timerSearingFlamesCD:Start(8)
+		end
 	elseif spellId == 62662 then -- Surge of Darkness (core 63s repeat)
 		local tanking, status = UnitDetailedThreatSituation("player", "boss1")
 		if tanking or (status == 3) then--Player is current target

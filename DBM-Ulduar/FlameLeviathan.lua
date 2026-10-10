@@ -10,7 +10,7 @@ mod:RegisterCombat("yell", L.YellPull)
 mod:RegisterEventsInCombat(
 	"SPELL_AURA_APPLIED 62396 62475 62374 62533",
 	"SPELL_AURA_REMOVED 62396 62374",
-	"SPELL_SUMMON 62906 62907 62947"
+	"SPELL_SUMMON 62906 62947"
 )
 
 local warnHodirsFury		= mod:NewTargetAnnounce(62533, 3)
@@ -60,9 +60,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		timerNextFlameVents:Start()
 	elseif spellId == 62475 then	-- Systems Shutdown / Overload
 		timerSystemOverload:Start()
-		timerNextFlameVents:Stop()
-		-- Core only delays events ~0ms on shutdown; vents resume on normal 20s loop.
-		timerNextFlameVents:Start(20)
+		-- Core only delays events ~21ms on shutdown; vents stay on their 20s loop, keep running timer.
 		specWarnSystemOverload:Show()
 		specWarnSystemOverload:Play("attacktank")
 	elseif spellId == 62374 then	-- Pursued (core 31s repeat)
@@ -95,7 +93,7 @@ function mod:SPELL_AURA_REMOVED(args)
 end
 
 function mod:SPELL_SUMMON(args)
-	if args:IsSpellID(62906, 62907, 62947) and self:AntiSpam(3, 1) then		-- Ward of Life spawned (core 62906/62947)
+	if args:IsSpellID(62906, 62947) and self:AntiSpam(3, 1) then		-- Ward of Life spawned
 		specWarnWardOfLife:Show()
 		specWarnWardOfLife:Show("bigmob")
 	end

@@ -40,7 +40,8 @@ local timerOverload				= mod:NewCastTimer(6, 63481, nil, nil, nil, 2, nil, DBM_C
 local timerOverloadCD			= mod:NewCDRangeTimer(25, 40, 63481, nil, nil, nil, 2, nil, DBM_COMMON_L.IMPORTANT_ICON, nil, 1)--Core 25-40s
 local timerLightningWhirl		= mod:NewCastTimer(5, 63483, nil, nil, nil, 4, nil, DBM_COMMON_L.INTERRUPT_ICON)
 local timerLightningWhirlCD		= mod:NewCDRangeTimer(10, 25, 63483)--Core 20-40s first, 10-25s repeat
-local timerLightningTendrils	= mod:NewBuffActiveTimer(35, 63486, nil, nil, nil, 6)
+local timerLightningTendrils	= mod:NewBuffActiveTimer(16, 63486, nil, nil, nil, 6) -- Core: ~16s airtime (LAND 16s after cast)
+local timerLightningTendrilsCD	= mod:NewCDTimer(35, 63486, nil, nil, nil, 6) -- Core 15-16s first, 35s repeat
 local timerChainLightningCD		= mod:NewCDRangeTimer(9, 17, 61879, nil, nil, nil, 3)--Core 9-17s
 mod:AddBoolOption("AlwaysWarnOnOverload", false, "announce", nil, nil, nil, 63481)
 
@@ -59,7 +60,7 @@ local specWarnRuneofShields		= mod:NewSpecialWarningDispel(62274, "MagicDispelle
 local timerRuneofShields		= mod:NewBuffActiveTimer(15, 62274, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)
 local timerRuneofShieldsCD	= mod:NewCDRangeTimer(27, 34, 62274, nil, nil, nil, 5, nil, DBM_COMMON_L.MAGIC_ICON)--Core 27-34s
 local timerRuneofDeath			= mod:NewCDRangeTimer(30, 40, 63490, nil, nil, nil, 3)
-local timerRuneofPower			= mod:NewCDTimer(30, 64320, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)
+local timerRuneofPower			= mod:NewCDTimer(60, 64320, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- Core 30s first, 60s repeat
 local timerRuneofSummoning		= mod:NewCDRangeTimer(30, 45, 62273, nil, nil, nil, 1)
 
 -- Steelbreaker
@@ -73,6 +74,7 @@ local timerStaticDisruptionCD	= mod:NewCDRangeTimer(20, 40, 61911, nil, nil, nil
 local timerFusionPunchCD		= mod:NewCDRangeTimer(15, 20, 61903, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON)--Core 15-20s
 
 local timerOverwhelmingPower	= mod:NewTargetTimer(25, 61888, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.DEADLY_ICON, nil, 3)
+local timerOverwhelmingPowerCD	= mod:NewCDTimer(36, 61888, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON) -- Core 8s first, 61s (10m) / 36s (25m) repeat
 local timerFusionPunchCast		= mod:NewCastTimer(3, 61903, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.MAGIC_ICON)
 local timerFusionPunchActive	= mod:NewTargetTimer(4, 61903, nil, nil, nil, 5, nil, DBM_COMMON_L.TANK_ICON..DBM_COMMON_L.MAGIC_ICON)
 mod:AddSetIconOption("SetIconOnOverwhelmingPower", 61888, false, false, {8})
@@ -106,8 +108,7 @@ function mod:OnCombatStart(delay)
 	timerChainLightningCD:StartRange(9, 17)--Core 9-17s
 	timerFusionPunchCD:Start(15)--Core 15s first
 	timerRuneofShieldsCD:Start(20)--Core 20s first
-	timerRuneofDeath:Start(35)--Core 35s first
-	self:ScheduleMethod(30, "RuneOfPower")
+	self:ScheduleMethod(30, "RuneOfPower")--Core 30s first, 60s repeat
 	table.wipe(disruptTargets)
 	self.vb.disruptIcon = 7
 	runemasterAlive = true
@@ -123,6 +124,8 @@ function mod:OnCombatEnd()
 	timerChainLightningCD:Cancel()
 	timerRuneofDeath:Cancel()
 	timerRuneofPower:Cancel()
+	timerOverwhelmingPowerCD:Cancel()
+	timerLightningTendrilsCD:Cancel()
 	timerRuneofShieldsCD:Cancel()
 	timerRuneofSummoning:Cancel()
 	timerStaticDisruptionCD:Cancel()
@@ -207,8 +210,10 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 		if self:IsDifficulty("normal10") then
 			timerOverwhelmingPower:Start(61, args.destName)
+			timerOverwhelmingPowerCD:Start(61)
 		else
 			timerOverwhelmingPower:Start(36, args.destName)
+			timerOverwhelmingPowerCD:Start(36)
 		end
 		if self.Options.SetIconOnOverwhelmingPower then
 			if self:IsDifficulty("normal10") then
@@ -219,6 +224,7 @@ function mod:SPELL_AURA_APPLIED(args)
 		end
 	elseif args:IsSpellID(63486, 61887) then	-- Lightning Tendrils
 		timerLightningTendrils:Start()
+		timerLightningTendrilsCD:Start()
 		specwarnLightningTendrils:Show()
 		specwarnLightningTendrils:Play("justrun")
 	elseif args:IsSpellID(61911, 63495) then	-- Static Disruption cast (61912/63494 are the aura)
@@ -266,18 +272,23 @@ function mod:UNIT_DIED(args)
 	local cid = self:GetCIDFromGUID(args.destGUID)
 	if cid == 32867 then		--Steelbreaker
 		steelbreakerAlive = false
-		if runemasterAlive and brundirAlive then
-			timerRuneofDeath:StartRange(30, 40)
-			warnRuneofDeathIn10Sec:Schedule(20)
-			timerLightningWhirlCD:StartRange(10, 25)
-		elseif runemasterAlive then
-			timerRuneofSummoning:Start(25)
+		if runemasterAlive and brundirAlive then -- Phase 2: both survivors supercharged
+			timerRuneofDeath:Start(35)--Core 35s first (phase 2 only, never at pull)
+			warnRuneofDeathIn10Sec:Schedule(25)
+			timerLightningWhirlCD:StartRange(20, 40)--Core 20-40s first
+		elseif runemasterAlive then -- Phase 3: Molgeim solo
+			timerRuneofSummoning:StartRange(20, 30)--Core 20-30s first
+		elseif brundirAlive then -- Phase 3: Brundir solo
+			timerLightningTendrilsCD:StartRange(15, 16)--Core 15-16s first
 		end
 		timerFusionPunchCast:Cancel()
 	elseif cid == 32927 then	--Runemaster Molgeim
 		runemasterAlive = false
-		if brundirAlive and steelbreakerAlive then
-			timerLightningWhirlCD:StartRange(10, 25)
+		if brundirAlive and steelbreakerAlive then -- Phase 2: both survivors supercharged
+			timerLightningWhirlCD:StartRange(20, 40)--Core 20-40s first
+			timerStaticDisruptionCD:Start(20)--Core 20s first (Steelbreaker phase 2)
+		elseif steelbreakerAlive then -- Phase 3: Steelbreaker solo
+			timerOverwhelmingPowerCD:Start(8)--Core 8s first (61s/36s repeat set on aura)
 		end
 		timerRuneofDeath:Cancel()
 		warnRuneofDeathIn10Sec:Cancel()
@@ -285,11 +296,14 @@ function mod:UNIT_DIED(args)
 		self:UnscheduleMethod("RuneOfPower")
 	elseif cid == 32857 then	--Stormcaller Brundir
 		brundirAlive = false
-		if runemasterAlive and steelbreakerAlive then
-			timerRuneofDeath:StartRange(30, 40)
-			warnRuneofDeathIn10Sec:Schedule(20)
-		elseif runemasterAlive then
-			timerRuneofSummoning:Start(25)
+		if runemasterAlive and steelbreakerAlive then -- Phase 2: both survivors supercharged
+			timerRuneofDeath:Start(35)--Core 35s first (phase 2 only, never at pull)
+			warnRuneofDeathIn10Sec:Schedule(25)
+			timerStaticDisruptionCD:Start(20)--Core 20s first (Steelbreaker phase 2)
+		elseif runemasterAlive then -- Phase 3: Molgeim solo
+			timerRuneofSummoning:StartRange(20, 30)--Core 20-30s first
+		elseif steelbreakerAlive then -- Phase 3: Steelbreaker solo
+			timerOverwhelmingPowerCD:Start(8)--Core 8s first (61s/36s repeat set on aura)
 		end
 		timerOverload:Cancel()
 		timerOverloadCD:Cancel()

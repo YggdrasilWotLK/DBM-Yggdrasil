@@ -66,8 +66,6 @@ function mod:OnCombatStart()
 	enrageTimer:Start()
 	timerHardmode:Start()
 	timerStormhammerCD:Start(8)--Core 8s first
-	timerUnbalancingStrike:Start(8)--Core 8s first (phase 2)
-	timerChainLightning:Start(13)--Core 13s first
 	if self.Options.RangeFrame then
 		DBM.RangeCheck:Show(8)
 	end
@@ -185,6 +183,9 @@ function mod:OnSync(event)
 		warnPhase2:Play("ptwo")
 		enrageTimer:Stop()
 		timerHardmode:Stop()
-		enrageTimer:Start(300)
+		enrageTimer:Start(300)--Core 5min after jump-down
+		timerUnbalancingStrike:Start(8)--Core 8s first (phase 2 only)
+		timerChainLightning:Start(13)--Core 13s first (phase 2 only)
+		timerLightningCharge:Start(12.5)--Core 12.5s first (phase 2 only), 10s orb cycle after
 	end
 end

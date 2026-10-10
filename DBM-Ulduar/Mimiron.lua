@@ -14,7 +14,7 @@ mod:RegisterEvents(
 
 mod:RegisterEventsInCombat(
 	"SPELL_CAST_START 63631 64529 62997 64570 64623 64383",
-	"SPELL_CAST_SUCCESS 63027 63414 65192",
+	"SPELL_CAST_SUCCESS 63414 65192",
 	"SPELL_AURA_APPLIED 63666 65026 64529 62997 64616",
 	"SPELL_AURA_REMOVED 63666 65026",
 	"SPELL_SUMMON 63811",
@@ -25,9 +25,9 @@ mod:RegisterEventsInCombat(
 
 --General
 local timerEnrage					= mod:NewBerserkTimer(900)
-local timerP1toP2					= mod:NewTimer(41, "TimeToPhase2", nil, nil, nil, 6)
-local timerP2toP3					= mod:NewTimer(15, "TimeToPhase3", nil, nil, nil, 6)
-local timerP3toP4					= mod:NewTimer(30, "TimeToPhase4", nil, nil, nil, 6)
+local timerP1toP2					= mod:NewTimer(43, "TimeToPhase2", nil, nil, nil, 6)--Core ~43s from P1 death yell (5+6+6+18+4+5+2+1.75 chain, yell at +5s)
+local timerP2toP3					= mod:NewTimer(17, "TimeToPhase3", nil, nil, nil, 6)--Core ~17s from P2 death yell
+local timerP3toP4					= mod:NewTimer(27, "TimeToPhase4", nil, nil, nil, 6)--Core ~27s from P3 death yell (5s yell +5+4+4.8+3+10 chain)
 
 mod:AddRangeFrameOption("6")
 
@@ -39,7 +39,7 @@ local warnPlasmaBlast				= mod:NewTargetNoFilterAnnounce(64529, 4, nil, "Tank|He
 local specWarnShockBlast			= mod:NewSpecialWarningRun(63631, "Melee", nil, nil, 4, 2)
 local specWarnPlasmaBlast			= mod:NewSpecialWarningDefensive(64529, nil, nil, nil, 1, 2)
 
-local timerProximityMines			= mod:NewCDTimer(25, 63027, nil, nil, nil, 3)
+local timerProximityMines			= mod:NewCDTimer(8, 63027, nil, nil, nil, 3)--Core event-driven: 6s initial, then 8s after each Shock Blast
 local timerShockBlast				= mod:NewCastTimer(4, 63631, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerNextShockBlast			= mod:NewNextTimer(30, 63631, nil, nil, nil, 2, nil, DBM_COMMON_L.DEADLY_ICON)--Core 20s first, 30s repeat
 local timerNapalmShell				= mod:NewBuffActiveTimer(6, 63666, nil, "Healer", 2, 5, nil, DBM_COMMON_L.IMPORTANT_ICON..DBM_COMMON_L.HEALER_ICON)
@@ -56,7 +56,7 @@ local specWarnRocketStrike			= mod:NewSpecialWarningDodge(64402, nil, nil, nil, 
 
 local timerSpinUp					= mod:NewCastTimer(4, 63414, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
 local timerP3Wx2LaserBarrageCast	= mod:NewCastTimer(10, 63274, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
-local timerNextP3Wx2LaserBarrage	= mod:NewNextTimer(31, 63414, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)
+local timerNextP3Wx2LaserBarrage	= mod:NewNextTimer(45, 63414, nil, nil, nil, 3, nil, DBM_COMMON_L.DEADLY_ICON)--Core 30s first, 45s repeat
 local timerRocketStrikeCD			= mod:NewCDTimer(20, 64402, nil, nil, nil, 3)--20-25
 
 -- Stage Three
@@ -76,8 +76,8 @@ local timerSelfRepair				= mod:NewCastSourceTimer(15, 64383, nil, nil, nil, 7, n
 mod:AddTimerLine(DBM_COMMON_L.HEROIC_ICON..DBM_CORE_L.HARD_MODE)
 local warnFlamesSoon				= mod:NewSoonAnnounce(64566, 1)
 
-local timerHardmode					= mod:NewTimer(610, "TimerHardmode", 64582, nil, nil, 6, nil, nil, nil, nil, nil, nil, nil, 64582)
-local timerNextFlames				= mod:NewNextTimer(28, 64566, nil, nil, nil, 7, nil, DBM_COMMON_L.IMPORTANT_ICON)
+local timerHardmode					= mod:NewTimer(600, "TimerHardmode", 64582, nil, nil, 6, nil, nil, nil, nil, nil, nil, nil, 64582)--Core HM berserk 8min (10m) / 10min (25m)
+local timerNextFlames				= mod:NewNextTimer(30, 64566, nil, nil, nil, 7, nil, DBM_COMMON_L.IMPORTANT_ICON)--Core 30s repeat
 
 -- Stage One
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(1)..": "..L.MobPhase1)
@@ -89,7 +89,7 @@ local warnFrostBomb					= mod:NewSpellAnnounce(64623, 3)
 
 local timerFrostBombExplosion		= mod:NewCastTimer(15, 65333, nil, nil, nil, 3)
 local timerNextFrostBomb			= mod:NewNextTimer(45, 64623, nil, nil, nil, 3, nil, DBM_COMMON_L.HEROIC_ICON)--Core 45s repeat (HM only)
-local timerNextFlameSuppressant		= mod:NewNextTimer(60, 65192, nil, nil, nil, 3)
+local timerNextFlameSuppressant		= mod:NewNextTimer(10, 65192, nil, nil, nil, 3)--Core 7s first, 10s repeat (P2 HM)
 
 -- Stage Three
 mod:AddTimerLine(DBM_CORE_L.SCENARIO_STAGE:format(3)..": "..L.MobPhase3)
@@ -116,11 +116,11 @@ local function ResetRange(self)
 	end
 end
 
-local function Flames(self)	-- Flames
+local function Flames(self)	-- Flames (core 30s repeat)
 	timerNextFlames:Start()
-	self:Schedule(28, Flames, self)
-	warnFlamesSoon:Schedule(18)
-	warnFlamesSoon:Schedule(23)
+	self:Schedule(30, Flames, self)
+	warnFlamesSoon:Schedule(20)
+	warnFlamesSoon:Schedule(25)
 end
 
 local function warnNapalmShellTargets(self)
@@ -168,8 +168,9 @@ local function NextPhase(self)
 		if self.Options.RangeFrame then
 			DBM.RangeCheck:Hide()
 		end
+		-- Core schedules first Frost Bomb 1s after phase start (HM); repeat is cast-driven
 		if self.vb.hardmode then
-			timerNextFrostBomb:Start(46)
+			timerNextFrostBomb:Start(1)
 		end
 	elseif self.vb.phase == 3 then
 		if self.Options.AutoChangeLootToFFA and DBM:GetRaidRank() == 2 then
@@ -179,8 +180,8 @@ local function NextPhase(self)
 		timerNextP3Wx2LaserBarrage:Cancel()
 		timerNextFrostBomb:Cancel()
 		timerP2toP3:Start()
-		timerBombBotSpawn:Start(34)
-		self:Schedule(34, BombBot, self)
+		timerBombBotSpawn:Start(15)--Core 15s first
+		self:Schedule(15, BombBot, self)
 		if self.Options.HealthFrame then
 			DBM.BossHealth:Clear()
 			DBM.BossHealth:AddBoss(33670, L.MobPhase3)
@@ -196,8 +197,10 @@ local function NextPhase(self)
 		timerBombBotSpawn:Cancel()
 		self:Unschedule(BombBot)
 		timerP3toP4:Start()
-		timerProximityMines:Start(34)
-		timerNextP3Wx2LaserBarrage:Start(72)
+		timerProximityMines:Start(6)--Core 6s first (P4)
+		timerNextP3Wx2LaserBarrage:Start(30)--Core 30s first (P4)
+		timerNextShockBlast:Start(20)--Core 20s first (P4)
+		timerRocketStrikeCD:Start(16)--Core 16s first (P4)
 		if self.Options.HealthFrame then
 			DBM.BossHealth:Show(L.name)
 			DBM.BossHealth:AddBoss(33670, L.MobPhase3)
@@ -205,7 +208,7 @@ local function NextPhase(self)
 			DBM.BossHealth:AddBoss(33432, L.MobPhase1)
 		end
 		if self.vb.hardmode then
-			timerNextFrostBomb:Start(28)
+			timerNextFrostBomb:Start(1)--Core 1s after phase start (HM); repeat is cast-driven
 		end
 	end
 end
@@ -221,6 +224,7 @@ function mod:OnCombatStart(delay)
 	timerPlasmaBlastCD:Start(10-delay)--Core 10s first
 	timerNextShockBlast:Start(20-delay) -- Core 20s first
 	timerNapalmCD:Start(3-delay)--Core 3s first
+	timerProximityMines:Start(6-delay)--Core 6s first
 	if DBM:GetRaidRank() == 2 then
 		lootmethod, _, masterlooterRaidID = GetLootMethod()
 	end
@@ -255,6 +259,7 @@ function mod:SPELL_CAST_START(args)
 		specWarnShockBlast:Play("runout")
 		timerShockBlast:Start()
 		timerNextShockBlast:Start()
+		timerProximityMines:Start(8)--Core mines 8s after each Shock Blast
 		if self.Options.RangeFrame then
 			DBM.RangeCheck:SetBossRange(15, self:GetBossUnitByCreatureId(33432))
 			self:Schedule(4.5, ResetRange, self)
@@ -279,9 +284,7 @@ end
 
 function mod:SPELL_CAST_SUCCESS(args)
 	local spellId = args.spellId
-	if spellId == 63027 then				-- Proximity Mines
-		timerProximityMines:Start()
-	elseif spellId == 63414 then			-- Spinning UP (before Dark Glare)
+	if spellId == 63414 then			-- Spinning UP (before Dark Glare)
 		self.vb.is_spinningUp = true
 		timerSpinUp:Start()
 		timerP3Wx2LaserBarrageCast:Schedule(4)
@@ -355,14 +358,15 @@ function mod:CHAT_MSG_MONSTER_YELL(msg)
 		timerEnrage:Stop()
 		self.vb.hardmode = true
 		self:SetWipeTime(10)
-		timerHardmode:Start()
-		timerPlasmaBlastCD:Start(28)
-		timerFlameSuppressant:Start()
-		timerProximityMines:Start(21)
-		timerNextFlames:Start(6)
-		self:Schedule(6, Flames, self)
+		if self:IsDifficulty("normal10") then--Core HM berserk 8min (10m) / 10min (25m)
+			timerHardmode:Start(480)
+		else
+			timerHardmode:Start(600)
+		end
+		-- Core does not reschedule P1 abilities on hard pull; P1 loop and first Flames (~7s) continue
+		timerNextFlames:Start(7)
+		self:Schedule(7, Flames, self)
 		warnFlamesSoon:Schedule(1)
-		timerNextShockBlast:Start(37)
 	elseif msg == L.YellKilled or msg:find(L.YellKilled) then -- register kill
 		timerEnrage:Stop()
 		timerHardmode:Stop()
